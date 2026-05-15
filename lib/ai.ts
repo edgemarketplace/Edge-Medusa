@@ -100,7 +100,7 @@ const FUNNEL_DEFS: Record<TemplateFamily, FunnelDef> = {
       heroHeading: ['Exceptional food for unforgettable events', 'Crafted with passion, served with pride', 'Your event, elevated', 'Fresh. Local. Unforgettable.'],
       heroSubheading: ['From intimate gatherings to grand celebrations, we create memorable dining experiences tailored to your vision.', 'Locally sourced ingredients, expertly prepared, beautifully presented.'],
       ctaText: ['Book your event', 'Request a quote', 'View packages', 'Plan your menu'],
-      packageNames: ['Intimate Gathering', 'Classic Celebration', 'Premium Experience'],
+      packageNames: ['Taco Bar Package', 'Full Catering Spread', 'Premium Fiesta'],
       testimonialQuotes: [
         'The food was absolutely incredible. Our guests are still talking about it weeks later!',
         'Professional, punctual, and the presentation was stunning. Made our event so special.',

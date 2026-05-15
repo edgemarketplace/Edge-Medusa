@@ -95,7 +95,7 @@ export default function StorefrontRenderer({
 
   return (
     <div
-      className="min-h-screen"
+      className="min-h-screen theme-store"
       style={{
         ...themeStyles,
         fontFamily: tokens.bodyFont,
@@ -103,6 +103,45 @@ export default function StorefrontRenderer({
         color: tokens.text,
       }}
     >
+      {/* Theme-aware style overrides for hardcoded Tailwind classes */}
+      <style dangerouslySetInnerHTML={{ __html: `
+        .theme-store .border-black\\/5 { border-color: var(--color-border, #E5E0DB) !important; }
+        .theme-store .border-black\\/10 { border-color: var(--color-border, #E5E0DB) !important; }
+        .theme-store .text-black\\/60 { color: var(--color-text-muted, #666) !important; }
+        .theme-store .text-black\\/50 { color: var(--color-text-muted, #666) !important; }
+        .theme-store .text-black\\/40 { color: var(--color-text-muted, #666) !important; }
+        .theme-store .text-black\\/30 { color: var(--color-text-muted, #666) !important; }
+        .theme-store .text-black\\/70 { color: var(--color-text-muted, #666) !important; }
+        .theme-store .bg-white { background-color: var(--color-surface, #FFF) !important; }
+        .theme-store .bg-black { background-color: var(--color-primary, #1A1A1A) !important; }
+        .theme-store .bg-black.text-white { background-color: var(--color-primary, #1A1A1A) !important; color: #FFF !important; }
+        .theme-store .bg-\\[\\#F9F8F6\\] { background-color: var(--color-background, #F9F8F6) !important; }
+        .theme-store .hover\\:text-black:hover { color: var(--color-text, #1A1A1A) !important; }
+        .theme-store .hover\\:bg-black\\/5:hover { background-color: rgba(0,0,0,0.03) !important; }
+        .theme-store .hover\\:bg-black\\/20:hover { background-color: rgba(0,0,0,0.1) !important; }
+        .theme-store .hover\\:bg-red-50:hover { background-color: #FEF2F2 !important; }
+        .theme-store .hover\\:text-red-600:hover { color: #DC2626 !important; }
+        .theme-store .text-amber-500 { color: #F59E0B !important; }
+        .theme-store .bg-amber-100 { background-color: #FEF3C7 !important; }
+        .theme-store .bg-amber-500 { background-color: #F59E0B !important; }
+        .theme-store .bg-green-100 { background-color: #DCFCE7 !important; }
+        .theme-store .bg-blue-50 { background-color: #EFF6FF !important; }
+        .theme-store .bg-black\\/5 { background-color: rgba(0,0,0,0.05) !important; }
+        .theme-store .bg-black\\/10 { background-color: rgba(0,0,0,0.1) !important; }
+        .theme-store .bg-black\\/30 { background-color: rgba(0,0,0,0.3) !important; }
+        .theme-store .ring-1.ring-black { box-shadow: 0 0 0 1px var(--color-primary, #1A1A1A) !important; }
+        .theme-store .ring-2.ring-black { box-shadow: 0 0 0 2px var(--color-primary, #1A1A1A) !important; }
+        .theme-store .shadow-sm { box-shadow: var(--shadow-sm, 0 1px 2px rgba(0,0,0,0.05)) !important; }
+        .theme-store .shadow-md { box-shadow: var(--shadow-md, 0 4px 12px rgba(0,0,0,0.08)) !important; }
+        .theme-store .shadow-lg { box-shadow: var(--shadow-md, 0 4px 12px rgba(0,0,0,0.08)) !important; }
+        .theme-store .shadow-xl { box-shadow: var(--shadow-md, 0 4px 12px rgba(0,0,0,0.08)) !important; }
+        .theme-store .shadow-2xl { box-shadow: var(--shadow-md, 0 4px 12px rgba(0,0,0,0.08)) !important; }
+        .theme-store .rounded-full { border-radius: var(--radius-full, 9999px) !important; }
+        .theme-store .rounded-2xl { border-radius: var(--radius-lg, 16px) !important; }
+        .theme-store .rounded-xl { border-radius: var(--radius-md, 8px) !important; }
+        .theme-store .rounded-lg { border-radius: var(--radius-sm, 4px) !important; }
+        .theme-store .border-black\\/15 { border-color: var(--color-border, #E5E0DB) !important; }
+      `}} />
 
       {/* Test mode banner */}
       {showTestBanner && (
