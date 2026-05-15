@@ -151,9 +151,15 @@ export default function PageEditor({ params }: PageEditorProps) {
           {saving && <span className="text-xs text-black/40 ml-2">Saving...</span>}
         </div>
         <div className="flex items-center gap-3">
-          <a href={`https://${site.subdomain}.edgemarketplacehub.com/${page.slug}`} target="_blank" rel="noreferrer" className="px-4 py-2 rounded-full border border-black/10 text-sm font-bold hover:bg-black/5">
-            Preview
-          </a>
+          {site.subdomain ? (
+            <a href={`https://${site.subdomain}.edgemarketplacehub.com/${page.slug}`} target="_blank" rel="noreferrer" className="px-4 py-2 rounded-full border border-black/10 text-sm font-bold hover:bg-black/5">
+              Preview live
+            </a>
+          ) : (
+            <span className="px-4 py-2 rounded-full border border-black/10 text-sm text-black/40" title="Launch your site to get a live URL">
+              Preview (launch first)
+            </span>
+          )}
         </div>
       </div>
 
