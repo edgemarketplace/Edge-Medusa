@@ -36,6 +36,7 @@ export default function StorefrontRenderer({
   }
 
   const [showContactModal, setShowContactModal] = useState(false);
+  const [showTestBanner, setShowTestBanner] = useState(false);
 
   async function handleCheckout() {
     const items = Object.entries(cart)
@@ -53,9 +54,12 @@ export default function StorefrontRenderer({
         body: JSON.stringify({ siteId: site.id, items }),
       });
       const data = await res.json();
-      if (data.url) { window.location.href = data.url; }
-      else if (data.error?.includes('Stripe not connected')) { setShowContactModal(true); }
-      else { alert(data.error || 'Checkout failed'); }
+      if (data.url) {
+        if (data.testMode) setShowTestBanner(true);
+        window.location.href = data.url;
+      } else {
+        alert(data.error || 'Checkout failed');
+      }
     } catch (err) { alert('Checkout failed. Please try again.'); }
     finally { setCheckingOut(false); }
   }
@@ -64,6 +68,13 @@ export default function StorefrontRenderer({
 
   return (
     <div className="min-h-screen bg-[#F9F8F6] text-[#1A1A1A]" style={{ fontFamily: template.fontFamily }}>
+
+      {/* Test mode banner */}
+      {showTestBanner && (
+        <div className="bg-amber-500 text-white text-center py-2 text-sm font-bold">
+          🧪 Test mode — use card <span className="font-mono bg-white/20 px-1 rounded">4242 4242 4242 4242</span> with any future date and CVC
+        </div>
+      )}
 
       {/* Stripe not connected modal */}
       {showContactModal && (

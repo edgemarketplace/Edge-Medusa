@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
+import { sendWelcomeEmail } from '@/lib/email';
 
 export async function POST(request: NextRequest) {
   try {
@@ -34,6 +35,14 @@ export async function POST(request: NextRequest) {
       console.error('Supabase insert error:', error);
       return NextResponse.json({ error: 'Failed to create site' }, { status: 500 });
     }
+
+    // Send welcome email (non-blocking)
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+    sendWelcomeEmail({
+      to: contact_email,
+      businessName: business_name,
+      buildUrl: `${appUrl}/build/${data.id}`,
+    }).catch(err => console.error('Welcome email failed:', err));
 
     return NextResponse.json(data, { status: 201 });
   } catch (error) {

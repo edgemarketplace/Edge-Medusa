@@ -1,22 +1,23 @@
 import { NextRequest, NextResponse } from 'next/server';
 import Stripe from 'stripe';
 import { supabaseAdmin } from '@/lib/supabase';
+import { sendOrderNotificationEmail, sendCustomerOrderConfirmationEmail } from '@/lib/email';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { siteId, items } = body;
+    const { siteId, items, customerEmail } = body;
 
     if (!siteId || !items || !Array.isArray(items) || items.length === 0) {
       return NextResponse.json({ error: 'siteId and items array required' }, { status: 400 });
     }
 
-    // Get the site to find the connected Stripe account
+    // Get the site
     const { data: site, error: siteError } = await supabaseAdmin
       .from('sites')
-      .select('stripe_account_id, business_name')
+      .select('stripe_account_id, business_name, contact_email')
       .eq('id', siteId)
       .single();
 
@@ -24,11 +25,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Site not found' }, { status: 404 });
     }
 
-    if (!site.stripe_account_id) {
-      return NextResponse.json({ error: 'Stripe not connected for this site' }, { status: 400 });
-    }
-
-    // Build line items for Stripe Checkout
+    // Build line items
     const lineItems = items.map((item: any) => {
       const rawPrice = String(item.price).replace(/[^0-9.]/g, '');
       const unitAmount = Math.round(parseFloat(rawPrice) * 100);
@@ -48,23 +45,49 @@ export async function POST(request: NextRequest) {
       };
     });
 
-    // Create a Checkout Session on the connected account
-    const session = await stripe.checkout.sessions.create(
-      {
-        line_items: lineItems,
-        mode: 'payment',
-        success_url: `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/store/${siteId}?success=true`,
-        cancel_url: `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/store/${siteId}?canceled=true`,
-        payment_intent_data: {
-          application_fee_amount: Math.round(lineItems.reduce((sum, li) => sum + (li.price_data!.unit_amount * li.quantity), 0) * 0.05), // 5% platform fee
-        },
-      },
-      {
-        stripeAccount: site.stripe_account_id,
-      }
-    );
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+    const totalAmount = lineItems.reduce((sum, li) => sum + (li.price_data!.unit_amount * li.quantity), 0);
 
-    return NextResponse.json({ url: session.url });
+    // Determine checkout mode
+    const hasStripeConnected = !!site.stripe_account_id;
+    const isTestMode = !hasStripeConnected;
+
+    // Create checkout session
+    const sessionConfig: any = {
+      line_items: lineItems,
+      mode: 'payment',
+      success_url: `${appUrl}/store/${siteId}?success=true&session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${appUrl}/store/${siteId}?canceled=true`,
+      metadata: {
+        site_id: siteId,
+        business_name: site.business_name,
+        customer_email: customerEmail || '',
+        is_test_mode: isTestMode ? 'true' : 'false',
+      },
+      customer_email: customerEmail || undefined,
+    };
+
+    let session;
+    if (hasStripeConnected) {
+      // Real merchant Stripe account — use Connect
+      session = await stripe.checkout.sessions.create(
+        {
+          ...sessionConfig,
+          payment_intent_data: {
+            application_fee_amount: Math.round(totalAmount * 0.05), // 5% platform fee
+          },
+        },
+        { stripeAccount: site.stripe_account_id }
+      );
+    } else {
+      // Test mode — use platform account directly
+      session = await stripe.checkout.sessions.create(sessionConfig);
+    }
+
+    return NextResponse.json({
+      url: session.url,
+      testMode: isTestMode,
+    });
   } catch (error) {
     console.error('Checkout error:', error);
     return NextResponse.json(
@@ -72,4 +95,10 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
   }
+}
+
+// Webhook handler for completed checkouts
+export async function GET(request: NextRequest) {
+  // Health check
+  return NextResponse.json({ ok: true });
 }
