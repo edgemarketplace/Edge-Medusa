@@ -1,6 +1,14 @@
 import { Resend } from 'resend';
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+let resend: Resend | null = null;
+
+function getResend(): Resend | null {
+  if (!process.env.RESEND_API_KEY) return null;
+  if (!resend) {
+    resend = new Resend(process.env.RESEND_API_KEY);
+  }
+  return resend;
+}
 
 interface WelcomeEmailProps {
   to: string;
@@ -9,13 +17,14 @@ interface WelcomeEmailProps {
 }
 
 export async function sendWelcomeEmail({ to, businessName, buildUrl }: WelcomeEmailProps) {
-  if (!process.env.RESEND_API_KEY) {
+  const client = getResend();
+  if (!client) {
     console.warn('RESEND_API_KEY not set, skipping welcome email');
     return;
   }
 
   try {
-    await resend.emails.send({
+    await client.emails.send({
       from: 'Edge Marketplace Hub <welcome@edgemarketplacehub.com>',
       to,
       subject: `Welcome to Edge Marketplace Hub, ${businessName}!`,
@@ -63,7 +72,8 @@ interface OrderNotificationEmailProps {
 }
 
 export async function sendOrderNotificationEmail({ to, businessName, orderId, items, total, customerEmail }: OrderNotificationEmailProps) {
-  if (!process.env.RESEND_API_KEY) {
+  const client = getResend();
+  if (!client) {
     console.warn('RESEND_API_KEY not set, skipping order notification email');
     return;
   }
@@ -73,7 +83,7 @@ export async function sendOrderNotificationEmail({ to, businessName, orderId, it
       `<tr><td style="padding: 8px 0; border-bottom: 1px solid #eee;">${item.name}</td><td style="padding: 8px 0; border-bottom: 1px solid #eee; text-align: center;">×${item.quantity}</td><td style="padding: 8px 0; border-bottom: 1px solid #eee; text-align: right;">${item.price}</td></tr>`
     ).join('');
 
-    await resend.emails.send({
+    await client.emails.send({
       from: 'Edge Marketplace Hub <orders@edgemarketplacehub.com>',
       to,
       subject: `New order on ${businessName}`,
@@ -103,7 +113,8 @@ interface CustomerOrderConfirmationEmailProps {
 }
 
 export async function sendCustomerOrderConfirmationEmail({ to, businessName, orderId, items, total }: CustomerOrderConfirmationEmailProps) {
-  if (!process.env.RESEND_API_KEY) {
+  const client = getResend();
+  if (!client) {
     console.warn('RESEND_API_KEY not set, skipping customer confirmation email');
     return;
   }
@@ -113,7 +124,7 @@ export async function sendCustomerOrderConfirmationEmail({ to, businessName, ord
       `<li style="padding: 8px 0; border-bottom: 1px solid #eee; display: flex; justify-content: space-between;"><span>${item.name} ×${item.quantity}</span><span>${item.price}</span></li>`
     ).join('');
 
-    await resend.emails.send({
+    await client.emails.send({
       from: 'Edge Marketplace Hub <orders@edgemarketplacehub.com>',
       to,
       subject: `Order confirmation from ${businessName}`,
