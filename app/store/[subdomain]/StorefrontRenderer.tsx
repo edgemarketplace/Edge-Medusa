@@ -2,7 +2,8 @@
 
 import { useState } from 'react';
 import type { SiteData, GeneratedSection, InventoryItem, TemplateDefinition, SectionType } from '@/lib/types';
-import { SECTION_LIBRARY, THEME_PRESETS } from '@/lib/section-library';
+import { SECTION_LIBRARY } from '@/lib/section-library';
+import { THEME_PRESETS } from '@/lib/types';
 
 interface StorefrontRendererProps {
   site: SiteData;
