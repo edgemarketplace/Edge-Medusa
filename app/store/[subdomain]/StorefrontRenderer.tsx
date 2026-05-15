@@ -96,7 +96,7 @@ export default function StorefrontRenderer({
       )}
 
       {mergedSections.map((section, i) => (
-        <SectionRenderer key={section.id || i} section={section} template={template} inventory={inventory} onAddToCart={addToCart} />
+        <SectionRenderer key={section.id || i} section={section} template={template} inventory={inventory} onAddToCart={addToCart} site={site} />
       ))}
 
       <footer className="border-t border-black/5 py-8 px-8 text-center text-sm text-black/40">
@@ -108,8 +108,8 @@ export default function StorefrontRenderer({
 
 // --- Section Renderer ---
 
-function SectionRenderer({ section, template, inventory, onAddToCart }: {
-  section: GeneratedSection; template: TemplateDefinition; inventory: InventoryItem[]; onAddToCart: (name: string) => void;
+function SectionRenderer({ section, template, inventory, onAddToCart, site }: {
+  section: GeneratedSection; template: TemplateDefinition; inventory: InventoryItem[]; onAddToCart: (name: string) => void; site: SiteData;
 }) {
   const { type, data } = section;
   const primary = template.primaryColor;
