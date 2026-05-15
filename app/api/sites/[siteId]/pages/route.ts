@@ -16,7 +16,8 @@ export async function GET(
       .order('created_at', { ascending: true });
 
     if (error) {
-      return NextResponse.json({ error: 'Failed to fetch pages' }, { status: 500 });
+      console.error('Supabase pages GET error:', JSON.stringify(error));
+      return NextResponse.json({ error: `Failed to fetch pages: ${error.message}` }, { status: 500 });
     }
 
     return NextResponse.json(data || []);
@@ -55,7 +56,8 @@ export async function POST(
       if (error.code === '23505') {
         return NextResponse.json({ error: 'Page with this slug already exists' }, { status: 409 });
       }
-      return NextResponse.json({ error: 'Failed to create page' }, { status: 500 });
+      console.error('Supabase pages POST error:', JSON.stringify(error));
+      return NextResponse.json({ error: `Failed to create page: ${error.message}` }, { status: 500 });
     }
 
     return NextResponse.json(data as PageData, { status: 201 });

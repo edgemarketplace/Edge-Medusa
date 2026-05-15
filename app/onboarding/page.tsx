@@ -11,6 +11,7 @@ export default function OnboardingPage() {
   const router = useRouter();
   const [businessName, setBusinessName] = useState('');
   const [offerings, setOfferings] = useState('');
+  const [tagline, setTagline] = useState('');
   const [email, setEmail] = useState('');
   const [selectedType, setSelectedType] = useState<TemplateFamily | null>(null);
   const [loading, setLoading] = useState(false);
@@ -33,6 +34,7 @@ export default function OnboardingPage() {
           business_name: businessName.trim(),
           business_type: selectedType,
           offerings: offerings.trim(),
+          tagline: tagline.trim(),
           contact_email: email.trim(),
         }),
       });
@@ -86,14 +88,30 @@ export default function OnboardingPage() {
 
           {/* What you sell */}
           <div>
-            <label className="block text-sm font-bold mb-2">What do you sell? *</label>
+            <label htmlFor="offerings" className="block text-sm font-bold mb-2">What do you sell? *</label>
             <textarea
+              id="offerings"
+              name="offerings"
               value={offerings}
               onChange={(e) => setOfferings(e.target.value)}
               placeholder="e.g. Handmade ceramics and home decor for modern living"
               rows={3}
               className="w-full border border-black/10 rounded-2xl px-5 py-4 text-lg focus:outline-none focus:border-black/30 bg-white resize-none"
               required
+            />
+          </div>
+
+          {/* Tagline */}
+          <div>
+            <label htmlFor="tagline" className="block text-sm font-bold mb-2">Your tagline <span className="text-black/30 font-normal">(optional)</span></label>
+            <input
+              id="tagline"
+              name="tagline"
+              type="text"
+              value={tagline}
+              onChange={(e) => setTagline(e.target.value)}
+              placeholder="e.g. Handcrafted with love in Portland, OR"
+              className="w-full border border-black/10 rounded-2xl px-5 py-4 text-lg focus:outline-none focus:border-black/30 bg-white"
             />
           </div>
 

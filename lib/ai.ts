@@ -9,76 +9,306 @@ if (!process.env.OPENAI_API_KEY) {
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
-function getStyleDirection(businessType: TemplateFamily): string {
-  switch (businessType) {
-    case 'retail-core': return 'Minimal luxury, clean product grids, large imagery, confident typography';
-    case 'service-pro': return 'Trustworthy, professional, clear service cards, before/after sections, testimonials';
-    case 'food-catering': return 'Appetizing, warm, menu-focused, inviting imagery, booking CTAs';
-    case 'artisan-market': return 'Story-rich, textured, human-centered, warm tones, maker narrative';
-    case 'event-floral': return 'Elegant, romantic, gallery-led, premium feel, soft colors';
-    default: return 'Clean, modern, professional';
-  }
+// --- Vertical-specific funnel definitions ---
+
+interface FunnelDef {
+  psychology: string;
+  pagePurpose: string;
+  requiredSections: { type: SectionType; purpose: string; tips: string }[];
+  contentTone: string;
+  milanoCues: string;
+  sampleCopy: Record<string, string[]>;
 }
 
-function buildPrompt(businessName: string, businessType: TemplateFamily, offerings: string): string {
+const FUNNEL_DEFS: Record<TemplateFamily, FunnelDef> = {
+  'retail-core': {
+    psychology: 'discovery + desire + trust. Customers browse, fall in love with products, need social proof to convert.',
+    pagePurpose: 'Establish brand identity, feature collections, drive browsing and purchase.',
+    requiredSections: [
+      { type: 'header-simple', purpose: 'Clean navigation that doesn\'t distract from products', tips: 'Minimal links, prominent logo, subtle CTA' },
+      { type: 'hero-visual', purpose: 'Editorial brand moment — oversized imagery, serif headline', tips: 'Full-bleed lifestyle image, muted overlay, confident serif typography' },
+      { type: 'featured-collection', purpose: 'Curated browsing — 4 hero products with large imagery', tips: 'Large product cards, minimal text, let images sell' },
+      { type: 'product-grid', purpose: 'Full catalog browsing with filters', tips: 'Clean grid, hover states, quick-add buttons' },
+      { type: 'testimonials', purpose: 'Social proof to convert browsers', tips: 'Real-sounding names, specific praise, star ratings' },
+      { type: 'newsletter', purpose: 'Capture emails for return visits', tips: 'Simple signup, promise exclusivity' },
+      { type: 'footer-commerce', purpose: 'Trust signals, links, newsletter', links: 'Clean columns, payment icons, social links' },
+    ],
+    contentTone: 'Confident, curated, editorial. Short punchy headlines. Product descriptions that evoke feeling, not just features.',
+    milanoCues: 'Oversized editorial imagery. Whitespace-heavy layouts. Serif headlines (playfair display style). Muted luxury palette (cream, charcoal, sage, terracotta). Horizontal collection grids. Magazine-style product spacing.',
+    sampleCopy: {
+      heroHeading: ['Curated for the modern home', 'Thoughtfully designed, beautifully made', 'Where style meets substance', 'Discover your new favorites'],
+      heroSubheading: ['Explore our collection of handpicked pieces designed to elevate everyday living.', 'Each piece is carefully sourced and crafted with intention.', 'Timeless design for the modern lifestyle.'],
+      ctaText: ['Shop the collection', 'Explore now', 'Discover more', 'View all'],
+      testimonialQuotes: [
+        'The quality is incredible — everything arrived beautifully packaged.',
+        'I get compliments every time I wear their pieces. Truly unique.',
+        'Finally found a brand that matches my aesthetic perfectly.',
+        'Fast shipping, beautiful products. Will definitely order again.',
+      ],
+    },
+  },
+
+  'service-pro': {
+    psychology: 'trust + credibility + booking. Customers need proof before they commit. Reduce friction to contact.',
+    pagePurpose: 'Establish trust immediately, showcase work, generate quote requests.',
+    requiredSections: [
+      { type: 'header-simple', purpose: 'Professional navigation with prominent CTA', tips: 'Phone number visible, "Get a quote" button' },
+      { type: 'hero-split', purpose: 'Authority hero — bold headline, service image, trust badges', tips: 'Strong contrast, confidence-driven layout, before/after hint' },
+      { type: 'service-list', purpose: 'Clear service offerings with pricing ranges', tips: 'Structured layout, benefit-focused descriptions, starting prices' },
+      { type: 'before-after', purpose: 'Visual proof of work quality', tips: 'High-quality transformation images, brief context' },
+      { type: 'value-icons', purpose: 'Why choose us — icon grid of differentiators', tips: 'Licensed, insured, satisfaction guarantee, years of experience' },
+      { type: 'testimonials', purpose: 'Customer proof with specific results', tips: 'Before/after context, specific praise, real names' },
+      { type: 'quote-cta', purpose: 'Conversion endpoint — make it easy to request a quote', tips: 'Simple form, fast response promise, no commitment' },
+      { type: 'footer-service', purpose: 'Contact info, service areas, hours', tips: 'Phone, email, service area map, business hours' },
+    ],
+    contentTone: 'Confident, professional, direct. Lead with benefits and results. Use specific numbers (years, customers served, satisfaction rate).',
+    milanoCues: 'Bold typography. Strong contrast (dark backgrounds, white text). Confidence-driven layouts. Clean hierarchy. Professional photography. Icon-driven trust sections.',
+    sampleCopy: {
+      heroHeading: ['Professional results you can see', 'Trusted by 500+ homeowners', 'Your property, perfected', 'Quality work, guaranteed'],
+      heroSubheading: ['We deliver professional [service] with a focus on quality, reliability, and your complete satisfaction.', 'Serving [area] for over X years. Licensed, insured, and committed to excellence.'],
+      ctaText: ['Get a free quote', 'Request estimate', 'Book now', 'Call today'],
+      serviceDescriptions: [
+        'Complete service from start to finish. We handle everything so you don\'t have to.',
+        'Professional-grade results using commercial equipment and proven techniques.',
+        'Customized to your specific needs. No job too big or small.',
+      ],
+      testimonialQuotes: [
+        'They transformed our space completely. Professional, on time, and the results exceeded expectations.',
+        'Best investment we\'ve made in our home. The team was courteous and the work was flawless.',
+        'I\'ve used several services before — these guys are on another level. Highly recommend.',
+        'Quick response, fair pricing, and the quality of work was outstanding. Will use again.',
+      ],
+    },
+  },
+
+  'food-catering': {
+    psychology: 'appetite + urgency + event conversion. Customers need to taste with their eyes first, then book for events.',
+    pagePurpose: 'Showcase food quality, highlight packages, drive catering inquiries.',
+    requiredSections: [
+      { type: 'header-promo', purpose: 'Announcement bar for seasonal offers + clean nav', tips: 'Promo banner for holiday/event season' },
+      { type: 'hero-visual', purpose: 'Appetite hero — cinematic food photography with overlay', tips: 'Rich food imagery, warm tones, bold pricing highlight' },
+      { type: 'packages', purpose: 'Event packages with clear pricing tiers', tips: '3 tiers (intimate, standard, premium), per-person pricing, inclusions listed' },
+      { type: 'service-list', purpose: 'Menu categories with descriptions', tips: 'Appetizers, mains, desserts, beverages — brief evocative descriptions' },
+      { type: 'gallery', purpose: 'Visual proof — event photos, plated dishes', tips: 'Masonry grid, warm lighting, professional food photography' },
+      { type: 'testimonials', purpose: 'Event host testimonials', tips: 'Specific event context, praise for food quality and service' },
+      { type: 'booking-cta', purpose: 'Event inquiry form with date/headcount', tips: 'Simple form, quick response promise, deposit info' },
+      { type: 'footer-service', purpose: 'Contact, service areas, social links', tips: 'Phone, email, Instagram, service radius' },
+    ],
+    contentTone: 'Warm, inviting, appetite-inducing. Use sensory language (fresh, handcrafted, locally-sourced). Highlight event experience, not just food.',
+    milanoCues: 'Cinematic food photography. Rich textures. Bold pricing highlights. Elegant menu typography. Warm editorial presentation. Visual richness.',
+    sampleCopy: {
+      heroHeading: ['Exceptional food for unforgettable events', 'Crafted with passion, served with pride', 'Your event, elevated', 'Fresh. Local. Unforgettable.'],
+      heroSubheading: ['From intimate gatherings to grand celebrations, we create memorable dining experiences tailored to your vision.', 'Locally sourced ingredients, expertly prepared, beautifully presented.'],
+      ctaText: ['Book your event', 'Request a quote', 'View packages', 'Plan your menu'],
+      packageNames: ['Intimate Gathering', 'Classic Celebration', 'Premium Experience'],
+      testimonialQuotes: [
+        'The food was absolutely incredible. Our guests are still talking about it weeks later!',
+        'Professional, punctual, and the presentation was stunning. Made our event so special.',
+        'Best catering we\'ve ever had. Every dish was fresh, flavorful, and beautifully plated.',
+        'They handled everything perfectly so we could enjoy our own party. Highly recommend!',
+      ],
+    },
+  },
+
+  'artisan-market': {
+    psychology: 'story + authenticity + craftsmanship. Customers buy the maker, not just the product. Emotional connection drives purchase.',
+    pagePurpose: 'Establish artisan identity, tell the story, showcase products with context.',
+    requiredSections: [
+      { type: 'header-simple', purpose: 'Warm, handcrafted feel navigation', tips: 'Simple nav, maker-focused branding' },
+      { type: 'hero-visual', purpose: 'Story-driven hero — maker at work or signature product', tips: 'Warm, textured imagery. Handcrafted feeling. Serif headline.' },
+      { type: 'brand-story', purpose: 'Founder story — why you make what you make', tips: 'Personal, authentic, process-focused. Show the hands behind the work.' },
+      { type: 'product-grid', purpose: 'Curated product showcase with artisan notes', tips: 'Large product images, brief maker notes, materials mentioned' },
+      { type: 'value-icons', purpose: 'Values — handmade, local, sustainable, etc.', tips: 'Icon grid: handmade, locally sourced, small batch, sustainable' },
+      { type: 'testimonials', purpose: 'Customer love — emotional connection stories', tips: 'Customers who love the story, not just the product' },
+      { type: 'newsletter', purpose: 'Build community, announce new products/markets', tips: 'Promise: new products, market dates, behind-the-scenes' },
+      { type: 'footer-basic', purpose: 'Simple, warm footer with social and contact', tips: 'Instagram link, market schedule, email' },
+    ],
+    contentTone: 'Warm, personal, authentic. First-person where appropriate. Focus on process, materials, and the human story behind each piece.',
+    milanoCues: 'Organic spacing. Textured visuals. Handcrafted feeling. Documentary/editorial mix. Warm imagery. Serif headlines with body serif.',
+    sampleCopy: {
+      heroHeading: ['Handcrafted with intention', 'Made by hand, with heart', 'Where craft meets community', 'Thoughtfully made, beautifully yours'],
+      heroSubheading: ['Every piece is carefully crafted by hand using traditional techniques and the finest materials.', 'Born from a passion for [craft], made with love in [location].'],
+      ctaText: ['Shop the collection', 'Meet the maker', 'Explore our story', 'Find us at markets'],
+      storyBody: [
+        'It started with a simple idea: create [products] that honor traditional craftsmanship while fitting beautifully into modern life.',
+        'Every piece begins with carefully selected materials and hours of dedicated handwork. No shortcuts, no mass production — just honest craft.',
+      ],
+      testimonialQuotes: [
+        'You can feel the love and care in every piece. It\'s not just a product, it\'s a story.',
+        'I love knowing exactly who made this and the care that went into it. Truly special.',
+        'The quality is unmatched. These are heirloom pieces that will last for years.',
+      ],
+    },
+  },
+
+  'event-floral': {
+    psychology: 'aspiration + elegance + trust. Customers are planning once-in-a-lifetime moments. They need to feel confident in their choice.',
+    pagePurpose: 'Create emotional impact, showcase portfolio, capture high-value inquiries.',
+    requiredSections: [
+      { type: 'header-simple', purpose: 'Elegant, minimal navigation', tips: 'Clean typography, subtle branding, inquiry CTA' },
+      { type: 'hero-visual', purpose: 'Cinematic hero — full-screen floral imagery with elegant overlay', tips: 'Full-bleed luxury floral photography, soft serif headline, subtle animation feel' },
+      { type: 'packages', purpose: 'Service tiers — simplify high-ticket buying', tips: '3 tiers (intimate, classic, luxury), starting prices, key inclusions' },
+      { type: 'gallery', purpose: 'Portfolio proof — immersive gallery-first layout', tips: 'Full-bleed images, masonry grid, category filters (weddings, events, installations)' },
+      { type: 'testimonials', purpose: 'Couple/event host testimonials with emotional weight', tips: 'Specific event details, emotional language, photographer credits' },
+      { type: 'value-icons', purpose: 'Trust signals — experience, awards, process', tips: 'Years of experience, events completed, awards, consultation process' },
+      { type: 'quote-cta', purpose: 'Inquiry form — capture event details and budget', tips: 'Event date, venue, guest count, budget range, consultation booking' },
+      { type: 'footer-basic', purpose: 'Minimal, elegant footer', tips: 'Contact, Instagram, service areas' },
+    ],
+    contentTone: 'Elegant, aspirational, confident. Use refined language. Focus on the experience and emotion, not just the product. Photography does the heavy lifting.',
+    milanoCues: 'Full-screen imagery. Luxury editorial feel. Soft transitions. Premium hierarchy. Gallery-first layouts. Serif headlines. Muted romantic palette (blush, sage, cream, gold).',
+    sampleCopy: {
+      heroHeading: ['Floral artistry for life\'s most beautiful moments', 'Where flowers become art', 'Elegant florals, unforgettable events', 'Crafted with passion, designed for you'],
+      heroSubheading: ['From intimate ceremonies to grand celebrations, we create bespoke floral designs that transform spaces and capture hearts.', 'Every arrangement is thoughtfully designed to reflect your unique vision and style.'],
+      ctaText: ['Start your inquiry', 'View our work', 'Book a consultation', 'Explore packages'],
+      packageNames: ['Intimate', 'Classic', 'Luxury'],
+      testimonialQuotes: [
+        'They completely exceeded our expectations. Every detail was perfect and our guests couldn\'t stop talking about the flowers.',
+        'Working with them was an absolute dream. They understood our vision perfectly and brought it to life beautifully.',
+        'The most stunning floral design I\'ve ever seen. Truly works of art that made our day unforgettable.',
+        'Professional, creative, and so easy to work with. The florals were the highlight of our event.',
+      ],
+    },
+  },
+};
+
+// --- Prompt Builder ---
+
+function buildPrompt(
+  businessName: string,
+  businessType: TemplateFamily,
+  offerings: string,
+  contactEmail: string,
+  tagline: string,
+): string {
   const template = TEMPLATES[businessType];
   const manifest = TEMPLATE_MANIFESTS[businessType];
-  const style = getStyleDirection(businessType);
+  const funnel = FUNNEL_DEFS[businessType];
 
-  // Build the required + recommended section list with their data shapes
-  const sectionShapes = [...manifest.requiredSections, ...manifest.recommendedSections.slice(0, 3)]
-    .map(type => {
-      const def = SECTION_LIBRARY[type];
-      const sampleData = Object.entries(def.defaultData)
-        .filter(([k]) => k !== 'items')
-        .map(([k, v]) => `"${k}": "${typeof v === 'string' ? v : JSON.stringify(v)}"`)
-        .join(', ');
-      return `    { "id": "<unique-id>", "type": "${type}", "data": { ${sampleData} } }`;
-    })
-    .join(',\n');
+  // Build section-by-section instructions
+  const sectionInstructions = funnel.requiredSections.map((sec, idx) => {
+    const def = SECTION_LIBRARY[sec.type];
+    const sampleData = buildSampleData(sec.type, businessName, offerings, funnel);
+    return `  ${idx + 1}. ${def.label} (${sec.type})
+     Purpose: ${sec.purpose}
+     Tips: ${sec.tips}
+     Data: ${JSON.stringify(sampleData, null, 6)}`;
+  }).join('\n\n');
 
-  return `You are a storefront designer for "${businessName}", a ${template.label} business that sells ${offerings}.
+  return `You are an expert storefront designer creating a premium, conversion-optimized website for "${businessName}" — a ${template.label} business that offers ${offerings}.
 
-Design a complete storefront with the following sections. Return ONLY valid JSON (no markdown, no code fences):
+## Business Context
+- Business name: ${businessName}
+- Type: ${template.label} (${businessType})
+- What they sell: ${offerings}
+- Contact: ${contactEmail}
+- Template style: ${template.kicker}${tagline ? `\n- Tagline: ${tagline}` : ''}
+
+## Design Psychology
+${funnel.psychology}
+
+## Page Purpose
+${funnel.pagePurpose}
+
+## Content Tone
+${funnel.contentTone}
+
+## Visual Style (Milano-inspired)
+${funnel.milanoCues}
+
+## Sections to Generate
+
+You MUST generate ALL of the following sections in order. Each section must have a unique short ID (like "a1b2c3d4"), a type, and a data object with REAL, compelling content — NOT placeholder text.
+
+${sectionInstructions}
+
+## Critical Rules
+1. Every text field must contain REAL, specific, compelling content — never "Lorem ipsum" or "Your text here"
+2. Headlines should be punchy, benefit-driven, and reference the business name or offerings
+3. Testimonials should sound like real customers with specific, believable praise
+4. FAQs should address real concerns a customer of this business type would have
+5. Pricing should be realistic for the business type and market
+6. All copy should sound professional and ready to publish — this is a 15-minute launch promise
+7. Use the sample copy style from the funnel definition as inspiration, but create original content
+8. Generate 2-3 testimonials with different names and perspectives
+9. Generate 2-3 FAQ items that address real customer concerns
+10. For image fields, leave empty string "" — the merchant will add their own photos
+
+## Output Format
+Return ONLY valid JSON (no markdown, no code fences) in this exact structure:
 
 {
   "sections": [
-${sectionShapes},
-    { "id": "<unique-id>", "type": "product-grid", "data": { "title": "Our Products", "columns": 3, "items": [] } },
-    { "id": "<unique-id>", "type": "testimonials", "data": { "title": "What customers say", "testimonials": [{"name": "<name>", "quote": "<quote>", "rating": 5}] } },
-    { "id": "<unique-id>", "type": "faq", "data": { "title": "Frequently Asked Questions", "questions": [{"question": "<question>", "answer": "<answer>"}] } },
-    { "id": "<unique-id>", "type": "footer-commerce", "data": { "logoText": "${businessName}", "newsletter": true, "copyright": "© ${new Date().getFullYear()} ${businessName}" } }
+    { "id": "<unique-8-char-id>", "type": "<section-type>", "data": { ... } },
+    ...
   ]
 }
 
-Requirements:
-- Generate unique short IDs for each section (e.g. "a1b2c3d4")
-- Fill in realistic, compelling content for ALL text fields
-- Generate 2-3 testimonials with realistic names and quotes
-- Generate 2-3 FAQ items relevant to the business
-- Prices should be realistic for the business type
-- Style direction: ${style}
-- All text should be in a ${template.kicker} tone
-- The hero heading should be compelling and reference the business
+Generate the COMPLETE JSON now. Every section. Every field. Real content.`;
+}
 
-Return ONLY the JSON object, nothing else.`;
+function buildSampleData(type: SectionType, businessName: string, offerings: string, funnel: FunnelDef): Record<string, any> {
+  const samples: Record<string, any> = {
+    'header-simple': { logoText: businessName, links: [{ label: 'Home', url: '#' }, { label: 'Shop', url: '#products' }, { label: 'About', url: '#about' }], ctaText: 'Shop now', ctaUrl: '#products' },
+    'header-promo': { announcement: 'Free shipping on orders over $50 — limited time!', logoText: businessName, links: [{ label: 'Home', url: '#' }, { label: 'Menu', url: '#menu' }, { label: 'Contact', url: '#contact' }] },
+    'hero-split': { heading: funnel.sampleCopy.heroHeading[0], subheading: funnel.sampleCopy.heroSubheading[0], ctaText: funnel.sampleCopy.ctaText[0], ctaUrl: '#products', imageUrl: '' },
+    'hero-visual': { heading: funnel.sampleCopy.heroHeading[0], subheading: funnel.sampleCopy.heroSubheading[0], ctaText: funnel.sampleCopy.ctaText[0], imageUrl: '', overlayOpacity: 0.4 },
+    'hero-products': { heading: `Welcome to ${businessName}`, subheading: offerings, ctaText: 'View all', items: [] },
+    'hero-cta': { headline: 'Join our community', subheading: 'Get exclusive offers, new arrivals, and insider access.', ctaText: 'Subscribe', showEmailCapture: true },
+    'hero-trust': { heading: funnel.sampleCopy.heroHeading[0], subheading: funnel.sampleCopy.heroSubheading[0], ctaText: funnel.sampleCopy.ctaText[0], trustBadges: ['Free shipping', '30-day returns', 'Secure checkout'] },
+    'featured-collection': { title: 'Featured Collection', collectionName: 'Best Sellers', itemCount: 4 },
+    'product-grid': { title: offerings.split(',')[0] || 'Our Products', columns: 3, showFilters: true, items: [] },
+    'best-sellers': { title: 'Best Sellers', items: [] },
+    'collection-carousel': { title: 'Shop by Category', collections: [{ name: 'New Arrivals', url: '#' }, { name: 'Best Sellers', url: '#' }, { name: 'Sale', url: '#' }] },
+    'brand-story': { headline: `Our Story`, body: funnel.sampleCopy.storyBody?.[0] || `At ${businessName}, we believe in ${offerings.toLowerCase()}. Every product is crafted with care and intention.`, imageUrl: '' },
+    'value-icons': { title: 'Why choose us', values: [{ icon: '✓', title: 'Quality guaranteed', description: 'We stand behind every product' }, { icon: '🚚', title: 'Fast delivery', description: 'Quick and reliable shipping' }, { icon: '💬', title: 'Expert support', description: 'We\'re here to help' }] },
+    'editorial-split': { headline: `Discover ${businessName}`, body: offerings, imageUrl: '', imageLeft: true },
+    'founder-note': { founderName: 'The Founder', founderTitle: `Owner, ${businessName}`, quote: funnel.sampleCopy.storyBody?.[0] || `I started ${businessName} with a simple mission: ${offerings.toLowerCase()}.`, imageUrl: '' },
+    'testimonials': { title: 'What our customers say', testimonials: [{ name: 'Sarah M.', quote: funnel.sampleCopy.testimonialQuotes[0], rating: 5 }, { name: 'James K.', quote: funnel.sampleCopy.testimonialQuotes[1], rating: 5 }] },
+    'reviews': { title: 'Customer Reviews', reviews: [{ name: 'Emily R.', rating: 5, text: funnel.sampleCopy.testimonialQuotes[0] }, { name: 'Michael T.', rating: 5, text: funnel.sampleCopy.testimonialQuotes[1] }] },
+    'logo-bar': { title: 'Trusted by', logos: [{ name: 'Vogue' }, { name: 'Forbes' }, { name: 'GQ' }] },
+    'stats': { stats: [{ value: '500+', label: 'Happy customers' }, { value: '4.9', label: 'Average rating' }, { value: '10+', label: 'Years of experience' }] },
+    'press': { title: 'As seen in', mentions: [{ outlet: 'Design Week', quote: funnel.sampleCopy.testimonialQuotes[0] }] },
+    'service-list': { title: 'Our Services', services: [{ name: 'Standard Service', description: 'Complete professional service delivery', price: 'From $150' }, { name: 'Premium Service', description: 'White-glove full service experience', price: 'From $350' }] },
+    'pricing-tiers': { title: 'Pricing', tiers: [{ name: 'Basic', price: '$99', features: ['Feature one', 'Feature two', 'Feature three'], highlighted: false }, { name: 'Professional', price: '$199', features: ['Everything in Basic', 'Feature four', 'Feature five', 'Feature six'], highlighted: true }, { name: 'Enterprise', price: '$399', features: ['Everything in Pro', 'Feature seven', 'Feature eight', 'Priority support'], highlighted: false }] },
+    'packages': { title: funnel.sampleCopy.packageNames ? `${funnel.sampleCopy.packageNames[0]} Packages` : 'Packages', packages: [{ name: funnel.sampleCopy.packageNames?.[0] || 'Starter', description: 'Perfect for getting started', price: '$45', features: ['Feature one', 'Feature two'] }, { name: funnel.sampleCopy.packageNames?.[1] || 'Standard', description: 'Our most popular option', price: '$75', features: ['Everything in Starter', 'Feature three', 'Feature four'] }] },
+    'quote-cta': { headline: 'Get a free quote', subheading: 'Tell us about your project and we\'ll get back to you within 24 hours.', ctaText: 'Request quote', showForm: true },
+    'booking-cta': { headline: 'Book your appointment', subheading: 'Choose a time that works for you. We\'ll confirm within 24 hours.', ctaText: 'Book now' },
+    'gallery': { title: 'Our Work', images: [] },
+    'video': { title: '', videoUrl: '', thumbnailUrl: '' },
+    'before-after': { title: 'Before & After', pairs: [{ beforeUrl: '', afterUrl: '', label: 'Recent project' }] },
+    'social-gallery': { title: `Follow ${businessName} on Instagram`, images: [] },
+    'faq': { title: 'Frequently Asked Questions', questions: [{ question: 'How do I place an order?', answer: `Simply browse our ${offerings.toLowerCase()} and add items to your cart. Checkout is quick and secure.` }, { question: 'What is your return policy?', answer: 'We offer a 30-day satisfaction guarantee. If you\'re not happy, we\'ll make it right.' }, { question: 'Do you offer delivery?', answer: 'Yes! We offer free shipping on orders over $50. Standard delivery takes 3-5 business days.' }] },
+    'newsletter': { headline: 'Stay in the loop', subheading: 'Get new arrivals, exclusive offers, and insider updates.', ctaText: 'Subscribe' },
+    'promo-banner': { text: '🎉 Limited time: Free shipping on all orders over $50!', ctaText: 'Shop now', backgroundColor: '#1A1A1A', textColor: '#FFFFFF' },
+    'sticky-cta': { text: 'Ready to get started?', ctaText: 'Shop now', position: 'bottom' },
+    'footer-basic': { logoText: businessName, links: [{ label: 'Privacy', url: '#' }, { label: 'Terms', url: '#' }, { label: 'Contact', url: '#' }], copyright: `© ${new Date().getFullYear()} ${businessName}. All rights reserved.` },
+    'footer-commerce': { logoText: businessName, newsletter: true, columns: [{ title: 'Shop', links: [{ label: 'New Arrivals', url: '#' }, { label: 'Best Sellers', url: '#' }, { label: 'Sale', url: '#' }] }, { title: 'Help', links: [{ label: 'FAQ', url: '#' }, { label: 'Shipping', url: '#' }, { label: 'Returns', url: '#' }] }], copyright: `© ${new Date().getFullYear()} ${businessName}. All rights reserved.` },
+    'footer-service': { logoText: businessName, showContact: true, showHours: true, hours: 'Mon-Fri 8am-6pm, Sat 9am-3pm', copyright: `© ${new Date().getFullYear()} ${businessName}. All rights reserved.` },
+  };
+
+  return samples[type] || SECTION_LIBRARY[type]?.defaultData || {};
 }
 
 function genId(): string {
   return Math.random().toString(36).slice(2, 10);
 }
 
+// --- Main Generation Function ---
+
 export async function generateStorefront(
   businessName: string,
   businessType: TemplateFamily,
-  offerings: string
+  offerings: string,
+  contactEmail: string = '',
+  tagline: string = '',
 ): Promise<GeneratedSection[]> {
-  const prompt = buildPrompt(businessName, businessType, offerings);
+  const prompt = buildPrompt(businessName, businessType, offerings, contactEmail, tagline);
 
   const response = await openai.chat.completions.create({
     model: 'gpt-4o',
     messages: [{ role: 'user', content: prompt }],
     response_format: { type: 'json_object' },
+    temperature: 0.8, // Slightly creative but consistent
   });
 
   const rawText = response.choices[0].message.content || '{}';
@@ -90,12 +320,16 @@ export async function generateStorefront(
 
   const parsed = JSON.parse(cleaned);
 
-  // Ensure all sections have IDs and valid types
-  const sections: GeneratedSection[] = (parsed.sections || []).map((s: any) => ({
-    id: s.id || genId(),
-    type: s.type as SectionType,
-    data: s.data || {},
-  }));
+  // Validate and fix sections
+  const sections: GeneratedSection[] = (parsed.sections || []).map((s: any) => {
+    const type = s.type as SectionType;
+    const def = SECTION_LIBRARY[type];
+    return {
+      id: s.id || genId(),
+      type,
+      data: def ? { ...def.defaultData, ...(s.data || {}) } : (s.data || {}),
+    };
+  });
 
   return sections;
 }

@@ -17,7 +17,8 @@ export async function GET(
       .single();
 
     if (error) {
-      return NextResponse.json({ error: 'Page not found' }, { status: 404 });
+      console.error('Supabase page GET error:', JSON.stringify(error));
+      return NextResponse.json({ error: `Page not found: ${error.message}` }, { status: 404 });
     }
 
     return NextResponse.json(data as PageData);
@@ -50,7 +51,8 @@ export async function PUT(
       .single();
 
     if (error) {
-      return NextResponse.json({ error: 'Failed to update page' }, { status: 500 });
+      console.error('Supabase page PUT error:', JSON.stringify(error));
+      return NextResponse.json({ error: `Failed to update page: ${error.message}` }, { status: 500 });
     }
 
     return NextResponse.json(data as PageData);
@@ -74,7 +76,8 @@ export async function DELETE(
       .eq('id', pageId);
 
     if (error) {
-      return NextResponse.json({ error: 'Failed to delete page' }, { status: 500 });
+      console.error('Supabase page DELETE error:', JSON.stringify(error));
+      return NextResponse.json({ error: `Failed to delete page: ${error.message}` }, { status: 500 });
     }
 
     return NextResponse.json({ ok: true });

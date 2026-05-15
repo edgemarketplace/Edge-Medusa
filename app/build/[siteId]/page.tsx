@@ -112,10 +112,17 @@ export default function BuildPage({ params }: BuildPageProps) {
   async function loadPages() {
     try {
       const res = await fetch(`/api/sites/${siteId}/pages`);
-      if (!res.ok) return;
+      if (!res.ok) {
+        console.warn('Pages API not available, table may not exist yet');
+        setPages([]);
+        return;
+      }
       const data = await res.json();
       setPages(data);
-    } catch (err) { console.warn('Failed to load pages:', err); }
+    } catch (err) {
+      console.warn('Failed to load pages:', err);
+      setPages([]);
+    }
   }
 
   function migrateSections(oldSections: any[]): GeneratedSection[] {

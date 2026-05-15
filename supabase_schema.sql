@@ -10,6 +10,7 @@ create table if not exists public.sites (
   business_type text not null check (business_type in ('retail-core', 'service-pro', 'food-catering', 'artisan-market', 'event-floral')),
   offerings text default '',
   contact_email text not null,
+  tagline text default '',
   template_data jsonb default '{"sections":[]}'::jsonb,
   status text default 'draft' check (status in ('draft', 'ready', 'live')),
   subdomain text unique,

@@ -28,12 +28,14 @@ export async function POST(
     );
   }
 
-  const { business_name, business_type, offerings } = site;
+  const { business_name, business_type, offerings, contact_email, tagline } = site;
 
   const sections = await generateStorefront(
     business_name,
     business_type,
-    offerings
+    offerings,
+    contact_email,
+    tagline || '',
   );
 
   const templateData = { sections };
