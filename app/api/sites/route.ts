@@ -5,7 +5,7 @@ import { sendWelcomeEmail } from '@/lib/email';
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { business_name, business_type, offerings, contact_email, tagline } = body;
+    const { business_name, business_type, offerings, contact_email, tagline, theme_id } = body;
 
     if (!business_name || !business_type || !contact_email) {
       return NextResponse.json(
@@ -25,9 +25,12 @@ export async function POST(request: NextRequest) {
       template_data: { sections: [] },
     };
 
-    // Only include tagline if provided (column may not exist yet)
+    // Only include tagline/theme_id if provided (column may not exist yet)
     if (tagline) {
       insertData.tagline = tagline;
+    }
+    if (theme_id) {
+      insertData.theme_id = theme_id;
     }
 
     let { data, error } = await supabaseAdmin

@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { TEMPLATES } from '@/lib/templates';
 import type { TemplateFamily, TemplateDefinition } from '@/lib/types';
+import { THEME_PRESETS } from '@/lib/types';
 
 const templateEntries = Object.values(TEMPLATES);
 
@@ -14,6 +15,7 @@ export default function OnboardingPage() {
   const [tagline, setTagline] = useState('');
   const [email, setEmail] = useState('');
   const [selectedType, setSelectedType] = useState<TemplateFamily | null>(null);
+  const [selectedTheme, setSelectedTheme] = useState<string>('milano');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -36,6 +38,7 @@ export default function OnboardingPage() {
           offerings: offerings.trim(),
           tagline: tagline.trim(),
           contact_email: email.trim(),
+          theme_id: selectedTheme,
         }),
       });
 
@@ -154,6 +157,37 @@ export default function OnboardingPage() {
                   </p>
                   <h3 className="font-bold text-lg mb-1">{template.label}</h3>
                   <p className="text-sm text-black/50 leading-relaxed">{template.summary}</p>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Theme picker */}
+          <div>
+            <label className="block text-sm font-bold mb-4">Pick your style *</label>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+              {THEME_PRESETS.map((theme) => (
+                <button
+                  key={theme.id}
+                  type="button"
+                  onClick={() => setSelectedTheme(theme.id)}
+                  className={`text-left rounded-2xl border p-4 transition-all ${
+                    selectedTheme === theme.id
+                      ? 'border-black bg-white shadow-md ring-1 ring-black'
+                      : 'border-black/10 bg-white hover:border-black/20'
+                  }`}
+                >
+                  <div className="flex items-center gap-2 mb-1.5">
+                    <span className="text-lg">{theme.preview}</span>
+                    <h3 className="font-bold text-sm">{theme.name}</h3>
+                  </div>
+                  <p className="text-[11px] text-black/50 leading-relaxed">{theme.description}</p>
+                  <div className="flex gap-1 mt-2">
+                    <div className="w-4 h-4 rounded-full border border-black/10" style={{ backgroundColor: theme.tokens.primary }} />
+                    <div className="w-4 h-4 rounded-full border border-black/10" style={{ backgroundColor: theme.tokens.accent }} />
+                    <div className="w-4 h-4 rounded-full border border-black/10" style={{ backgroundColor: theme.tokens.background }} />
+                    <div className="w-4 h-4 rounded-full border border-black/10" style={{ backgroundColor: theme.tokens.surface }} />
+                  </div>
                 </button>
               ))}
             </div>

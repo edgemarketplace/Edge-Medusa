@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import type { SiteData, GeneratedSection, InventoryItem, TemplateDefinition, SectionType } from '@/lib/types';
-import { SECTION_LIBRARY } from '@/lib/section-library';
+import { SECTION_LIBRARY, THEME_PRESETS } from '@/lib/section-library';
 
 interface StorefrontRendererProps {
   site: SiteData;
@@ -66,8 +66,42 @@ export default function StorefrontRenderer({
 
   const cartCount = Object.values(cart).reduce((sum, qty) => sum + qty, 0);
 
+  // Get theme tokens
+  const themePreset = THEME_PRESETS.find(t => t.id === (site.theme_id || 'milano')) || THEME_PRESETS[0];
+  const tokens = themePreset.tokens;
+
+  // Build CSS variables for the theme
+  const themeStyles: Record<string, string> = {
+    '--color-primary': tokens.primary,
+    '--color-primary-hover': tokens.primaryHover,
+    '--color-secondary': tokens.secondary,
+    '--color-accent': tokens.accent,
+    '--color-background': tokens.background,
+    '--color-surface': tokens.surface,
+    '--color-text': tokens.text,
+    '--color-text-muted': tokens.textMuted,
+    '--color-text-inverse': tokens.textInverse,
+    '--color-border': tokens.border,
+    '--font-heading': tokens.headingFont,
+    '--font-body': tokens.bodyFont,
+    '--radius-sm': tokens.radiusSm,
+    '--radius-md': tokens.radiusMd,
+    '--radius-lg': tokens.radiusLg,
+    '--radius-full': tokens.radiusFull,
+    '--shadow-sm': tokens.shadowSm,
+    '--shadow-md': tokens.shadowMd,
+  };
+
   return (
-    <div className="min-h-screen bg-[#F9F8F6] text-[#1A1A1A]" style={{ fontFamily: template.fontFamily }}>
+    <div
+      className="min-h-screen"
+      style={{
+        ...themeStyles,
+        fontFamily: tokens.bodyFont,
+        backgroundColor: tokens.background,
+        color: tokens.text,
+      }}
+    >
 
       {/* Test mode banner */}
       {showTestBanner && (

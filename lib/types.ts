@@ -103,13 +103,14 @@ export interface GeneratedSection {
   type: SectionType;
   data: Record<string, any>;
 }
-
 export interface SiteData {
   id: string;
   business_name: string;
   business_type: TemplateFamily;
   offerings: string;
   contact_email: string;
+  tagline: string;
+  theme_id: string;
   template_data: {
     sections: GeneratedSection[];
   };
@@ -131,6 +132,200 @@ export interface TemplateDefinition {
   fontFamily: string;
   borderRadius: string;
 }
+
+// --- Theme System ---
+
+export interface ThemePreset {
+  id: string;
+  name: string;
+  description: string;
+  preview: string; // emoji or short label
+  tokens: ThemeTokens;
+}
+
+export interface ThemeTokens {
+  // Colors
+  primary: string;
+  primaryHover: string;
+  secondary: string;
+  accent: string;
+  background: string;
+  surface: string;
+  text: string;
+  textMuted: string;
+  textInverse: string;
+  border: string;
+  // Typography
+  headingFont: string;
+  bodyFont: string;
+  // Radius
+  radiusSm: string;
+  radiusMd: string;
+  radiusLg: string;
+  radiusFull: string;
+  // Shadows
+  shadowSm: string;
+  shadowMd: string;
+}
+
+export const THEME_PRESETS: ThemePreset[] = [
+  {
+    id: 'milano',
+    name: 'Milano',
+    description: 'Editorial luxury with serif headlines and muted tones',
+    preview: '🖤',
+    tokens: {
+      primary: '#1A1A1A',
+      primaryHover: '#333333',
+      secondary: '#F5F0EB',
+      accent: '#B8860B',
+      background: '#F9F8F6',
+      surface: '#FFFFFF',
+      text: '#1A1A1A',
+      textMuted: '#666666',
+      textInverse: '#FFFFFF',
+      border: '#E5E0DB',
+      headingFont: '"Playfair Display", Georgia, serif',
+      bodyFont: '"Inter", system-ui, sans-serif',
+      radiusSm: '4px',
+      radiusMd: '8px',
+      radiusLg: '16px',
+      radiusFull: '9999px',
+      shadowSm: '0 1px 2px rgba(0,0,0,0.05)',
+      shadowMd: '0 4px 12px rgba(0,0,0,0.08)',
+    },
+  },
+  {
+    id: 'botanical',
+    name: 'Botanical',
+    description: 'Fresh, organic feel with sage greens and warm whites',
+    preview: '🌿',
+    tokens: {
+      primary: '#4A6741',
+      primaryHover: '#3A5233',
+      secondary: '#F7F5F0',
+      accent: '#C4956A',
+      background: '#FBFBF8',
+      surface: '#FFFFFF',
+      text: '#2C3E2D',
+      textMuted: '#6B7B6C',
+      textInverse: '#FFFFFF',
+      border: '#E8E4DD',
+      headingFont: '"DM Serif Display", Georgia, serif',
+      bodyFont: '"DM Sans", system-ui, sans-serif',
+      radiusSm: '4px',
+      radiusMd: '12px',
+      radiusLg: '20px',
+      radiusFull: '9999px',
+      shadowSm: '0 1px 3px rgba(74,103,65,0.06)',
+      shadowMd: '0 4px 16px rgba(74,103,65,0.1)',
+    },
+  },
+  {
+    id: 'midnight',
+    name: 'Midnight',
+    description: 'Bold, confident dark theme with sharp contrast',
+    preview: '🌙',
+    tokens: {
+      primary: '#FFFFFF',
+      primaryHover: '#E5E5E5',
+      secondary: '#1A1A2E',
+      accent: '#E94560',
+      background: '#0F0F1A',
+      surface: '#1A1A2E',
+      text: '#FFFFFF',
+      textMuted: '#8888AA',
+      textInverse: '#0F0F1A',
+      border: '#2A2A3E',
+      headingFont: '"Space Grotesk", system-ui, sans-serif',
+      bodyFont: '"Inter", system-ui, sans-serif',
+      radiusSm: '2px',
+      radiusMd: '6px',
+      radiusLg: '12px',
+      radiusFull: '9999px',
+      shadowSm: '0 1px 3px rgba(0,0,0,0.2)',
+      shadowMd: '0 4px 20px rgba(0,0,0,0.3)',
+    },
+  },
+  {
+    id: 'sunset',
+    name: 'Sunset',
+    description: 'Warm, inviting tones with terracotta and cream',
+    preview: '🌅',
+    tokens: {
+      primary: '#C75B39',
+      primaryHover: '#A84A2E',
+      secondary: '#FFF8F0',
+      accent: '#D4A574',
+      background: '#FFFBF5',
+      surface: '#FFFFFF',
+      text: '#3D2B1F',
+      textMuted: '#8B7355',
+      textInverse: '#FFFFFF',
+      border: '#F0E6D8',
+      headingFont: '"Lora", Georgia, serif',
+      bodyFont: '"Source Sans 3", system-ui, sans-serif',
+      radiusSm: '6px',
+      radiusMd: '12px',
+      radiusLg: '24px',
+      radiusFull: '9999px',
+      shadowSm: '0 1px 3px rgba(199,91,57,0.06)',
+      shadowMd: '0 4px 16px rgba(199,91,57,0.12)',
+    },
+  },
+  {
+    id: 'arctic',
+    name: 'Arctic',
+    description: 'Clean, minimal with crisp whites and cool grays',
+    preview: '❄️',
+    tokens: {
+      primary: '#2563EB',
+      primaryHover: '#1D4ED8',
+      secondary: '#F8FAFC',
+      accent: '#06B6D4',
+      background: '#FFFFFF',
+      surface: '#F8FAFC',
+      text: '#0F172A',
+      textMuted: '#64748B',
+      textInverse: '#FFFFFF',
+      border: '#E2E8F0',
+      headingFont: '"Plus Jakarta Sans", system-ui, sans-serif',
+      bodyFont: '"Inter", system-ui, sans-serif',
+      radiusSm: '4px',
+      radiusMd: '8px',
+      radiusLg: '16px',
+      radiusFull: '9999px',
+      shadowSm: '0 1px 2px rgba(0,0,0,0.04)',
+      shadowMd: '0 4px 12px rgba(0,0,0,0.08)',
+    },
+  },
+  {
+    id: 'noir',
+    name: 'Noir',
+    description: 'Ultra-minimal black and white with dramatic typography',
+    preview: '🖤',
+    tokens: {
+      primary: '#000000',
+      primaryHover: '#1A1A1A',
+      secondary: '#F5F5F5',
+      accent: '#FF3366',
+      background: '#FFFFFF',
+      surface: '#FAFAFA',
+      text: '#000000',
+      textMuted: '#737373',
+      textInverse: '#FFFFFF',
+      border: '#E5E5E5',
+      headingFont: '"Syne", system-ui, sans-serif',
+      bodyFont: '"Inter", system-ui, sans-serif',
+      radiusSm: '0px',
+      radiusMd: '2px',
+      radiusLg: '4px',
+      radiusFull: '9999px',
+      shadowSm: 'none',
+      shadowMd: '0 2px 8px rgba(0,0,0,0.08)',
+    },
+  },
+];
 
 export interface PageData {
   id: string;

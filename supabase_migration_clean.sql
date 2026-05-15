@@ -12,6 +12,17 @@ BEGIN
   END IF;
 END $$;
 
+-- 1b. Add theme_id column to sites table if it doesn't exist
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_name = 'sites' AND column_name = 'theme_id'
+  ) THEN
+    ALTER TABLE public.sites ADD COLUMN theme_id text DEFAULT 'milano';
+  END IF;
+END $$;
+
 -- 2. Create auth_sessions table if it doesn't exist
 CREATE TABLE IF NOT EXISTS public.auth_sessions (
   id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
