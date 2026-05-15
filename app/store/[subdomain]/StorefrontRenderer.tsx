@@ -35,6 +35,8 @@ export default function StorefrontRenderer({
     setCart((prev) => ({ ...prev, [itemName]: (prev[itemName] || 0) + 1 }));
   }
 
+  const [showContactModal, setShowContactModal] = useState(false);
+
   async function handleCheckout() {
     const items = Object.entries(cart)
       .filter(([, qty]) => qty > 0)
@@ -52,7 +54,7 @@ export default function StorefrontRenderer({
       });
       const data = await res.json();
       if (data.url) { window.location.href = data.url; }
-      else if (data.error?.includes('Stripe not connected')) { alert('This merchant has not set up payments yet. Please contact them directly.'); }
+      else if (data.error?.includes('Stripe not connected')) { setShowContactModal(true); }
       else { alert(data.error || 'Checkout failed'); }
     } catch (err) { alert('Checkout failed. Please try again.'); }
     finally { setCheckingOut(false); }
@@ -62,6 +64,27 @@ export default function StorefrontRenderer({
 
   return (
     <div className="min-h-screen bg-[#F9F8F6] text-[#1A1A1A]" style={{ fontFamily: template.fontFamily }}>
+
+      {/* Stripe not connected modal */}
+      {showContactModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30" onClick={() => setShowContactModal(false)}>
+          <div className="bg-white rounded-3xl p-8 max-w-sm w-full mx-4 shadow-2xl text-center" onClick={e => e.stopPropagation()}>
+            <div className="w-16 h-16 bg-amber-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <span className="text-2xl">💐</span>
+            </div>
+            <h2 className="text-xl font-bold mb-2">Ready to order?</h2>
+            <p className="text-black/60 text-sm mb-6">
+              {site.business_name} hasn't set up online payments yet. Contact them directly to place your order.
+            </p>
+            <a href={`mailto:${site.contact_email}`} className="block w-full px-4 py-3 rounded-full bg-black text-white font-bold mb-3">
+              ✉️ Email {site.business_name}
+            </a>
+            <button onClick={() => setShowContactModal(false)} className="w-full px-4 py-3 rounded-full border border-black/10 font-bold text-sm">
+              Continue browsing
+            </button>
+          </div>
+        </div>
+      )}
       {cartCount > 0 && (
         <div className="fixed bottom-6 right-6 z-50">
           <button onClick={handleCheckout} disabled={checkingOut}
