@@ -1,22 +1,43 @@
 import { supabaseAdmin } from '@/lib/supabase';
-import { notFound } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
 import type { SiteData, GeneratedSection, InventoryItem } from '@/lib/types';
 import { TEMPLATES } from '@/lib/templates';
 import StorefrontRenderer from './StorefrontRenderer';
 
 interface StorePageProps {
   params: Promise<{ subdomain: string }>;
+  searchParams: Promise<{ success?: string; canceled?: string; session_id?: string }>;
 }
 
-async function getSite(subdomain: string): Promise<{ site: SiteData; inventory: InventoryItem[] } | null> {
-  const { data: site } = await supabaseAdmin
+export default async function StorePage({ params, searchParams }: StorePageProps) {
+  const { subdomain: subdomainOrId } = await params;
+  const { success, canceled } = await searchParams;
+
+  // Try to find by subdomain first
+  let { data: site } = await supabaseAdmin
     .from('sites')
     .select('*')
-    .eq('subdomain', subdomain)
+    .eq('subdomain', subdomainOrId)
     .eq('status', 'live')
     .single();
 
-  if (!site) return null;
+  // If not found by subdomain, try by site ID (UUID format — from old Stripe URLs)
+  if (!site && subdomainOrId.includes('-')) {
+    const { data: siteById } = await supabaseAdmin
+      .from('sites')
+      .select('*')
+      .eq('id', subdomainOrId)
+      .single();
+
+    if (siteById) {
+      if (siteById.subdomain && siteById.status === 'live') {
+        redirect(`/store/${siteById.subdomain}`);
+      }
+      site = siteById;
+    }
+  }
+
+  if (!site) notFound();
 
   const { data: inventory } = await supabaseAdmin
     .from('inventory_items')
@@ -24,16 +45,6 @@ async function getSite(subdomain: string): Promise<{ site: SiteData; inventory: 
     .eq('site_id', site.id)
     .order('created_at', { ascending: true });
 
-  return { site, inventory: inventory || [] };
-}
-
-export default async function StorePage({ params }: StorePageProps) {
-  const { subdomain } = await params;
-  const data = await getSite(subdomain);
-
-  if (!data) notFound();
-
-  const { site, inventory } = data;
   const sections: GeneratedSection[] = site.template_data?.sections || [];
   const template = TEMPLATES[site.business_type as keyof typeof TEMPLATES];
 
@@ -41,7 +52,7 @@ export default async function StorePage({ params }: StorePageProps) {
     <StorefrontRenderer
       site={site}
       sections={sections}
-      inventory={inventory}
+      inventory={inventory || []}
       template={template}
     />
   );

@@ -56,8 +56,8 @@ export async function POST(request: NextRequest) {
     const sessionConfig: any = {
       line_items: lineItems,
       mode: 'payment',
-      success_url: `${appUrl}/store/${siteId}?success=true&session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${appUrl}/store/${siteId}?canceled=true`,
+      success_url: `${appUrl}/checkout/success?site_id=${siteId}&session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${appUrl}/checkout/canceled?site_id=${siteId}`,
       metadata: {
         site_id: siteId,
         business_name: site.business_name,
