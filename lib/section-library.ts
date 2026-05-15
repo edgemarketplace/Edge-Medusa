@@ -383,9 +383,20 @@ export function validatePublish(sections: GeneratedSection[], manifest: Template
   const typeCounts: Record<string, number> = {};
   sectionTypes.forEach(t => { typeCounts[t] = (typeCounts[t] || 0) + 1; });
 
-  // Check required sections
+  // Check required sections — accept any type within the same category
   for (const required of manifest.requiredSections) {
-    if (!sectionTypes.includes(required)) {
+    const requiredDef = SECTION_LIBRARY[required];
+    if (!requiredDef) continue;
+    const category = requiredDef.category;
+    
+    // For header, hero, footer — accept any type in that category
+    if (category === 'header' || category === 'hero' || category === 'footer') {
+      const hasType = sectionTypes.some(t => SECTION_LIBRARY[t]?.category === category);
+      if (!hasType) {
+        const label = category === 'header' ? 'Header' : category === 'hero' ? 'Hero' : 'Footer';
+        errors.push(`Missing required section: ${label} (any type)`);
+      }
+    } else if (!sectionTypes.includes(required)) {
       const def = SECTION_LIBRARY[required];
       errors.push(`Missing required section: ${def?.label || required}`);
     }
