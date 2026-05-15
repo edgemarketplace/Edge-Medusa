@@ -51,6 +51,7 @@ export async function POST(
     return NextResponse.json({
       subdomain,
       url: `https://${subdomain}.edgemarketplacehub.com`,
+      siteId,
       site: data,
     });
   } catch (error) {

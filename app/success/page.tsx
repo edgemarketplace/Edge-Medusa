@@ -1,11 +1,11 @@
 import Link from 'next/link';
 
 interface SuccessPageProps {
-  searchParams: Promise<{ subdomain?: string; url?: string }>;
+  searchParams: Promise<{ subdomain?: string; url?: string; siteId?: string }>;
 }
 
 export default async function SuccessPage({ searchParams }: SuccessPageProps) {
-  const { subdomain, url } = await searchParams;
+  const { subdomain, url, siteId } = await searchParams;
   const storeUrl = url || (subdomain ? `https://${subdomain}.edgemarketplacehub.com` : null);
 
   return (
@@ -22,6 +22,7 @@ export default async function SuccessPage({ searchParams }: SuccessPageProps) {
         <p className="text-black/60 text-lg mb-8">
           Your storefront is now live and ready to accept customers.
         </p>
+
         {storeUrl && (
           <a
             href={storeUrl}
@@ -35,9 +36,29 @@ export default async function SuccessPage({ searchParams }: SuccessPageProps) {
             </svg>
           </a>
         )}
-        <div className="mt-8 flex flex-col items-center gap-3">
+
+        {/* Email signup prompt */}
+        <div className="bg-white border border-black/10 rounded-2xl p-6 mb-6">
+          <h2 className="font-bold text-lg mb-2">Don&apos;t lose your store</h2>
+          <p className="text-black/60 text-sm mb-4">
+            Create an account to save your progress, edit your site anytime, and manage orders.
+          </p>
+          <Link
+            href={siteId ? `/email-gate?siteId=${siteId}` : '/login'}
+            className="inline-flex items-center gap-2 px-6 py-3 rounded-full border border-black/10 text-sm font-bold hover:bg-black/5 transition-colors"
+          >
+            Create account →
+          </Link>
+        </div>
+
+        <div className="flex flex-col items-center gap-3">
+          {siteId && (
+            <Link href={`/build/${siteId}`} className="text-black/60 hover:text-black text-sm font-medium">
+              ← Back to editor
+            </Link>
+          )}
           <Link href="/" className="text-black/40 hover:text-black text-sm">
-            ← Back to Edge Marketplace Hub
+            Back to Edge Marketplace Hub
           </Link>
         </div>
       </div>

@@ -217,7 +217,7 @@ export default function BuildPage({ params }: BuildPageProps) {
       const res = await fetch(`/api/sites/${siteId}/launch`, { method: 'POST' });
       if (!res.ok) throw new Error('Launch failed');
       const data = await res.json();
-      window.location.href = `/success?subdomain=${data.subdomain}&url=${encodeURIComponent(data.url)}`;
+      window.location.href = `/success?subdomain=${data.subdomain}&url=${encodeURIComponent(data.url)}&siteId=${data.siteId || siteId}`;
     } catch (err: any) { setError(err.message); }
     finally { setLaunching(false); }
   }

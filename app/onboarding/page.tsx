@@ -66,7 +66,7 @@ export default function OnboardingPage() {
       }
 
       const site = await res.json();
-      router.push(`/build/${site.id}`);
+      router.push(`/email-gate?siteId=${site.id}&email=${encodeURIComponent(email.trim())}&business=${encodeURIComponent(businessName.trim())}`);
     } catch (err: any) {
       setError(err.message || 'Something went wrong. Please try again.');
     } finally {
