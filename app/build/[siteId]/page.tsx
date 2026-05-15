@@ -19,6 +19,12 @@ export default function BuildPage({ params }: BuildPageProps) {
   const [launching, setLaunching] = useState(false);
   const [error, setError] = useState('');
   const [activeTab, setActiveTab] = useState<'preview' | 'inventory'>('preview');
+  const [stripeConnected, setStripeConnected] = useState(!!site?.stripe_account_id);
+
+  // Update stripeConnected when site loads
+  useEffect(() => {
+    setStripeConnected(!!site?.stripe_account_id);
+  }, [site]);
 
   // Resolve params
   useEffect(() => {
@@ -117,9 +123,8 @@ export default function BuildPage({ params }: BuildPageProps) {
       const res = await fetch(`/api/sites/${siteId}/launch`, { method: 'POST' });
       if (!res.ok) throw new Error('Launch failed');
       const data = await res.json();
-
-      // Redirect to live store
-      window.location.href = data.url;
+      // Redirect to success page
+      window.location.href = `/success?subdomain=${data.subdomain}&url=${encodeURIComponent(data.url)}`;
     } catch (err: any) {
       setError(err.message);
     } finally {
@@ -203,6 +208,14 @@ export default function BuildPage({ params }: BuildPageProps) {
           <span className="font-bold">{site.business_name}</span>
         </div>
         <div className="flex items-center gap-3">
+          {!stripeConnected && (
+            <a
+              href={`/api/stripe/connect?siteId=${siteId}`}
+              className="px-4 py-2 rounded-full border border-blue-200 bg-blue-50 text-blue-700 text-sm font-bold hover:bg-blue-100"
+            >
+              Connect Stripe
+            </a>
+          )}
           <button
             onClick={handleGenerate}
             disabled={generating}
