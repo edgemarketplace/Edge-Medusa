@@ -75,14 +75,17 @@ export default function OnboardingPage() {
         <form onSubmit={handleSubmit} className="space-y-8">
           {/* Business Name */}
           <div>
-            <label className="block text-sm font-bold mb-2">Business name *</label>
+            <label htmlFor="businessName" className="block text-sm font-bold mb-2">Business name *</label>
             <input
+              id="businessName"
+              name="businessName"
               type="text"
               value={businessName}
               onChange={(e) => setBusinessName(e.target.value)}
               placeholder="e.g. Bella's Blooms"
               className="w-full border border-black/10 rounded-2xl px-5 py-4 text-lg focus:outline-none focus:border-black/30 bg-white"
               required
+              autoComplete="organization"
             />
           </div>
 
@@ -117,14 +120,17 @@ export default function OnboardingPage() {
 
           {/* Email */}
           <div>
-            <label className="block text-sm font-bold mb-2">Email *</label>
+            <label htmlFor="email" className="block text-sm font-bold mb-2">Email *</label>
             <input
+              id="email"
+              name="email"
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="you@yourbusiness.com"
               className="w-full border border-black/10 rounded-2xl px-5 py-4 text-lg focus:outline-none focus:border-black/30 bg-white"
               required
+              autoComplete="email"
             />
           </div>
 
