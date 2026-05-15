@@ -31,7 +31,7 @@ const FUNNEL_DEFS: Record<TemplateFamily, FunnelDef> = {
       { type: 'product-grid', purpose: 'Full catalog browsing with filters', tips: 'Clean grid, hover states, quick-add buttons' },
       { type: 'testimonials', purpose: 'Social proof to convert browsers', tips: 'Real-sounding names, specific praise, star ratings' },
       { type: 'newsletter', purpose: 'Capture emails for return visits', tips: 'Simple signup, promise exclusivity' },
-      { type: 'footer-commerce', purpose: 'Trust signals, links, newsletter', links: 'Clean columns, payment icons, social links' },
+      { type: 'footer-commerce', purpose: 'Trust signals, links, newsletter', tips: 'Clean columns, payment icons, social links' },
     ],
     contentTone: 'Confident, curated, editorial. Short punchy headlines. Product descriptions that evoke feeling, not just features.',
     milanoCues: 'Oversized editorial imagery. Whitespace-heavy layouts. Serif headlines (playfair display style). Muted luxury palette (cream, charcoal, sage, terracotta). Horizontal collection grids. Magazine-style product spacing.',
