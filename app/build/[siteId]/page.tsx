@@ -1094,8 +1094,8 @@ function PagesPanel({ pages, site, showNewPage, newPageTitle, newPageSlug, editi
                 <button
                   key={idx}
                   onClick={() => {
-                    setNewPageTitle(tmpl.title);
-                    setNewPageSlug(tmpl.slug);
+                    onNewPageTitleChange(tmpl.title);
+                    onNewPageSlugChange(tmpl.slug);
                   }}
                   className={`text-left rounded-xl border p-3 transition-all ${
                     newPageSlug === tmpl.slug ? 'border-black bg-black/5' : 'border-black/10 hover:border-black/20'
@@ -1107,7 +1107,7 @@ function PagesPanel({ pages, site, showNewPage, newPageTitle, newPageSlug, editi
                 </button>
               ))}
               <button
-                onClick={() => { setNewPageTitle(''); setNewPageSlug(''); }}
+                onClick={() => { onNewPageTitleChange(''); onNewPageSlugChange(''); }}
                 className={`text-left rounded-xl border p-3 transition-all ${
                   !newPageSlug ? 'border-black bg-black/5' : 'border-black/10 hover:border-black/20'
                 }`}
