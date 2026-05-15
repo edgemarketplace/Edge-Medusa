@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import type { GeneratedSection, SectionType, TemplateFamily } from '@/lib/types';
 import { SECTION_LIBRARY } from '@/lib/section-library';
 
@@ -15,42 +15,50 @@ function genId(): string {
   return Math.random().toString(36).slice(2, 10);
 }
 
-const UNSPLASH_COLLECTIONS: Record<string, string[]> = {
-  retail: [
-    'https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=1200',
-    'https://images.unsplash.com/photo-1558618666-fcd25c85f82e?w=1200',
-    'https://images.unsplash.com/photo-1560472355-536de3962603?w=1200',
-  ],
-  service: [
-    'https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=1200',
-    'https://images.unsplash.com/photo-1607472586893-edb57bdc0e39?w=1200',
-    'https://images.unsplash.com/photo-1517649763962-0c623066013b?w=1200',
-  ],
-  food: [
-    'https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=1200',
-    'https://images.unsplash.com/photo-1540189549336-e6e99c3679fe?w=1200',
-    'https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=1200',
-  ],
-  artisan: [
-    'https://images.unsplash.com/photo-1565193566173-7a0ee3dbe261?w=1200',
-    'https://images.unsplash.com/photo-1513364776144-60967b0f800f?w=1200',
-    'https://images.unsplash.com/photo-1452587925148-ce544e77e70d?w=1200',
-  ],
-  event: [
-    'https://images.unsplash.com/photo-1519167758481-83f550bb49b3?w=1200',
-    'https://images.unsplash.com/photo-1464366400600-7168b8af9bc3?w=1200',
-    'https://images.unsplash.com/photo-1511795409834-ef04bbd61622?w=1200',
-  ],
+// Default search queries per business type for Unsplash
+const DEFAULT_QUERIES: Record<string, string> = {
+  'retail-core': 'boutique store interior',
+  'service-pro': 'professional service work',
+  'food-catering': 'food catering event',
+  'artisan-market': 'handmade artisan craft',
+  'event-floral': 'wedding floral arrangement',
 };
 
 export default function SectionEditor({ draft, onChange, siteId, businessType }: SectionEditorProps) {
   const def = SECTION_LIBRARY[draft.type];
   const data = draft.data;
   const [uploading, setUploading] = useState(false);
-  const [showUnsplash, setShowUnsplash] = useState(false);
+  const [showImagePicker, setShowImagePicker] = useState<string | null>(null);
+  const [unsplashImages, setUnsplashImages] = useState<Array<{ url: string; thumb: string; alt: string }>>([]);
+  const [unsplashLoading, setUnsplashLoading] = useState(false);
+  const [unsplashQuery, setUnsplashQuery] = useState('');
+  const [aiPrompt, setAiPrompt] = useState('');
+  const [aiGenerating, setAiGenerating] = useState(false);
 
-  const unsplashKey = businessType === 'retail-core' ? 'retail' : businessType === 'service-pro' ? 'service' : businessType === 'food-catering' ? 'food' : businessType === 'artisan-market' ? 'artisan' : 'event';
-  const unsplashImages = UNSPLASH_COLLECTIONS[unsplashKey] || UNSPLASH_COLLECTIONS.retail;
+  const defaultQuery = DEFAULT_QUERIES[businessType] || 'business';
+
+  // Search Unsplash
+  const searchUnsplash = useCallback(async (query: string) => {
+    setUnsplashLoading(true);
+    try {
+      const res = await fetch(`/api/images/search?q=${encodeURIComponent(query)}&count=9`);
+      if (res.ok) {
+        const results = await res.json();
+        setUnsplashImages(results);
+      }
+    } catch (err) {
+      console.error('Unsplash search failed:', err);
+    } finally {
+      setUnsplashLoading(false);
+    }
+  }, []);
+
+  // Load default images when picker opens
+  useEffect(() => {
+    if (showImagePicker && unsplashImages.length === 0) {
+      searchUnsplash(defaultQuery);
+    }
+  }, [showImagePicker, unsplashImages.length, defaultQuery, searchUnsplash]);
 
   async function uploadImage(file: File): Promise<string> {
     const formData = new FormData();
@@ -61,7 +69,7 @@ export default function SectionEditor({ draft, onChange, siteId, businessType }:
     return result.url;
   }
 
-  async function handleImage(field: string) {
+  async function handleImageUpload(field: string) {
     const input = document.createElement('input');
     input.type = 'file'; input.accept = 'image/*';
     input.onchange = async () => {
@@ -75,9 +83,35 @@ export default function SectionEditor({ draft, onChange, siteId, businessType }:
     input.click();
   }
 
+  async function handleAiGenerate(field: string) {
+    if (!aiPrompt.trim()) return;
+    setAiGenerating(true);
+    try {
+      const res = await fetch('/api/images/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prompt: aiPrompt, siteId }),
+      });
+      if (res.ok) {
+        const result = await res.json();
+        if (result.url) {
+          onChange(field, result.url);
+          setShowImagePicker(null);
+          setAiPrompt('');
+        }
+      }
+    } catch (err) {
+      console.error('AI generation failed:', err);
+    } finally {
+      setAiGenerating(false);
+    }
+  }
+
   function ImageField({ label, field, currentUrl }: { label: string; field: string; currentUrl?: string }) {
     const fieldId = `img-${field}-${draft.id}`;
     const urlInputId = `url-${field}-${draft.id}`;
+    const isOpen = showImagePicker === field;
+
     return (
       <div>
         <label htmlFor={fieldId} className="block text-xs font-bold text-black/50 mb-1 uppercase tracking-wider">{label}</label>
@@ -88,26 +122,68 @@ export default function SectionEditor({ draft, onChange, siteId, businessType }:
           </div>
         ) : (
           <div className="flex gap-2 mb-2">
-            <button onClick={() => handleImage(field)} disabled={uploading} className="flex items-center justify-center w-20 h-20 border border-dashed border-black/15 rounded-lg hover:border-black/30 text-black/25" id={fieldId} aria-label={`Upload ${label}`}>
+            <button onClick={() => handleImageUpload(field)} disabled={uploading} className="flex items-center justify-center w-20 h-20 border border-dashed border-black/15 rounded-lg hover:border-black/30 text-black/25" id={fieldId} aria-label={`Upload ${label}`}>
               {uploading ? '...' : '+'}
             </button>
-            <button onClick={() => setShowUnsplash(!showUnsplash)} className="px-3 h-20 border border-black/10 rounded-lg text-xs text-black/50 hover:bg-black/5" aria-label="Browse stock images">
+            <button onClick={() => setShowImagePicker(isOpen ? null : field)} className={`px-3 h-20 border rounded-lg text-xs transition-colors ${isOpen ? 'border-black bg-black/5 text-black' : 'border-black/10 text-black/50 hover:bg-black/5'}`} aria-label="Browse images">
               🖼 Browse
             </button>
           </div>
         )}
+
+        {/* URL input */}
         <div className="flex gap-2 mb-2">
           <input id={urlInputId} name={urlInputId} type="url" placeholder="Or paste image URL..." className="flex-1 border border-black/10 rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:border-black/30" onKeyDown={(e) => { if (e.key === 'Enter') { onChange(field, (e.target as HTMLInputElement).value); } }} />
           <button onClick={() => { const el = document.getElementById(urlInputId) as HTMLInputElement; if (el?.value) onChange(field, el.value); }} className="px-2 py-1 rounded-lg border border-black/10 text-xs font-bold hover:bg-black/5">Set</button>
         </div>
-        {showUnsplash && (
-          <div className="grid grid-cols-3 gap-2 mb-2">
-            {unsplashImages.map((url, idx) => (
-              <button key={idx} onClick={() => { onChange(field, url); setShowUnsplash(false); }} className="relative group">
-                <img src={url} alt={`Stock image ${idx + 1}`} className="w-full h-16 object-cover rounded-lg border border-black/10 hover:border-black/30" />
-                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 rounded-lg transition-colors" />
+
+        {/* Image picker panel */}
+        {isOpen && (
+          <div className="border border-black/10 rounded-xl p-3 mb-2 bg-[#FAFAF9]">
+            {/* Search */}
+            <div className="flex gap-2 mb-3">
+              <input
+                type="text"
+                value={unsplashQuery}
+                onChange={e => setUnsplashQuery(e.target.value)}
+                placeholder="Search free photos..."
+                className="flex-1 border border-black/10 rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-black/30"
+                onKeyDown={(e) => { if (e.key === 'Enter' && unsplashQuery.trim()) searchUnsplash(unsplashQuery); }}
+              />
+              <button onClick={() => unsplashQuery.trim() && searchUnsplash(unsplashQuery)} disabled={unsplashLoading} className="px-3 py-2 rounded-lg bg-black text-white text-xs font-bold disabled:opacity-50">
+                {unsplashLoading ? '...' : 'Search'}
               </button>
-            ))}
+            </div>
+
+            {/* Unsplash results */}
+            {unsplashImages.length > 0 && (
+              <div className="grid grid-cols-3 gap-2 mb-3">
+                {unsplashImages.map((img, idx) => (
+                  <button key={idx} onClick={() => { onChange(field, img.url); setShowImagePicker(null); }} className="relative group">
+                    <img src={img.thumb} alt={img.alt} className="w-full h-16 object-cover rounded-lg border border-black/10 hover:border-black/30" />
+                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 rounded-lg transition-colors" />
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {/* AI generation */}
+            <div className="border-t border-black/5 pt-3">
+              <p className="text-[10px] font-bold text-black/40 uppercase tracking-wider mb-2">✨ Or generate with AI</p>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={aiPrompt}
+                  onChange={e => setAiPrompt(e.target.value)}
+                  placeholder="Describe the image you want..."
+                  className="flex-1 border border-black/10 rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-black/30"
+                  onKeyDown={(e) => { if (e.key === 'Enter' && aiPrompt.trim()) handleAiGenerate(field); }}
+                />
+                <button onClick={() => handleAiGenerate(field)} disabled={aiGenerating || !aiPrompt.trim()} className="px-3 py-2 rounded-lg bg-gradient-to-r from-purple-600 to-pink-600 text-white text-xs font-bold disabled:opacity-50 whitespace-nowrap">
+                  {aiGenerating ? '...' : '✨ Generate'}
+                </button>
+              </div>
+            </div>
           </div>
         )}
       </div>
@@ -133,6 +209,7 @@ export default function SectionEditor({ draft, onChange, siteId, businessType }:
       {(data.videoUrl !== undefined) && <EditField label="Video URL" name={`videoUrl-${draft.id}`} value={data.videoUrl} onChange={v => onChange('videoUrl', v)} />}
       {(data.thumbnailUrl !== undefined) && <EditField label="Video thumbnail URL" name={`thumbnailUrl-${draft.id}`} value={data.thumbnailUrl} onChange={v => onChange('thumbnailUrl', v)} />}
 
+      {/* Image fields */}
       {(data.imageUrl !== undefined) && <ImageField label="Image" field="imageUrl" currentUrl={data.imageUrl} />}
       {(data.hero_image_url !== undefined) && <ImageField label="Background image" field="hero_image_url" currentUrl={data.hero_image_url} />}
 

@@ -21,6 +21,24 @@ export default function OnboardingPage() {
 
   const canSubmit = businessName.trim() && offerings.trim() && email.trim() && selectedType && !loading;
 
+  const [generationStep, setGenerationStep] = useState(0);
+  const generationSteps = [
+    'Analyzing your business model...',
+    'Writing high-converting copy...',
+    'Sourcing imagery...',
+    'Assembling your layout...',
+    'Applying your theme...',
+    'Finalizing your store...',
+  ];
+
+  useEffect(() => {
+    if (!loading) { setGenerationStep(0); return; }
+    const interval = setInterval(() => {
+      setGenerationStep(prev => (prev < generationSteps.length - 1 ? prev + 1 : prev));
+    }, 2000);
+    return () => clearInterval(interval);
+  }, [loading, generationSteps.length]);
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!canSubmit) return;
@@ -205,7 +223,18 @@ export default function OnboardingPage() {
             disabled={!canSubmit}
             className="w-full bg-black text-white py-5 rounded-full text-lg font-bold disabled:opacity-40 disabled:cursor-not-allowed hover:scale-[1.02] transition-transform"
           >
-            {loading ? 'Creating your store...' : 'Generate my store →'}
+            {loading ? (
+              <div className="flex flex-col items-center gap-1">
+                <span>{generationSteps[generationStep]}</span>
+                <div className="flex gap-1 mt-1">
+                  {generationSteps.map((_, i) => (
+                    <div key={i} className={`w-1.5 h-1.5 rounded-full transition-colors ${i <= generationStep ? 'bg-white' : 'bg-white/30'}`} />
+                  ))}
+                </div>
+              </div>
+            ) : (
+              'Generate my store →'
+            )}
           </button>
         </form>
       </div>

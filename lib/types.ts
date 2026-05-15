@@ -96,6 +96,18 @@ export interface InventoryItem {
   description: string;
   category: string;
   image_url?: string;
+  // Enhanced fields
+  variants?: Array<{
+    name: string;
+    price: string;
+    sku?: string;
+  }>;
+  stock?: number;
+  sku?: string;
+  tax_rate?: number;
+  shipping_class?: 'standard' | 'express' | 'free';
+  weight?: number;
+  enabled?: boolean;
 }
 
 export interface GeneratedSection {

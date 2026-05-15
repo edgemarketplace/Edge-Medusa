@@ -23,6 +23,32 @@ BEGIN
   END IF;
 END $$;
 
+-- 1c. Add enhanced inventory columns if they don't exist
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'inventory_items' AND column_name = 'variants') THEN
+    ALTER TABLE public.inventory_items ADD COLUMN variants jsonb DEFAULT null;
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'inventory_items' AND column_name = 'stock') THEN
+    ALTER TABLE public.inventory_items ADD COLUMN stock integer DEFAULT null;
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'inventory_items' AND column_name = 'sku') THEN
+    ALTER TABLE public.inventory_items ADD COLUMN sku text DEFAULT null;
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'inventory_items' AND column_name = 'tax_rate') THEN
+    ALTER TABLE public.inventory_items ADD COLUMN tax_rate numeric DEFAULT null;
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'inventory_items' AND column_name = 'shipping_class') THEN
+    ALTER TABLE public.inventory_items ADD COLUMN shipping_class text DEFAULT 'standard';
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'inventory_items' AND column_name = 'weight') THEN
+    ALTER TABLE public.inventory_items ADD COLUMN weight numeric DEFAULT null;
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'inventory_items' AND column_name = 'enabled') THEN
+    ALTER TABLE public.inventory_items ADD COLUMN enabled boolean DEFAULT true;
+  END IF;
+END $$;
+
 -- 2. Create auth_sessions table if it doesn't exist
 CREATE TABLE IF NOT EXISTS public.auth_sessions (
   id uuid DEFAULT gen_random_uuid() PRIMARY KEY,

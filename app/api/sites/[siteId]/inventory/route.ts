@@ -48,6 +48,13 @@ export async function PUT(
           description: item.description || '',
           category: item.category || '',
           image_url: item.image_url || null,
+          variants: item.variants || null,
+          stock: item.stock ?? null,
+          sku: item.sku || null,
+          tax_rate: item.tax_rate ?? null,
+          shipping_class: item.shipping_class || 'standard',
+          weight: item.weight ?? null,
+          enabled: item.enabled !== false,
         }));
 
       const { error } = await supabaseAdmin
