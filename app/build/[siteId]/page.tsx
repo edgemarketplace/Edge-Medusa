@@ -1120,8 +1120,11 @@ function PagesPanel({ pages, site, showNewPage, newPageTitle, newPageSlug, editi
                   <p className="text-xs text-black/40">/{page.slug} · {page.sections?.length || 0} sections</p>
                 </div>
                 <div className="flex gap-2">
+                  <Link href={`/build/${site?.id}/page/${page.id}`} className="px-3 py-1.5 rounded-full bg-black text-white text-xs font-bold hover:bg-black/80">
+                    Edit sections
+                  </Link>
                   <a href={`https://${site?.subdomain}.edgemarketplacehub.com/${page.slug}`} target="_blank" rel="noreferrer" className="px-3 py-1.5 rounded-full border border-black/10 text-xs font-bold hover:bg-black/5">Visit</a>
-                  <button onClick={() => onStartEdit(page)} className="px-3 py-1.5 rounded-full border border-black/10 text-xs font-bold hover:bg-black/5">Edit</button>
+                  <button onClick={() => onStartEdit(page)} className="px-3 py-1.5 rounded-full border border-black/10 text-xs font-bold hover:bg-black/5">Rename</button>
                   <button onClick={() => onDelete(page.id)} className="px-3 py-1.5 rounded-full border border-black/10 text-xs font-bold hover:bg-red-50 text-black/40 hover:text-red-600">Delete</button>
                 </div>
               </div>
