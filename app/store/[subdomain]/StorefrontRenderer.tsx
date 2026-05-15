@@ -29,6 +29,7 @@ export default function StorefrontRenderer({
           price: item.price,
           description: item.description,
           id: item.id,
+          image_url: item.image_url,
         })),
       };
     }
@@ -102,11 +103,19 @@ export default function StorefrontRenderer({
       {mergedSections.map((section, i) => {
         if (section.type === 'hero') {
           return (
-            <div key={i} className="px-8 py-24 text-center">
-              <h1 className="text-4xl md:text-6xl font-serif italic tracking-tight mb-6">
+            <div
+              key={i}
+              className="px-8 py-24 text-center relative overflow-hidden"
+              style={section.hero_image_url ? {
+                backgroundImage: `linear-gradient(rgba(0,0,0,0.4), rgba(0,0,0,0.4)), url(${section.hero_image_url})`,
+                backgroundSize: 'cover',
+                backgroundPosition: 'center',
+              } : undefined}
+            >
+              <h1 className={`text-4xl md:text-6xl font-serif italic tracking-tight mb-6 ${section.hero_image_url ? 'text-white' : ''}`}>
                 {section.heading}
               </h1>
-              <p className="text-xl text-black/60 max-w-2xl mx-auto mb-8">
+              <p className={`text-xl max-w-2xl mx-auto mb-8 ${section.hero_image_url ? 'text-white/80' : 'text-black/60'}`}>
                 {section.subheading}
               </p>
               {section.ctaText && (
@@ -137,9 +146,13 @@ export default function StorefrontRenderer({
                     key={j}
                     className="bg-white rounded-2xl overflow-hidden shadow-sm"
                   >
-                    <div className="w-full h-48 bg-[#F9F8F6] flex items-center justify-center text-4xl">
-                      📦
-                    </div>
+                    {item.image_url ? (
+                      <img src={item.image_url} alt={item.name} className="w-full h-48 object-cover" />
+                    ) : (
+                      <div className="w-full h-48 bg-[#F9F8F6] flex items-center justify-center text-4xl">
+                        📦
+                      </div>
+                    )}
                     <div className="p-6">
                       <h3 className="font-bold text-lg">{item.name}</h3>
                       <p className="text-black/50 text-sm mt-1">{item.description}</p>

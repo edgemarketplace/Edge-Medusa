@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
-import type { SiteData, GeneratedSection, InventoryItem, TemplateFamily } from '@/lib/types';
+import type { SiteData, GeneratedSection, InventoryItem, TemplateFamily, PageData } from '@/lib/types';
 import { TEMPLATES } from '@/lib/templates';
 
 interface BuildPageProps {
@@ -27,8 +27,16 @@ export default function BuildPage({ params }: BuildPageProps) {
   const [saving, setSaving] = useState(false);
   const [launching, setLaunching] = useState(false);
   const [error, setError] = useState('');
-  const [activeTab, setActiveTab] = useState<'preview' | 'inventory'>('preview');
+  const [activeTab, setActiveTab] = useState<'preview' | 'inventory' | 'pages'>('preview');
   const [stripeConnected, setStripeConnected] = useState(!!site?.stripe_account_id);
+
+  // Pages state
+  const [pages, setPages] = useState<PageData[]>([]);
+  const [editingPageId, setEditingPageId] = useState<string | null>(null);
+  const [editPageDraft, setEditPageDraft] = useState<Partial<PageData> | null>(null);
+  const [showNewPage, setShowNewPage] = useState(false);
+  const [newPageSlug, setNewPageSlug] = useState('');
+  const [newPageTitle, setNewPageTitle] = useState('');
 
   // Inline editing state
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
@@ -74,6 +82,7 @@ export default function BuildPage({ params }: BuildPageProps) {
 
     loadSite();
     loadInventory();
+    loadPages();
   }, [siteId]);
 
   useEffect(() => {
@@ -156,6 +165,79 @@ export default function BuildPage({ params }: BuildPageProps) {
     }
   }
 
+  // --- Pages ---
+
+  async function loadPages() {
+    try {
+      const res = await fetch(`/api/sites/${siteId}/pages`);
+      if (!res.ok) throw new Error('Failed to load pages');
+      const data = await res.json();
+      setPages(data);
+    } catch (err) {
+      console.warn('Failed to load pages:', err);
+    }
+  }
+
+  async function handleCreatePage() {
+    if (!newPageSlug.trim() || !newPageTitle.trim()) return;
+    try {
+      const res = await fetch(`/api/sites/${siteId}/pages`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          slug: newPageSlug.trim().toLowerCase().replace(/[^a-z0-9-]/g, '-'),
+          title: newPageTitle.trim(),
+          sections: [{ type: 'hero', heading: newPageTitle.trim(), subheading: 'Add your content here' }],
+        }),
+      });
+      if (!res.ok) throw new Error('Failed to create page');
+      setNewPageSlug('');
+      setNewPageTitle('');
+      setShowNewPage(false);
+      await loadPages();
+    } catch (err: any) {
+      setError(err.message);
+    }
+  }
+
+  async function handleDeletePage(pageId: string) {
+    if (!confirm('Delete this page?')) return;
+    try {
+      const res = await fetch(`/api/sites/${siteId}/pages/${pageId}`, { method: 'DELETE' });
+      if (!res.ok) throw new Error('Failed to delete page');
+      await loadPages();
+    } catch (err: any) {
+      setError(err.message);
+    }
+  }
+
+  function startPageEdit(page: PageData) {
+    setEditingPageId(page.id);
+    setEditPageDraft({ title: page.title, slug: page.slug });
+  }
+
+  function cancelPageEdit() {
+    setEditingPageId(null);
+    setEditPageDraft(null);
+  }
+
+  async function savePageEdit(pageId: string) {
+    if (!editPageDraft) return;
+    try {
+      const res = await fetch(`/api/sites/${siteId}/pages/${pageId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(editPageDraft),
+      });
+      if (!res.ok) throw new Error('Failed to save page');
+      setEditingPageId(null);
+      setEditPageDraft(null);
+      await loadPages();
+    } catch (err: any) {
+      setError(err.message);
+    }
+  }
+
   // --- Inline editing ---
 
   function startEditing(index: number) {
@@ -218,6 +300,39 @@ export default function BuildPage({ params }: BuildPageProps) {
     [updated[index], updated[target]] = [updated[target], updated[index]];
     setSections(updated);
     handleSaveSections(updated);
+  }
+
+  // --- Image upload ---
+
+  async function uploadImage(file: File): Promise<string> {
+    const formData = new FormData();
+    formData.append('file', file);
+    const res = await fetch(`/api/sites/${siteId}/upload`, {
+      method: 'POST',
+      body: formData,
+    });
+    if (!res.ok) throw new Error('Upload failed');
+    const data = await res.json();
+    return data.url;
+  }
+
+  async function handleInventoryImageUpload(index: number, file: File) {
+    try {
+      const url = await uploadImage(file);
+      updateInventoryItem(index, 'image_url', url);
+    } catch (err: any) {
+      setError(err.message);
+    }
+  }
+
+  async function handleHeroImageUpload(file: File) {
+    if (!editDraft) return;
+    try {
+      const url = await uploadImage(file);
+      updateDraft('hero_image_url', url);
+    } catch (err: any) {
+      setError(err.message);
+    }
   }
 
   // --- Inventory ---
@@ -345,6 +460,14 @@ export default function BuildPage({ params }: BuildPageProps) {
           >
             Inventory ({inventory.length})
           </button>
+          <button
+            onClick={() => setActiveTab('pages')}
+            className={`py-4 text-sm font-bold border-b-2 transition-colors ${
+              activeTab === 'pages' ? 'border-black text-black' : 'border-transparent text-black/40'
+            }`}
+          >
+            Pages ({pages.length})
+          </button>
         </div>
       </div>
 
@@ -454,6 +577,12 @@ export default function BuildPage({ params }: BuildPageProps) {
                                 <Field label="Heading" value={editDraft.heading || ''} onChange={v => updateDraft('heading', v)} />
                                 <Field label="Subheading" value={editDraft.subheading || ''} onChange={v => updateDraft('subheading', v)} multiline />
                                 <Field label="Button text" value={editDraft.ctaText || ''} onChange={v => updateDraft('ctaText', v)} />
+                                <ImageUploadField
+                                  label="Background image"
+                                  currentUrl={editDraft.hero_image_url}
+                                  onUpload={handleHeroImageUpload}
+                                  onRemove={() => updateDraft('hero_image_url', '')}
+                                />
                               </>
                             )}
                             {section.type === 'products' && (
@@ -613,12 +742,39 @@ export default function BuildPage({ params }: BuildPageProps) {
             <div className="space-y-4">
               {inventory.map((item, index) => (
                 <div key={index} className="bg-white border border-black/5 rounded-2xl p-5">
-                  <div className="grid grid-cols-12 gap-3">
+                  <div className="grid grid-cols-12 gap-3 items-start">
+                    {/* Image upload */}
+                    <div className="col-span-3 md:col-span-1">
+                      {item.image_url ? (
+                        <div className="relative group">
+                          <img src={item.image_url} alt={item.name} className="w-full aspect-square object-cover rounded-lg" />
+                          <button
+                            onClick={() => updateInventoryItem(index, 'image_url', '')}
+                            className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white rounded-full text-xs opacity-0 group-hover:opacity-100 transition-opacity"
+                          >
+                            ✕
+                          </button>
+                        </div>
+                      ) : (
+                        <label className="flex items-center justify-center w-full aspect-square border border-dashed border-black/15 rounded-lg cursor-pointer hover:border-black/30 transition-colors overflow-hidden">
+                          <input
+                            type="file"
+                            accept="image/*"
+                            className="hidden"
+                            onChange={(e) => {
+                              const file = e.target.files?.[0];
+                              if (file) handleInventoryImageUpload(index, file);
+                            }}
+                          />
+                          <span className="text-black/25 text-lg">+</span>
+                        </label>
+                      )}
+                    </div>
                     <input
                       value={item.name}
                       onChange={(e) => updateInventoryItem(index, 'name', e.target.value)}
                       placeholder="Name *"
-                      className="col-span-12 md:col-span-4 border border-black/10 rounded-xl px-4 py-3"
+                      className="col-span-9 md:col-span-3 border border-black/10 rounded-xl px-4 py-3"
                     />
                     <input
                       value={item.price}
@@ -640,7 +796,7 @@ export default function BuildPage({ params }: BuildPageProps) {
                     />
                     <button
                       onClick={() => removeInventoryItem(index)}
-                      className="col-span-2 md:col-span-1 flex items-center justify-center rounded-xl border border-black/10 hover:bg-red-50"
+                      className="col-span-2 md:col-span-1 flex items-center justify-center rounded-xl border border-black/10 hover:bg-red-50 py-3"
                     >
                       ✕
                     </button>
@@ -660,6 +816,142 @@ export default function BuildPage({ params }: BuildPageProps) {
                 </button>
               </div>
             )}
+          </div>
+        )}
+
+        {activeTab === 'pages' && (
+          <div className="space-y-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-2xl font-bold">Pages</h2>
+                <p className="text-black/50 text-sm mt-1">
+                  Add additional pages to your store. Each page has its own URL and sections.
+                </p>
+              </div>
+              <button
+                onClick={() => setShowNewPage(true)}
+                className="px-4 py-2 rounded-full bg-black text-white text-sm font-bold"
+              >
+                + Add page
+              </button>
+            </div>
+
+            {showNewPage && (
+              <div className="bg-white border border-black/10 rounded-2xl p-5">
+                <h3 className="font-bold mb-3">New page</h3>
+                <div className="grid grid-cols-12 gap-3">
+                  <input
+                    value={newPageTitle}
+                    onChange={(e) => setNewPageTitle(e.target.value)}
+                    placeholder="Page title (e.g. About Us)"
+                    className="col-span-12 md:col-span-5 border border-black/10 rounded-xl px-4 py-3"
+                  />
+                  <input
+                    value={newPageSlug}
+                    onChange={(e) => setNewPageSlug(e.target.value)}
+                    placeholder="URL slug (e.g. about)"
+                    className="col-span-8 md:col-span-4 border border-black/10 rounded-xl px-4 py-3"
+                  />
+                  <div className="col-span-4 md:col-span-3 flex gap-2">
+                    <button
+                      onClick={handleCreatePage}
+                      disabled={!newPageTitle.trim() || !newPageSlug.trim()}
+                      className="flex-1 px-4 py-2 rounded-full bg-black text-white text-sm font-bold disabled:opacity-40"
+                    >
+                      Create
+                    </button>
+                    <button
+                      onClick={() => { setShowNewPage(false); setNewPageTitle(''); setNewPageSlug(''); }}
+                      className="px-4 py-2 rounded-full border border-black/10 text-sm font-bold hover:bg-black/5"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {pages.length === 0 && !showNewPage && (
+              <div className="bg-white border border-dashed border-black/10 rounded-2xl p-12 text-center">
+                <p className="text-black/40 mb-4">No additional pages yet</p>
+                <button
+                  onClick={() => setShowNewPage(true)}
+                  className="px-6 py-3 rounded-full bg-black text-white font-bold"
+                >
+                  Create your first page
+                </button>
+              </div>
+            )}
+
+            <div className="space-y-3">
+              {pages.map((page) => (
+                <div key={page.id} className="bg-white border border-black/5 rounded-2xl p-5">
+                  {editingPageId === page.id ? (
+                    <div className="space-y-3">
+                      <div className="grid grid-cols-12 gap-3">
+                        <input
+                          value={editPageDraft?.title || ''}
+                          onChange={(e) => setEditPageDraft({ ...editPageDraft, title: e.target.value })}
+                          placeholder="Page title"
+                          className="col-span-12 md:col-span-5 border border-black/10 rounded-xl px-4 py-3"
+                        />
+                        <input
+                          value={editPageDraft?.slug || ''}
+                          onChange={(e) => setEditPageDraft({ ...editPageDraft, slug: e.target.value })}
+                          placeholder="URL slug"
+                          className="col-span-8 md:col-span-4 border border-black/10 rounded-xl px-4 py-3"
+                        />
+                        <div className="col-span-4 md:col-span-3 flex gap-2">
+                          <button
+                            onClick={() => savePageEdit(page.id)}
+                            className="flex-1 px-4 py-2 rounded-full bg-black text-white text-sm font-bold"
+                          >
+                            Save
+                          </button>
+                          <button
+                            onClick={cancelPageEdit}
+                            className="px-4 py-2 rounded-full border border-black/10 text-sm font-bold hover:bg-black/5"
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h3 className="font-bold">{page.title}</h3>
+                        <p className="text-xs text-black/40 mt-0.5">
+                          /{page.slug} · {page.sections?.length || 0} section{(page.sections?.length || 0) !== 1 ? 's' : ''}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <a
+                          href={`https://${site?.subdomain}.edgemarketplacehub.com/${page.slug}`}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="px-3 py-1.5 rounded-full border border-black/10 text-xs font-bold hover:bg-black/5"
+                        >
+                          Visit
+                        </a>
+                        <button
+                          onClick={() => startPageEdit(page)}
+                          className="px-3 py-1.5 rounded-full border border-black/10 text-xs font-bold hover:bg-black/5"
+                        >
+                          Edit
+                        </button>
+                        <button
+                          onClick={() => handleDeletePage(page.id)}
+                          className="px-3 py-1.5 rounded-full border border-black/10 text-xs font-bold hover:bg-red-50 text-black/40 hover:text-red-600"
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
           </div>
         )}
       </div>
@@ -692,6 +984,45 @@ function Field({ label, value, onChange, multiline }: {
           onChange={(e) => onChange(e.target.value)}
           className="w-full border border-black/10 rounded-xl px-4 py-3 focus:outline-none focus:border-black/30"
         />
+      )}
+    </div>
+  );
+}
+
+// --- Image upload field component ---
+
+function ImageUploadField({ label, currentUrl, onUpload, onRemove }: {
+  label: string;
+  currentUrl?: string;
+  onUpload: (file: File) => void;
+  onRemove: () => void;
+}) {
+  return (
+    <div>
+      <label className="block text-xs font-bold text-black/50 mb-1 uppercase tracking-wider">{label}</label>
+      {currentUrl ? (
+        <div className="relative group inline-block">
+          <img src={currentUrl} alt={label} className="h-24 rounded-xl object-cover border border-black/10" />
+          <button
+            onClick={onRemove}
+            className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-red-500 text-white rounded-full text-xs opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center"
+          >
+            ✕
+          </button>
+        </div>
+      ) : (
+        <label className="flex items-center justify-center w-24 h-24 border border-dashed border-black/15 rounded-xl cursor-pointer hover:border-black/30 transition-colors">
+          <input
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              if (file) onUpload(file);
+            }}
+          />
+          <span className="text-black/25 text-2xl">+</span>
+        </label>
       )}
     </div>
   );

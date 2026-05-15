@@ -24,10 +24,12 @@ export interface GeneratedSection {
   ctaText?: string;
   body?: string;
   title?: string;
+  hero_image_url?: string;
   items?: Array<{
     name: string;
     price: string;
     description: string;
+    image_url?: string;
   }>;
 }
 
@@ -57,4 +59,14 @@ export interface TemplateDefinition {
   primaryColor: string;
   fontFamily: string;
   borderRadius: string;
+}
+
+export interface PageData {
+  id: string;
+  site_id: string;
+  slug: string;
+  title: string;
+  sections: GeneratedSection[];
+  created_at: string;
+  updated_at: string;
 }
