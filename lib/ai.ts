@@ -4,7 +4,7 @@ import { GeneratedSection, TemplateFamily } from './types';
 import { TEMPLATES } from './templates';
 
 const openai = process.env.OPENAI_API_KEY ? new OpenAI({ apiKey: process.env.OPENAI_API_KEY }) : null;
-const gemini = process.env.GEMINI_API_KEY ? new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY }) : null;
+const gemini = process.env.GOOGLE_API_KEY ? new GoogleGenAI({ apiKey: process.env.GOOGLE_API_KEY }) : null;
 
 function getStyleDirection(businessType: TemplateFamily): string {
   const template = TEMPLATES[businessType];
@@ -82,7 +82,7 @@ export async function generateStorefront(
 
   if (gemini) {
     const result = await gemini.models.generateContent({
-      model: 'gemini-2.0-flash',
+      model: 'gemini-2.5-flash',
       contents: prompt,
       config: { responseMimeType: 'application/json' },
     });
