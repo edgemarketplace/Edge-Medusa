@@ -20,7 +20,8 @@ export async function GET(request: NextRequest) {
 
   const state = Buffer.from(JSON.stringify({ siteId })).toString('base64');
 
-  const oauthUrl = `https://connect.stripe.com/oauth/authorize?response_type=code&client_id=${clientId}&scope=read_write&state=${state}`;
+  const redirectUri = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/stripe/callback`;
+  const oauthUrl = `https://connect.stripe.com/oauth/authorize?response_type=code&client_id=${clientId}&scope=read_write&state=${state}&redirect_uri=${encodeURIComponent(redirectUri)}`;
 
   return NextResponse.redirect(oauthUrl);
 }
