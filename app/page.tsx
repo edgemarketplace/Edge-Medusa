@@ -11,12 +11,17 @@ export default function LandingPage() {
           </div>
           <span className="font-bold tracking-tight text-xl">Edge Marketplace Hub</span>
         </div>
-        <Link
-          href="/onboarding"
-          className="bg-black text-white px-6 py-2.5 rounded-full text-sm font-bold hover:scale-105 transition-transform"
-        >
-          Start building
-        </Link>
+        <div className="flex items-center gap-4">
+          <Link href="/login" className="text-sm text-black/60 hover:text-black font-medium">
+            Sign in
+          </Link>
+          <Link
+            href="/onboarding"
+            className="bg-black text-white px-6 py-2.5 rounded-full text-sm font-bold hover:scale-105 transition-transform"
+          >
+            Start building
+          </Link>
+        </div>
       </nav>
 
       {/* Hero */}

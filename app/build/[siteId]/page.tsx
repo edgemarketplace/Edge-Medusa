@@ -420,7 +420,9 @@ export default function BuildPage({ params }: BuildPageProps) {
       {/* Top bar */}
       <div className="sticky top-0 z-20 bg-white border-b border-black/5 px-6 py-4 flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <Link href="/" className="font-bold text-sm">← Edge</Link>
+          <Link href="/account" className="text-sm text-black/60 hover:text-black font-medium">
+            ← My account
+          </Link>
           <span className="text-black/20">|</span>
           <span className="font-bold">{site.business_name}</span>
           <span className="text-xs text-black/30 bg-black/5 px-2 py-0.5 rounded-full">{template.label}</span>
