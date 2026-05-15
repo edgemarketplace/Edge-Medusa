@@ -371,6 +371,112 @@ export const TEMPLATE_MANIFESTS: Record<TemplateFamily, TemplateManifest> = {
   },
 };
 
+// --- Vertical Page Templates ---
+// Pre-built page templates for each vertical — auto-populated when creating new pages
+
+export interface PageTemplate {
+  slug: string;
+  title: string;
+  description: string;
+  sections: Array<{ type: SectionType; data: Record<string, any> }>;
+}
+
+export const PAGE_TEMPLATES: Record<TemplateFamily, PageTemplate[]> = {
+  'retail-core': [
+    { slug: 'shop', title: 'Shop', description: 'Product catalog with filters', sections: [
+      { type: 'header-simple', data: { logoText: '', links: [{ label: 'Home', url: '/' }, { label: 'Shop', url: '/shop' }], ctaText: 'Cart', ctaUrl: '#' } },
+      { type: 'hero-visual', data: { heading: 'Our Collection', subheading: 'Browse our curated selection', ctaText: 'Shop now', imageUrl: '', overlayOpacity: 0.3 } },
+      { type: 'product-grid', data: { title: 'All Products', columns: 3, showFilters: true, items: [] } },
+      { type: 'footer-commerce', data: { logoText: '', newsletter: true, columns: [{ title: 'Shop', links: [] }, { title: 'Help', links: [] }], copyright: '' } },
+    ]},
+    { slug: 'about', title: 'About Us', description: 'Brand story and values', sections: [
+      { type: 'header-simple', data: { logoText: '', links: [{ label: 'Home', url: '/' }, { label: 'Shop', url: '/shop' }], ctaText: 'Shop now', ctaUrl: '/shop' } },
+      { type: 'hero-visual', data: { heading: 'Our Story', subheading: 'The passion behind our brand', imageUrl: '', overlayOpacity: 0.4 } },
+      { type: 'brand-story', data: { headline: 'How It Started', body: 'Every brand has a story. Ours began with a simple belief in quality and accessibility.', imageUrl: '' } },
+      { type: 'value-icons', data: { title: 'What We Stand For', values: [{ icon: '🌿', title: 'Sustainable', description: 'Ethically sourced' }, { icon: '✋', title: 'Handcrafted', description: 'Made with care' }, { icon: '💚', title: 'Quality', description: 'Built to last' }] } },
+      { type: 'footer-commerce', data: { logoText: '', newsletter: true, columns: [{ title: 'Shop', links: [] }, { title: 'Help', links: [] }], copyright: '' } },
+    ]},
+  ],
+  'service-pro': [
+    { slug: 'services', title: 'Services', description: 'Service offerings and pricing', sections: [
+      { type: 'header-simple', data: { logoText: '', links: [{ label: 'Home', url: '/' }, { label: 'Services', url: '/services' }], ctaText: 'Get a quote', ctaUrl: '/contact' } },
+      { type: 'hero-split', data: { heading: 'Our Services', subheading: 'Professional solutions for your needs', ctaText: 'Request a quote', ctaUrl: '/contact', imageUrl: '' } },
+      { type: 'service-list', data: { title: 'What We Offer', services: [{ name: 'Standard Service', description: 'Complete professional delivery', price: 'From $150' }, { name: 'Premium Service', description: 'White-glove full service', price: 'From $350' }] } },
+      { type: 'value-icons', data: { title: 'Why Choose Us', values: [{ icon: '✓', title: 'Licensed & Insured', description: 'Fully certified' }, { icon: '⭐', title: '5-Star Rated', description: 'Happy customers' }, { icon: '🛡', title: 'Guaranteed', description: 'Satisfaction promise' }] } },
+      { type: 'footer-service', data: { logoText: '', showContact: true, showHours: true, hours: 'Mon-Fri 8am-6pm', copyright: '' } },
+    ]},
+    { slug: 'gallery', title: 'Our Work', description: 'Portfolio and testimonials', sections: [
+      { type: 'header-simple', data: { logoText: '', links: [{ label: 'Home', url: '/' }, { label: 'Services', url: '/services' }], ctaText: 'Get a quote', ctaUrl: '/contact' } },
+      { type: 'hero-visual', data: { heading: 'Our Work Speaks', subheading: 'See the results we deliver', imageUrl: '', overlayOpacity: 0.4 } },
+      { type: 'before-after', data: { title: 'Recent Projects', pairs: [{ beforeUrl: '', afterUrl: '', label: 'Project' }] } },
+      { type: 'testimonials', data: { title: 'What Customers Say', testimonials: [{ name: 'Sarah M.', quote: 'Professional, on time, exceeded expectations.', rating: 5 }] } },
+      { type: 'quote-cta', data: { headline: 'Ready to Start?', subheading: 'Contact us for a free quote.', ctaText: 'Request Quote' } },
+      { type: 'footer-service', data: { logoText: '', showContact: true, showHours: true, hours: 'Mon-Fri 8am-6pm', copyright: '' } },
+    ]},
+    { slug: 'contact', title: 'Contact', description: 'Contact form and booking', sections: [
+      { type: 'header-simple', data: { logoText: '', links: [{ label: 'Home', url: '/' }, { label: 'Services', url: '/services' }], ctaText: 'Call now', ctaUrl: 'tel:' } },
+      { type: 'hero-split', data: { heading: 'Get In Touch', subheading: 'We\'ll respond within 24 hours.', ctaText: 'Send message', ctaUrl: '#form', imageUrl: '' } },
+      { type: 'quote-cta', data: { headline: 'Request a Free Quote', subheading: 'Tell us about your project.', ctaText: 'Get Quote', showForm: true } },
+      { type: 'footer-service', data: { logoText: '', showContact: true, showHours: true, hours: 'Mon-Fri 8am-6pm', copyright: '' } },
+    ]},
+  ],
+  'food-catering': [
+    { slug: 'menu', title: 'Menu', description: 'Menu categories and pricing', sections: [
+      { type: 'header-promo', data: { announcement: '🎉 Now booking for the holidays!', logoText: '', links: [{ label: 'Home', url: '/' }, { label: 'Menu', url: '/menu' }] } },
+      { type: 'hero-visual', data: { heading: 'Our Menu', subheading: 'Fresh, locally-sourced ingredients', imageUrl: '', overlayOpacity: 0.4 } },
+      { type: 'service-list', data: { title: 'Menu Categories', services: [{ name: 'Appetizers', description: 'Start your event right', price: 'From $12/person' }, { name: 'Main Courses', description: 'Hearty entrées', price: 'From $25/person' }] } },
+      { type: 'gallery', data: { title: 'From Our Kitchen', images: [] } },
+      { type: 'footer-service', data: { logoText: '', showContact: true, showHours: true, hours: 'Tue-Sun 10am-8pm', copyright: '' } },
+    ]},
+    { slug: 'catering', title: 'Catering', description: 'Event packages and booking', sections: [
+      { type: 'header-promo', data: { announcement: '🎉 Now booking for the holidays!', logoText: '', links: [{ label: 'Home', url: '/' }, { label: 'Catering', url: '/catering' }] } },
+      { type: 'hero-visual', data: { heading: 'Event Catering', subheading: 'From intimate to grand celebrations', imageUrl: '', overlayOpacity: 0.4 } },
+      { type: 'packages', data: { title: 'Catering Packages', packages: [{ name: 'Intimate', description: 'Small events', price: '$45/person', features: ['Appetizers', 'Main', 'Dessert'] }, { name: 'Classic', description: 'Most popular', price: '$75/person', features: ['Everything in Intimate', 'Premium entrées', 'Bar setup'] }, { name: 'Premium', description: 'Ultimate experience', price: '$125/person', features: ['Everything in Classic', 'Custom menu', 'Coordinator'] }] } },
+      { type: 'testimonials', data: { title: 'Client Love', testimonials: [{ name: 'Emily R.', quote: 'Absolutely incredible food!', rating: 5 }] } },
+      { type: 'booking-cta', data: { headline: 'Plan Your Event', subheading: 'Get a customized proposal.', ctaText: 'Book Now' } },
+      { type: 'footer-service', data: { logoText: '', showContact: true, showHours: true, hours: 'Tue-Sun 10am-8pm', copyright: '' } },
+    ]},
+  ],
+  'artisan-market': [
+    { slug: 'shop', title: 'Shop', description: 'Product showcase', sections: [
+      { type: 'header-simple', data: { logoText: '', links: [{ label: 'Home', url: '/' }, { label: 'Shop', url: '/shop' }], ctaText: 'Cart', ctaUrl: '#' } },
+      { type: 'hero-visual', data: { heading: 'Handcrafted with Care', subheading: 'Each piece uniquely made', imageUrl: '', overlayOpacity: 0.3 } },
+      { type: 'product-grid', data: { title: 'Our Collection', columns: 3, showFilters: false, items: [] } },
+      { type: 'footer-basic', data: { logoText: '', links: [{ label: 'Privacy', url: '#' }], copyright: '' } },
+    ]},
+    { slug: 'story', title: 'Our Story', description: 'Maker story and process', sections: [
+      { type: 'header-simple', data: { logoText: '', links: [{ label: 'Home', url: '/' }, { label: 'Shop', url: '/shop' }], ctaText: 'Shop now', ctaUrl: '/shop' } },
+      { type: 'hero-visual', data: { heading: 'Meet the Maker', subheading: 'The hands behind every piece', imageUrl: '', overlayOpacity: 0.4 } },
+      { type: 'brand-story', data: { headline: 'How It Started', body: 'A passion for traditional craftsmanship and modern design.', imageUrl: '' } },
+      { type: 'value-icons', data: { title: 'Our Values', values: [{ icon: '✋', title: 'Handmade', description: 'Crafted by hand' }, { icon: '🌿', title: 'Sustainable', description: 'Eco-friendly' }, { icon: '💝', title: 'Made with Love', description: 'Crafted with care' }] } },
+      { type: 'footer-basic', data: { logoText: '', links: [{ label: 'Privacy', url: '#' }], copyright: '' } },
+    ]},
+  ],
+  'event-floral': [
+    { slug: 'packages', title: 'Packages', description: 'Service tiers and pricing', sections: [
+      { type: 'header-simple', data: { logoText: '', links: [{ label: 'Home', url: '/' }, { label: 'Packages', url: '/packages' }], ctaText: 'Inquire', ctaUrl: '/contact' } },
+      { type: 'hero-visual', data: { heading: 'Floral Packages', subheading: 'Elegant designs for your day', imageUrl: '', overlayOpacity: 0.4 } },
+      { type: 'packages', data: { title: 'Our Packages', packages: [{ name: 'Intimate', description: 'Smaller gatherings', price: 'From $1,500', features: ['Bridal bouquet', 'Boutonnieres', 'Ceremony arrangements'] }, { name: 'Classic', description: 'Most popular', price: 'From $3,500', features: ['Everything in Intimate', 'Reception centerpieces', 'Aisle décor'] }, { name: 'Luxury', description: 'Ultimate experience', price: 'From $7,500', features: ['Everything in Classic', 'Custom installations', 'Premium flowers'] }] } },
+      { type: 'value-icons', data: { title: 'Why Choose Us', values: [{ icon: '💐', title: 'Expert Design', description: 'Years of experience' }, { icon: '🤝', title: 'Personalized', description: 'Custom designs' }, { icon: '✨', title: 'Detail-Oriented', description: 'Every petal perfect' }] } },
+      { type: 'footer-basic', data: { logoText: '', links: [{ label: 'Privacy', url: '#' }], copyright: '' } },
+    ]},
+    { slug: 'gallery', title: 'Gallery', description: 'Portfolio of past work', sections: [
+      { type: 'header-simple', data: { logoText: '', links: [{ label: 'Home', url: '/' }, { label: 'Gallery', url: '/gallery' }], ctaText: 'Inquire', ctaUrl: '/contact' } },
+      { type: 'hero-visual', data: { heading: 'Our Portfolio', subheading: 'Favorite moments', imageUrl: '', overlayOpacity: 0.4 } },
+      { type: 'gallery', data: { title: 'Weddings & Events', images: [] } },
+      { type: 'testimonials', data: { title: 'Kind Words', testimonials: [{ name: 'Sarah & James', quote: 'Every detail was perfect.', rating: 5 }] } },
+      { type: 'quote-cta', data: { headline: 'Start Your Inquiry', subheading: 'Tell us about your vision.', ctaText: 'Book Consultation' } },
+      { type: 'footer-basic', data: { logoText: '', links: [{ label: 'Privacy', url: '#' }], copyright: '' } },
+    ]},
+    { slug: 'contact', title: 'Contact', description: 'Inquiry form', sections: [
+      { type: 'header-simple', data: { logoText: '', links: [{ label: 'Home', url: '/' }, { label: 'Packages', url: '/packages' }], ctaText: 'Inquire', ctaUrl: '#form' } },
+      { type: 'hero-visual', data: { heading: 'Let\'s Create Something Beautiful', subheading: 'Tell us your vision', imageUrl: '', overlayOpacity: 0.4 } },
+      { type: 'quote-cta', data: { headline: 'Start Your Inquiry', subheading: 'We\'ll respond within 24 hours.', ctaText: 'Send Inquiry', showForm: true } },
+      { type: 'footer-basic', data: { logoText: '', links: [{ label: 'Privacy', url: '#' }], copyright: '' } },
+    ]},
+  ],
+};
+
 // --- Publish Validation ---
 
 import type { GeneratedSection, PublishValidation } from './types';

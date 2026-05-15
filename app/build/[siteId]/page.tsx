@@ -4,7 +4,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import Link from 'next/link';
 import type { SiteData, GeneratedSection, InventoryItem, TemplateFamily, PageData, SectionType, PublishValidation } from '@/lib/types';
 import { TEMPLATES } from '@/lib/templates';
-import { SECTION_LIBRARY, SECTION_CATEGORIES, TEMPLATE_MANIFESTS, validatePublish } from '@/lib/section-library';
+import { SECTION_LIBRARY, SECTION_CATEGORIES, TEMPLATE_MANIFESTS, validatePublish, PAGE_TEMPLATES } from '@/lib/section-library';
 
 interface BuildPageProps {
   params: Promise<{ siteId: string }>;
@@ -348,14 +348,27 @@ export default function BuildPage({ params }: BuildPageProps) {
     const title = newPageTitle.trim();
     if (!slug || !title) return;
     try {
+      // Check if we have a matching template
+      const templates = PAGE_TEMPLATES[site?.business_type as TemplateFamily] || [];
+      const matchedTemplate = templates.find(t => t.slug === slug);
+      
+      let sections: GeneratedSection[];
+      if (matchedTemplate) {
+        // Use template sections
+        sections = matchedTemplate.sections.map(s => ({
+          id: genId(),
+          type: s.type,
+          data: { ...s.data, logoText: s.data.logoText || site?.business_name || '' },
+        }));
+      } else {
+        // Default blank page with hero
+        sections = [{ id: genId(), type: 'hero-visual' as SectionType, data: { heading: title, subheading: 'Add your content here' } }];
+      }
+
       const res = await fetch(`/api/sites/${siteId}/pages`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          slug,
-          title,
-          sections: [{ id: genId(), type: 'hero-visual' as SectionType, data: { heading: title, subheading: 'Add your content here' } }],
-        }),
+        body: JSON.stringify({ slug, title, sections }),
       });
       if (!res.ok) {
         const err = await res.json();
@@ -1072,15 +1085,47 @@ function PagesPanel({ pages, site, showNewPage, newPageTitle, newPageSlug, editi
       </div>
       {showNewPage && (
         <div className="bg-white border border-black/10 rounded-2xl p-5">
-          <h3 className="font-bold mb-3">New page</h3>
+          <h3 className="font-bold mb-3">Create new page</h3>
+          {/* Template picker */}
+          <div className="mb-4">
+            <p className="text-xs font-bold text-black/50 mb-2 uppercase tracking-wider">Choose a template</p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              {PAGE_TEMPLATES[site?.business_type as TemplateFamily]?.map((tmpl, idx) => (
+                <button
+                  key={idx}
+                  onClick={() => {
+                    setNewPageTitle(tmpl.title);
+                    setNewPageSlug(tmpl.slug);
+                  }}
+                  className={`text-left rounded-xl border p-3 transition-all ${
+                    newPageSlug === tmpl.slug ? 'border-black bg-black/5' : 'border-black/10 hover:border-black/20'
+                  }`}
+                >
+                  <p className="font-bold text-sm">{tmpl.title}</p>
+                  <p className="text-xs text-black/50 mt-0.5">{tmpl.description}</p>
+                  <p className="text-[10px] text-black/30 mt-1">{tmpl.sections.length} sections · /{tmpl.slug}</p>
+                </button>
+              ))}
+              <button
+                onClick={() => { setNewPageTitle(''); setNewPageSlug(''); }}
+                className={`text-left rounded-xl border p-3 transition-all ${
+                  !newPageSlug ? 'border-black bg-black/5' : 'border-black/10 hover:border-black/20'
+                }`}
+              >
+                <p className="font-bold text-sm">Blank page</p>
+                <p className="text-xs text-black/50 mt-0.5">Start from scratch</p>
+              </button>
+            </div>
+          </div>
+          {/* Custom title/slug */}
           <div className="grid grid-cols-12 gap-3">
             <label className="col-span-12 md:col-span-5">
               <span className="sr-only">Page title</span>
-              <input id="new-page-title" name="newPageTitle" value={newPageTitle} onChange={e => onNewPageTitleChange(e.target.value)} placeholder="Page title (e.g. About Us)" className="w-full border border-black/10 rounded-xl px-3 py-2.5 text-sm" />
+              <input id="new-page-title" name="newPageTitle" value={newPageTitle} onChange={e => onNewPageTitleChange(e.target.value)} placeholder="Page title" className="w-full border border-black/10 rounded-xl px-3 py-2.5 text-sm" />
             </label>
             <label className="col-span-8 md:col-span-4">
               <span className="sr-only">URL slug</span>
-              <input id="new-page-slug" name="newPageSlug" value={newPageSlug} onChange={e => onNewPageSlugChange(e.target.value)} placeholder="URL slug (e.g. about)" className="w-full border border-black/10 rounded-xl px-3 py-2.5 text-sm" />
+              <input id="new-page-slug" name="newPageSlug" value={newPageSlug} onChange={e => onNewPageSlugChange(e.target.value)} placeholder="URL slug" className="w-full border border-black/10 rounded-xl px-3 py-2.5 text-sm" />
             </label>
             <div className="col-span-4 md:col-span-3 flex gap-2">
               <button onClick={onCreatePage} disabled={!newPageTitle.trim() || !newPageSlug.trim()} className="flex-1 px-4 py-2 rounded-full bg-black text-white text-sm font-bold disabled:opacity-40">Create</button>
