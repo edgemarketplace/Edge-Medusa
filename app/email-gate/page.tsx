@@ -1,9 +1,9 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 
-export default function EmailGatePage() {
+function EmailGateContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const siteId = searchParams.get('siteId') || '';
@@ -42,7 +42,6 @@ export default function EmailGatePage() {
   }
 
   function handleSkip() {
-    // Set a session flag so we don't ask again immediately
     sessionStorage.setItem(`skipped_email_${siteId}`, 'true');
     router.push(`/build/${siteId}`);
   }
@@ -125,5 +124,17 @@ export default function EmailGatePage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function EmailGatePage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-[#F9F8F6] flex items-center justify-center">
+        <div className="animate-spin h-8 w-8 border-2 border-black border-t-transparent rounded-full" />
+      </div>
+    }>
+      <EmailGateContent />
+    </Suspense>
   );
 }
