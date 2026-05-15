@@ -15,21 +15,39 @@ export async function POST(request: NextRequest) {
     }
 
     const site_token = crypto.randomUUID();
+    const insertData: any = {
+      business_name,
+      business_type,
+      offerings: offerings || '',
+      contact_email,
+      site_token,
+      status: 'draft',
+      template_data: { sections: [] },
+    };
 
-    const { data, error } = await supabaseAdmin
+    // Only include tagline if provided (column may not exist yet)
+    if (tagline) {
+      insertData.tagline = tagline;
+    }
+
+    let { data, error } = await supabaseAdmin
       .from('sites')
-      .insert({
-        business_name,
-        business_type,
-        offerings: offerings || '',
-        contact_email,
-        tagline: tagline || '',
-        site_token,
-        status: 'draft',
-        template_data: { sections: [] },
-      })
+      .insert(insertData)
       .select()
       .single();
+
+    // If tagline column doesn't exist, retry without it
+    if (error && error.code === 'PGRST204' && error.message?.includes('tagline')) {
+      console.warn('tagline column not found, retrying without it');
+      delete insertData.tagline;
+      const retry = await supabaseAdmin
+        .from('sites')
+        .insert(insertData)
+        .select()
+        .single();
+      data = retry.data;
+      error = retry.error;
+    }
 
     if (error) {
       console.error('Supabase insert error:', error);
