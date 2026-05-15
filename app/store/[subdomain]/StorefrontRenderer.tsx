@@ -64,6 +64,8 @@ export default function StorefrontRenderer({
       const data = await res.json();
       if (data.url) {
         window.location.href = data.url;
+      } else if (data.error?.includes('Stripe not connected')) {
+        alert('This merchant has not set up payments yet. Please contact them directly.');
       } else {
         alert(data.error || 'Checkout failed');
       }

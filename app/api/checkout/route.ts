@@ -29,17 +29,24 @@ export async function POST(request: NextRequest) {
     }
 
     // Build line items for Stripe Checkout
-    const lineItems = items.map((item: any) => ({
-      price_data: {
-        currency: 'usd',
-        product_data: {
-          name: item.name,
-          description: item.description || undefined,
+    const lineItems = items.map((item: any) => {
+      const rawPrice = String(item.price).replace(/[^0-9.]/g, '');
+      const unitAmount = Math.round(parseFloat(rawPrice) * 100);
+      if (!unitAmount || unitAmount <= 0) {
+        throw new Error(`Invalid price for item "${item.name}": ${item.price}`);
+      }
+      return {
+        price_data: {
+          currency: 'usd',
+          product_data: {
+            name: item.name,
+            description: item.description || undefined,
+          },
+          unit_amount: unitAmount,
         },
-        unit_amount: Math.round(parseFloat(item.price.replace('$', '')) * 100),
-      },
-      quantity: item.quantity || 1,
-    }));
+        quantity: item.quantity || 1,
+      };
+    });
 
     // Create a Checkout Session on the connected account
     const session = await stripe.checkout.sessions.create(
