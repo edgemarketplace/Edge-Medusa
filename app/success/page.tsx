@@ -35,7 +35,7 @@ export default async function SuccessPage({ searchParams }: SuccessPageProps) {
             </svg>
           </a>
         )}
-        <div className="mt-8">
+        <div className="mt-8 flex flex-col items-center gap-3">
           <Link href="/" className="text-black/40 hover:text-black text-sm">
             ← Back to Edge Marketplace Hub
           </Link>
