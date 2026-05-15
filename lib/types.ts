@@ -7,6 +7,88 @@ export type TemplateFamily =
 
 export type SiteStatus = 'draft' | 'ready' | 'live';
 
+// --- Section Categories & Types ---
+
+export type SectionCategory =
+  | 'header'
+  | 'hero'
+  | 'commerce'
+  | 'storytelling'
+  | 'social-proof'
+  | 'service'
+  | 'media'
+  | 'conversion'
+  | 'footer';
+
+export type SectionType =
+  // Headers
+  | 'header-simple'
+  | 'header-promo'
+  | 'header-mega'
+  // Heroes
+  | 'hero-split'
+  | 'hero-visual'
+  | 'hero-products'
+  | 'hero-cta'
+  | 'hero-trust'
+  // Commerce discovery
+  | 'featured-collection'
+  | 'product-grid'
+  | 'best-sellers'
+  | 'collection-carousel'
+  // Storytelling
+  | 'brand-story'
+  | 'value-icons'
+  | 'editorial-split'
+  | 'founder-note'
+  // Social proof
+  | 'testimonials'
+  | 'reviews'
+  | 'logo-bar'
+  | 'stats'
+  | 'press'
+  // Service selling
+  | 'service-list'
+  | 'pricing-tiers'
+  | 'packages'
+  | 'quote-cta'
+  | 'booking-cta'
+  // Media
+  | 'gallery'
+  | 'video'
+  | 'before-after'
+  | 'social-gallery'
+  // Conversion
+  | 'faq'
+  | 'newsletter'
+  | 'promo-banner'
+  | 'sticky-cta'
+  // Footers
+  | 'footer-basic'
+  | 'footer-commerce'
+  | 'footer-service';
+
+export interface SectionDefinition {
+  type: SectionType;
+  category: SectionCategory;
+  label: string;
+  description: string;
+  icon: string;
+  defaultData: Record<string, any>;
+}
+
+// --- Template Manifest ---
+
+export interface TemplateManifest {
+  family: TemplateFamily;
+  requiredSections: SectionType[];
+  recommendedSections: SectionType[];
+  allowedSections: SectionType[];
+  maxDuplicates: Partial<Record<SectionType, number>>;
+}
+
+// --- Data Models ---
+
 export interface InventoryItem {
   id?: string;
   name: string;
@@ -17,20 +99,9 @@ export interface InventoryItem {
 }
 
 export interface GeneratedSection {
-  type: 'hero' | 'products' | 'about' | 'contact';
-  heading?: string;
-  subheading?: string;
-  headline?: string;
-  ctaText?: string;
-  body?: string;
-  title?: string;
-  hero_image_url?: string;
-  items?: Array<{
-    name: string;
-    price: string;
-    description: string;
-    image_url?: string;
-  }>;
+  id: string;
+  type: SectionType;
+  data: Record<string, any>;
 }
 
 export interface SiteData {
@@ -69,4 +140,12 @@ export interface PageData {
   sections: GeneratedSection[];
   created_at: string;
   updated_at: string;
+}
+
+// --- Publish Validation ---
+
+export interface PublishValidation {
+  valid: boolean;
+  errors: string[];
+  warnings: string[];
 }
