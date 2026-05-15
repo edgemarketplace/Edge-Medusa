@@ -1,10 +1,12 @@
 import OpenAI from 'openai';
-import { GoogleGenAI } from '@google/genai';
 import { GeneratedSection, TemplateFamily } from './types';
 import { TEMPLATES } from './templates';
 
-const openai = process.env.OPENAI_API_KEY ? new OpenAI({ apiKey: process.env.OPENAI_API_KEY }) : null;
-const gemini = process.env.GOOGLE_API_KEY ? new GoogleGenAI({ apiKey: process.env.GOOGLE_API_KEY }) : null;
+if (!process.env.OPENAI_API_KEY) {
+  throw new Error('OPENAI_API_KEY is required');
+}
+
+const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 function getStyleDirection(businessType: TemplateFamily): string {
   const template = TEMPLATES[businessType];
@@ -78,27 +80,14 @@ export async function generateStorefront(
 ): Promise<GeneratedSection[]> {
   const prompt = buildPrompt(businessName, businessType, offerings);
 
-  let rawText: string;
+  const response = await openai.chat.completions.create({
+    model: 'gpt-4o',
+    messages: [{ role: 'user', content: prompt }],
+    response_format: { type: 'json_object' },
+  });
 
-  if (gemini) {
-    const result = await gemini.models.generateContent({
-      model: 'gemini-2.5-flash',
-      contents: prompt,
-      config: { responseMimeType: 'application/json' },
-    });
-    rawText = result.text || '{}';
-  } else if (openai) {
-    const response = await openai.chat.completions.create({
-      model: 'gpt-4o',
-      messages: [{ role: 'user', content: prompt }],
-      response_format: { type: 'json_object' },
-    });
-    rawText = response.choices[0].message.content || '{}';
-  } else {
-    throw new Error('No AI provider configured');
-  }
+  const rawText = response.choices[0].message.content || '{}';
 
-  // Clean up the response
   const cleaned = rawText
     .replace(/^```json\s*/i, '')
     .replace(/^```\s*/, '')
