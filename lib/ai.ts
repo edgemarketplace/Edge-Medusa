@@ -169,6 +169,39 @@ const FUNNEL_DEFS: Record<TemplateFamily, FunnelDef> = {
       ],
     },
   },
+
+  'coach-educator': {
+    psychology: 'trust + transformation + authority. Clients need to believe you can transform their life/skill, then see a clear path to get there.',
+    pagePurpose: 'Establish authority, show transformation proof, drive coaching/consultation bookings.',
+    requiredSections: [
+      { type: 'header-simple', purpose: 'Clean navigation with prominent "Book Consult" CTA', tips: 'Logo, minimal links, "Book Now" button top-right' },
+      { type: 'hero-trust', purpose: 'Authority hero — transformation headline, trust badges (years experience, clients served)', tips: 'Bold claim of transformation, 3 key trust metrics, serif headline' },
+      { type: 'service-list', purpose: 'Coaching packages with clear outcomes', tips: 'Package names like "Career Pivot", "Leadership Mastery", outcomes-driven descriptions, price ranges' },
+      { type: 'testimonials', purpose: 'Transformation stories with specific results', tips: 'Before/after states, specific metrics (got promoted, landed dream job), full names with photos' },
+      { type: 'value-icons', purpose: 'Why choose you — credentials, methodology, results', tips: 'Certifications, years experience, unique methodology, satisfaction rate' },
+      { type: 'faq', purpose: 'Address objections (cost, time, fit)', tips: 'Real concerns: "Is coaching right for me?", "How fast will I see results?", "What if it doesn\'t work?"' },
+      { type: 'booking-cta', purpose: 'Low-friction consultation booking', tips: 'Simple form, promise of 24hr response, no commitment language' },
+      { type: 'footer-basic', purpose: 'Clean footer with social links and credentials', tips: 'LinkedIn, Instagram, certifications listed, contact email' },
+    ],
+    contentTone: 'Authoritative yet empathetic. Lead with transformation outcomes. Use specific numbers (X clients coached, Y% success rate). Sound like a proven expert who cares.',
+    milanoCues: 'Clean, editorial layout. Serif headlines. Muted purple/charcoal palette. Whitespace-heavy. Testimonial cards with large quotes. Professional photography of you/your workspace.',
+    sampleCopy: {
+      heroHeading: ['Transform your career in 90 days', 'Unlock your leadership potential', 'Go from stuck to thriving', 'Your breakthrough starts here'],
+      heroSubheading: ['I help professionals like you break through barriers and achieve the career you\'ve always wanted. Proven methodology, real results.', 'Over 500 professionals coached. 94% report measurable progress within 60 days.'],
+      ctaText: ['Book a free consult', 'Start your journey', 'See how I help', 'Get your roadmap'],
+      serviceDescriptions: [
+        '6-week intensive coaching program with weekly 1:1 sessions, customized action plan, and lifetime access to resource library.',
+        'Group coaching mastermind with peer accountability, bi-weekly calls, and exclusive workshops for accelerated growth.',
+        'Executive leadership coaching for senior leaders ready to step into C-suite roles with confidence and strategy.',
+      ],
+      testimonialQuotes: [
+        'Working with [Name] changed my entire trajectory. I went from feeling stuck to landing my dream role in just 3 months!',
+        'The clarity I gained from our sessions was priceless. I finally understand my value and how to communicate it.',
+        'Best investment I\'ve ever made in myself. The ROI isn\'t just financial — it\'s a complete mindset shift.',
+        'I was skeptical at first, but the methodology really works. I\'ve been promoted twice in 8 months!',
+      ],
+    },
+  },
 };
 
 // --- Prompt Builder ---
@@ -298,7 +331,7 @@ function genId(): string {
 export async function generateStorefront(
   businessName: string,
   businessType: TemplateFamily,
-  offerings: string,
+  offerings: string = '',
   contactEmail: string = '',
   tagline: string = '',
 ): Promise<GeneratedSection[]> {

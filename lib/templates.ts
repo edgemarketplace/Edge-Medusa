@@ -51,4 +51,14 @@ export const TEMPLATES: Record<TemplateFamily, TemplateDefinition> = {
     fontFamily: 'Inter, system-ui, sans-serif',
     borderRadius: '24px',
   },
+  'coach-educator': {
+    family: 'coach-educator',
+    label: 'Coach & Educator',
+    kicker: 'Transformation-focused',
+    headline: 'Sell expertise, not just content.',
+    summary: 'Built for coaches, course creators, and educators who need to convert visitors into clients.',
+    primaryColor: '#7c3aed',
+    fontFamily: 'Inter, system-ui, sans-serif',
+    borderRadius: '8px',
+  },
 };

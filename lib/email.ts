@@ -14,41 +14,66 @@ interface WelcomeEmailProps {
   to: string;
   businessName: string;
   buildUrl: string;
+  isLive?: boolean;
+  stripeConnectUrl?: string;
 }
 
-export async function sendWelcomeEmail({ to, businessName, buildUrl }: WelcomeEmailProps) {
+export async function sendWelcomeEmail({ to, businessName, buildUrl, isLive, stripeConnectUrl }: WelcomeEmailProps) {
   const client = getResend();
   if (!client) {
     console.warn('RESEND_API_KEY not set, skipping welcome email');
     return;
   }
 
+  const isLaunch = isLive && stripeConnectUrl;
+
   try {
     await client.emails.send({
       from: 'Edge Marketplace Hub <welcome@edgemarketplacehub.com>',
       to,
-      subject: `Welcome to Edge Marketplace Hub, ${businessName}!`,
+      subject: isLaunch 
+        ? `🎉 Your store is live, ${businessName}!`
+        : `Welcome to Edge Marketplace Hub, ${businessName}!`,
       html: `
         <div style="font-family: system-ui, sans-serif; max-width: 600px; margin: 0 auto; padding: 40px 20px;">
           <div style="text-align: center; margin-bottom: 32px;">
-            <div style="width: 48px; height: 48px; background: #000; border-radius: 4px; display: inline-flex; align-items: center; justify-content: center; color: white; font-family: serif; font-style: italic; font-weight: bold; font-size: 24px;">E</div>
+            <div style="width: 48px; height: 48px; background: #2D2D2D; border-radius: 4px; display: inline-flex; align-items: center; justify-content: center; color: white; font-family: serif; font-style: italic; font-weight: bold; font-size: 24px;">E</div>
           </div>
-          <h1 style="font-size: 28px; font-weight: bold; margin-bottom: 16px; text-align: center;">Your store is ready to build</h1>
+          <h1 style="font-size: 28px; font-weight: bold; margin-bottom: 16px; text-align: center;">
+            ${isLaunch ? 'Your store is live! 🎉' : 'Your store is ready to build'}
+          </h1>
           <p style="color: #666; font-size: 16px; line-height: 1.6; margin-bottom: 24px; text-align: center;">
             Hi ${businessName},<br><br>
-            Your storefront has been created. Complete your setup in 15 minutes:
+            ${isLaunch 
+              ? 'Congratulations! Your store is now live and ready to accept orders.' 
+              : 'Your storefront has been created. Complete your setup in 15 minutes:'}
           </p>
           <div style="background: #F9F8F6; border-radius: 16px; padding: 24px; margin-bottom: 24px;">
             <ol style="margin: 0; padding-left: 20px; color: #333; font-size: 14px; line-height: 2;">
-              <li>Customize your page sections</li>
-              <li>Add your products or services</li>
-              <li>Connect Stripe to accept payments</li>
-              <li>Launch your store</li>
+              ${isLaunch 
+                ? `<li>View your live store</li>
+                   <li>Connect Stripe to receive payments</li>
+                   <li>Share your store link</li>`
+                : `<li>Customize your page sections</li>
+                   <li>Add your products or services</li>
+                   <li>Connect Stripe to accept payments</li>
+                   <li>Launch your store</li>`}
             </ol>
           </div>
+          ${isLaunch && stripeConnectUrl ? `
+            <div style="background: #EFF6FF; border: 1px solid #BFDBFE; border-radius: 12px; padding: 20px; margin-bottom: 24px;">
+              <h3 style="font-size: 16px; font-weight: bold; margin: 0 0 8px 0;">Connect Stripe to get paid</h3>
+              <p style="font-size: 14px; color: #666; margin: 0 0 16px 0;">
+                You're live! Connect your Stripe account to start receiving payments from customers.
+              </p>
+              <a href="${stripeConnectUrl}" style="display: inline-block; background: #635BFF; color: white; padding: 12px 24px; border-radius: 9999px; text-decoration: none; font-weight: bold; font-size: 14px;">
+                Connect Stripe →
+              </a>
+            </div>
+          ` : ''}
           <div style="text-align: center; margin-bottom: 32px;">
-            <a href="${buildUrl}" style="display: inline-block; background: #000; color: #fff; padding: 16px 32px; border-radius: 9999px; text-decoration: none; font-weight: bold; font-size: 16px;">
-              Continue building →
+            <a href="${isLaunch ? buildUrl : buildUrl}" style="display: inline-block; background: #2D2D2D; color: #fff; padding: 16px 32px; border-radius: 9999px; text-decoration: none; font-weight: bold; font-size: 16px;">
+              ${isLaunch ? 'View your store →' : 'Continue building →'}
             </a>
           </div>
           <p style="color: #999; font-size: 12px; text-align: center;">

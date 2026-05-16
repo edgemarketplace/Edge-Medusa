@@ -28,14 +28,14 @@ export async function POST(
     );
   }
 
-  const { business_name, business_type, offerings, contact_email, tagline } = site;
+  const { business_name, business_type, contact_email } = site;
 
   const sections = await generateStorefront(
     business_name,
     business_type,
-    offerings,
+    '', // offerings no longer collected
     contact_email,
-    tagline || '',
+    '', // tagline no longer collected
   );
 
   const templateData = { sections };

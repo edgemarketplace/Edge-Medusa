@@ -11,15 +11,13 @@ const templateEntries = Object.values(TEMPLATES);
 export default function OnboardingPage() {
   const router = useRouter();
   const [businessName, setBusinessName] = useState('');
-  const [offerings, setOfferings] = useState('');
-  const [tagline, setTagline] = useState('');
   const [email, setEmail] = useState('');
   const [selectedType, setSelectedType] = useState<TemplateFamily | null>(null);
   const [selectedTheme, setSelectedTheme] = useState<string>('milano');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  const canSubmit = businessName.trim() && offerings.trim() && email.trim() && selectedType && !loading;
+  const canSubmit = businessName.trim() && email.trim() && selectedType && !loading;
 
   const [generationStep, setGenerationStep] = useState(0);
   const generationSteps = [
@@ -53,8 +51,6 @@ export default function OnboardingPage() {
         body: JSON.stringify({
           business_name: businessName.trim(),
           business_type: selectedType,
-          offerings: offerings.trim(),
-          tagline: tagline.trim(),
           contact_email: email.trim(),
           theme_id: selectedTheme,
         }),
@@ -110,35 +106,6 @@ export default function OnboardingPage() {
             />
           </div>
 
-          {/* What you sell */}
-          <div>
-            <label htmlFor="offerings" className="block text-sm font-bold mb-2">What do you sell? *</label>
-            <textarea
-              id="offerings"
-              name="offerings"
-              value={offerings}
-              onChange={(e) => setOfferings(e.target.value)}
-              placeholder="e.g. Handmade ceramics and home decor for modern living"
-              rows={3}
-              className="w-full border border-black/10 rounded-2xl px-5 py-4 text-lg focus:outline-none focus:border-black/30 bg-white resize-none"
-              required
-            />
-          </div>
-
-          {/* Tagline */}
-          <div>
-            <label htmlFor="tagline" className="block text-sm font-bold mb-2">Your tagline <span className="text-black/30 font-normal">(optional)</span></label>
-            <input
-              id="tagline"
-              name="tagline"
-              type="text"
-              value={tagline}
-              onChange={(e) => setTagline(e.target.value)}
-              placeholder="e.g. Handcrafted with love in Portland, OR"
-              className="w-full border border-black/10 rounded-2xl px-5 py-4 text-lg focus:outline-none focus:border-black/30 bg-white"
-            />
-          </div>
-
           {/* Email */}
           <div>
             <label htmlFor="email" className="block text-sm font-bold mb-2">Email *</label>
@@ -157,7 +124,7 @@ export default function OnboardingPage() {
 
           {/* Template picker */}
           <div>
-            <label className="block text-sm font-bold mb-4">Pick your style *</label>
+            <label className="block text-sm font-bold mb-4">Pick your business type *</label>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {templateEntries.map((template) => (
                 <button

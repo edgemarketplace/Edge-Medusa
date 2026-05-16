@@ -447,6 +447,12 @@ export default function BuildPage({ params }: BuildPageProps) {
               Connect Stripe
             </a>
           )}
+          <button
+            onClick={() => window.open(`/store/${site?.subdomain || siteId}?preview=true`, '_blank')}
+            className="px-6 py-2 rounded-full border border-black/10 text-sm font-bold hover:bg-black/5 flex items-center gap-2"
+          >
+            👁 Preview Shop
+          </button>
           <button onClick={handleGenerate} disabled={generating} className="px-4 py-2 rounded-full border border-black/10 text-sm font-bold hover:bg-black/5 disabled:opacity-50">
             {generating ? 'Generating...' : '↻ Regenerate'}
           </button>
