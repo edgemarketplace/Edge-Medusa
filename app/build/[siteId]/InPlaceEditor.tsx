@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useCallback } from 'react';
+import React, { useState, useRef, useCallback } from 'react';
 import type { GeneratedSection, InventoryItem, TemplateDefinition, SectionType } from '@/lib/types';
 import { SECTION_LIBRARY, SECTION_CATEGORIES } from '@/lib/section-library';
 
@@ -139,9 +139,10 @@ export default function InPlaceEditor({ sections, inventory, template, siteId, o
 }
 
 // ── Contenteditable text helper ──
-function Editable({ value, onChange, className, tag = 'span', placeholder }: {
+function Editable({ value, onChange, className, style, tag = 'span', placeholder }: {
   value: string; onChange: (v: string) => void;
-  className?: string; tag?: 'span' | 'p' | 'h1' | 'h2' | 'h3';
+  className?: string; style?: React.CSSProperties;
+  tag?: 'span' | 'p' | 'h1' | 'h2' | 'h3';
   placeholder?: string;
 }) {
   const ref = useRef<HTMLElement>(null);
@@ -158,6 +159,7 @@ function Editable({ value, onChange, className, tag = 'span', placeholder }: {
       suppressContentEditableWarning
       onBlur={handleBlur}
       className={`outline-none focus:ring-2 focus:ring-blue-500/30 focus:ring-offset-1 rounded cursor-text transition-all ${className || ''}`}
+      style={style}
       data-placeholder={placeholder}
       dangerouslySetInnerHTML={{ __html: value || '' }}
     />
