@@ -1,4 +1,6 @@
 import Link from 'next/link';
+import { supabaseAdmin } from '@/lib/supabase';
+import { SiteData } from '@/lib/types';
 
 interface SuccessPageProps {
   searchParams: Promise<{ subdomain?: string; url?: string; siteId?: string }>;
@@ -6,7 +8,22 @@ interface SuccessPageProps {
 
 export default async function SuccessPage({ searchParams }: SuccessPageProps) {
   const { subdomain, url, siteId } = await searchParams;
-  const storeUrl = url || (subdomain ? `https://${subdomain}.edgemarketplacehub.com` : null);
+  
+  // If we only have siteId, fetch the site to get subdomain
+  let storeSubdomain = subdomain;
+  if (!storeSubdomain && !url && siteId) {
+    const { data: site } = await supabaseAdmin
+      .from('sites')
+      .select('subdomain')
+      .eq('id', siteId)
+      .single();
+    
+    if (site?.subdomain) {
+      storeSubdomain = site.subdomain;
+    }
+  }
+  
+  const storeUrl = url || (storeSubdomain ? `https://${storeSubdomain}.edgemarketplacehub.com` : null);
 
   return (
     <div className="min-h-screen bg-[#F9F8F6] text-[#1A1A1A] font-sans flex items-center justify-center">
