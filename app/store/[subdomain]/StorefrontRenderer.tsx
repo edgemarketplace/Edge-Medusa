@@ -475,17 +475,19 @@ function SectionRenderer({ section, template, inventory, onAddToCart, site }: {
 
   // Media
   if (type === 'gallery') {
+    const images = data.images || [];
     return (
       <div className="px-8 py-16">
         <h2 className="text-2xl font-serif italic text-center mb-8">{data.title || 'Gallery'}</h2>
-        <div className="grid grid-cols-3 gap-4">
-          {(data.images || []).map((img: any, i: number) => (
-            <img key={i} src={typeof img === 'string' ? img : img.url} alt="" className="w-full h-48 object-cover rounded-xl" />
-          ))}
-          {(!data.images || data.images.length === 0) && (
-            <div className="col-span-3 text-center text-xs text-black/20 py-8">Add images in the editor</div>
-          )}
-        </div>
+        {images.length > 0 ? (
+          <div className="grid grid-cols-3 gap-4">
+            {images.map((img: any, i: number) => (
+              <img key={i} src={typeof img === 'string' ? img : img.url} alt={typeof img === 'object' ? img.alt || '' : ''} className="w-full h-48 object-cover rounded-xl" />
+            ))}
+          </div>
+        ) : (
+          <div className="text-center text-black/20 py-8 text-sm">No images yet — add some in the editor</div>
+        )}
       </div>
     );
   }
