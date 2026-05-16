@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, Suspense } from 'react';
+import { useState, Suspense, useEffect, useCallback } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 
 function EmailGateContent() {
@@ -14,6 +14,19 @@ function EmailGateContent() {
   const [sent, setSent] = useState(false);
   const [error, setError] = useState('');
   const [emailValue, setEmailValue] = useState(email);
+  const [countdown, setCountdown] = useState<number | null>(null);
+
+  // Handle countdown
+  useEffect(() => {
+    if (countdown === null) return;
+    if (countdown === 0) {
+      sessionStorage.setItem(`skipped_email_${siteId}`, 'true');
+      router.push(`/build/${siteId}`);
+      return;
+    }
+    const timer = setTimeout(() => setCountdown(countdown - 1), 1000);
+    return () => clearTimeout(timer);
+  }, [countdown, siteId, router]);
 
   async function handleSendLink() {
     if (!emailValue.trim() || !emailValue.includes('@')) {
@@ -38,8 +51,7 @@ function EmailGateContent() {
   }
 
   function handleSkip() {
-    sessionStorage.setItem(`skipped_email_${siteId}`, 'true');
-    router.push(`/build/${siteId}`);
+    setCountdown(5);
   }
 
   if (sent) {
@@ -61,6 +73,18 @@ function EmailGateContent() {
           <p className="text-xs text-black/30 mt-3">
             You can always sign in later from the builder.
           </p>
+        </div>
+      </div>
+    );
+  }
+
+  // Countdown screen
+  if (countdown !== null) {
+    return (
+      <div className="min-h-screen bg-[#F9F8F6] flex items-center justify-center">
+        <div className="text-center">
+          <h1 className="text-6xl font-bold mb-4 animate-pulse">{countdown}</h1>
+          <p className="text-black/60">Your store is ready...</p>
         </div>
       </div>
     );
