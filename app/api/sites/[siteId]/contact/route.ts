@@ -51,6 +51,8 @@ export async function POST(
         .eq('id', conversation.id);
     }
 
+    if (!conversation) throw new Error('Failed to create or find conversation');
+
     // 2. Insert message
     const { error: msgError } = await supabaseAdmin
       .from('messages')
