@@ -228,51 +228,78 @@ function buildPrompt(
     const def = SECTION_LIBRARY[sec.type];
     const sampleData = buildSampleData(sec.type, businessName, offerings, funnel);
     return `  ${idx + 1}. ${def.label} (${sec.type})
-     Purpose: ${sec.purpose}
-     Tips: ${sec.tips}
-     Data: ${JSON.stringify(sampleData, null, 6)}`;
+    Purpose: ${sec.purpose}
+    Tips: ${sec.tips}
+    Data: ${JSON.stringify(sampleData, null, 6)}`;
   }).join('\n\n');
 
-  return `You are an expert storefront designer creating a premium, conversion-optimized website for "${businessName}" — a ${template.label} business that offers ${offerings}.
+  return `You are an ELITE, conversion-focused copywriter creating a premium storefront for "${businessName}" — a ${template.label} business.
 
-## Business Context
-- Business name: ${businessName}
-- Type: ${template.label} (${businessType})
+## YOUR MISSION
+Generate content that makes visitors IMMEDIATELY want to buy/book. This is NOT a template — it's a custom, high-converting storefront for THIS specific business.
+
+## BUSINESS DNA
+- Name: "${businessName}" (USE THIS IN EVERY HEADLINE)
+- Type: ${businessType}
 - What they sell: ${offerings}
 - Contact: ${contactEmail}
-- Template style: ${template.kicker}${tagline ? `\n- Tagline: ${tagline}` : ''}
+- Tagline: ${tagline || 'N/A'}
 
-## Design Psychology
+## VERTICAL PSYCHOLOGY
 ${funnel.psychology}
 
-## Page Purpose
-${funnel.pagePurpose}
-
-## Content Tone
+## CONTENT TONE
 ${funnel.contentTone}
 
-## Visual Style (Milano-inspired)
+## MILANO VISUAL STYLE
 ${funnel.milanoCues}
 
-## Sections to Generate
+## ⚠️ FORBIDDEN WORDS (Never use these — they're generic/template-speak)
+- "Professional" (unless part of a certification name)
+- "Quality" (too vague — say what makes it quality)
+- "Reliable" (prove it instead)
+- "We deliver" (boring, passive)
+- "Services you can trust" (meaningless)
+- "Your satisfaction guaranteed" (generic)
+- "High-quality" (empty phrase)
+- "Experienced team" (show experience, don't claim it)
 
-You MUST generate ALL of the following sections in order. Each section must have a unique short ID (like "a1b2c3d4"), a type, and a data object with REAL, compelling content — NOT placeholder text.
+## ✅ POWER WORDS TO USE (Make copy sticky)
+Transform, Unlock, Breakthrough, Proven, Secret, Revealed, Finally, Exposed, Truth, Myth, Shocking, Counter-intuitive, Never, Ever, Always, Imagine, Instant, Effortless, Guaranteed, Risk-free, Exclusive, Limited, Now, Today
 
+## HEADLINE FORMULAS (Follow these patterns)
+1. "[Business Name]: [Specific Benefit] in [Timeframe]"
+2. "The [Truth/Secret] About [Industry] That [Authority Figure] Won't Tell You"
+3. "Why [Number]% of [Customers] Fire Their [Competitor Type] (And Why You Should Too)"
+4. "[Business Name] vs. Everyone Else: Here's the [Number]X Difference"
+5. "Stop [Pain Point]. Start [Desired Outcome] with [Business Name]"
+
+## BAD VS GOOD EXAMPLES
+❌ BAD: "Professional results you can see"
+✅ GOOD: "${businessName}: See Why 94% of Our Customers Never Call Anyone Else"
+
+❌ BAD: "We deliver professional epoxy flooring services"
+✅ GOOD: "${businessName}: Your Garage Floor Shouldn't Embarrass You When Neighbors Visit"
+
+❌ BAD: "Complete professional service"
+✅ GOOD: "We've Transformed 500+ Floors in 2 Years — Here's What We Discovered About What Actually Lasts"
+
+## SECTIONS TO GENERATE
 ${sectionInstructions}
 
-## Critical Rules
-1. Every text field must contain REAL, specific, compelling content — never "Lorem ipsum" or "Your text here"
-2. Headlines should be punchy, benefit-driven, and reference the business name or offerings
-3. Testimonials should sound like real customers with specific, believable praise
-4. FAQs should address real concerns a customer of this business type would have
-5. Pricing should be realistic for the business type and market
-6. All copy should sound professional and ready to publish — this is a 15-minute launch promise
-7. Use the sample copy style from the funnel definition as inspiration, but create original content
-8. Generate 2-3 testimonials with different names and perspectives
-9. Generate 2-3 FAQ items that address real customer concerns
-10. For image fields, leave empty string "" — the merchant will add their own photos
+## CRITICAL RULES (Violate these and the store fails)
+1. EVERY headline MUST include "${businessName}" or a specific benefit metric
+2. NO placeholder text. NO "Lorem ipsum". NO "Your text here"
+3. Testimonials: Use FULL names (not "Sarah M."), specific results ("saved $5,000"), and emotional language
+4. FAQs: Address REAL objections ("What if I hate it?", "How long does it really take?") — NOT generic questions
+5. Pricing: Use REAL market rates. Add "Limited time" or scarcity elements
+6. CTAs: Use urgency words ("Book now", "Get instant access", "Start my transformation") — NEVER "Submit" or "Click here"
+7. Imagery: Leave imageUrl EMPTY — merchant adds their own photos later
+8. Write like a HUMAN expert, not an AI. Use contractions (you're, we're, don't)
+9. Every section must feel CUSTOM — if a visitor saw this, they should think "This was written just for me"
+10. Use the sample copy style above as INSPIRATION only — create ORIGINAL content for ${businessName}
 
-## Output Format
+## OUTPUT FORMAT
 Return ONLY valid JSON (no markdown, no code fences) in this exact structure:
 
 {
@@ -282,7 +309,7 @@ Return ONLY valid JSON (no markdown, no code fences) in this exact structure:
   ]
 }
 
-Generate the COMPLETE JSON now. Every section. Every field. Real content.`;
+Generate ALL sections. Every field. Real content. POWERFUL copy. Now.`;
 }
 
 function buildSampleData(type: SectionType, businessName: string, offerings: string, funnel: FunnelDef): Record<string, any> {
