@@ -315,8 +315,12 @@ ${sectionInstructions}
     - Required sections: ${manifest.requiredSections.join(', ')}
     - Max duplicates: ${Object.entries(manifest.maxDuplicates).map(([k,v]) => `${k} (max ${v})`).join(', ')}
     - YOU MUST NOT generate more than the max allowed for any section type
-    - Example: if max is 1 for service-list, generate ONLY ONE service-list section per page
-    - Count your sections before returning JSON to ensure compliance
+    - Example: if max is 1 for service-list, generate ONLY ONE service-list section TOTAL (not per page)
+    - **ONLY ONE header section per site** (pick ONE type: header-simple, header-promo, or header-mega)
+    - **ONLY ONE hero section per site** (pick ONE type: hero-split, hero-visual, hero-products, hero-cta, or hero-trust)
+    - **ONLY ONE footer section per site** (pick ONE type: footer-basic or footer-service)
+    - Count your sections BEFORE returning JSON: if you generated 2 heroes, DELETE one
+    - Pages: homepage (main page), about page, contact page — each with appropriate sections for the business type
 
 ## OUTPUT FORMAT
 Return ONLY valid JSON (no markdown, no code fences) in this exact structure:

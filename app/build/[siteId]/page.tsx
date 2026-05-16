@@ -228,7 +228,11 @@ export default function BuildPage({ params }: BuildPageProps) {
       const res = await fetch(`/api/sites/${siteId}/launch`, { method: 'POST' });
       if (!res.ok) throw new Error('Launch failed');
       const data = await res.json();
-      window.location.href = `/success?subdomain=${data.subdomain}&url=${encodeURIComponent(data.url)}&siteId=${data.siteId || siteId}`;
+      const params = new URLSearchParams();
+      if (data.subdomain) params.set('subdomain', data.subdomain);
+      if (data.url) params.set('url', data.url);
+      params.set('siteId', data.siteId || siteId);
+      window.location.href = `/success?${params.toString()}`;
     } catch (err: any) { setError(err.message); }
     finally { setLaunching(false); }
   }
