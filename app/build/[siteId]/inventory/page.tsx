@@ -496,15 +496,48 @@ function InventoryModal({
             )}
           </div>
 
-          {/* Image URL */}
+          {/* Image Upload */}
           <div>
-            <label className="block text-sm font-bold mb-2">Image URL (optional)</label>
+            <label className="block text-sm font-bold mb-2">Product Image</label>
+            {form.image_url && (
+              <div className="mb-3 relative">
+                <img src={form.image_url} alt={form.name} className="w-full h-48 object-cover rounded-xl" />
+                <button
+                  type="button"
+                  onClick={(e) => { e.stopPropagation(); setForm({ ...form, image_url: '' }); }}
+                  className="absolute top-2 right-2 bg-red-500 text-white w-6 h-6 rounded-full text-xs hover:bg-red-600"
+                >
+                  ×
+                </button>
+              </div>
+            )}
+            <input
+              type="file"
+              accept="image/*"
+              onChange={async (e) => {
+                const file = e.target.files?.[0];
+                if (!file) return;
+                const formData = new FormData();
+                formData.append('file', file);
+                formData.append('siteId', siteId);
+                try {
+                  const res = await fetch(`/api/upload`, { method: 'POST', body: formData });
+                  if (!res.ok) throw new Error('Upload failed');
+                  const { url } = await res.json();
+                  setForm({ ...form, image_url: url });
+                } catch (err) {
+                  alert('Image upload failed. Try URL instead.');
+                }
+              }}
+              className="w-full border border-black/10 rounded-2xl px-5 py-3 text-sm file:mr-4 file:py-1 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-medium file:bg-[#F9F8F6] hover:file:bg-[#F0F0F0]"
+            />
+            <p className="text-xs text-black/40 mt-1">Or enter URL below</p>
             <input
               type="text"
               value={form.image_url || ''}
               onChange={(e) => setForm({ ...form, image_url: e.target.value })}
               placeholder="https://..."
-              className="w-full border border-black/10 rounded-2xl px-5 py-3 text-sm focus:outline-none focus:border-black/30"
+              className="mt-2 w-full border border-black/10 rounded-2xl px-5 py-3 text-sm focus:outline-none focus:border-black/30"
             />
           </div>
 
