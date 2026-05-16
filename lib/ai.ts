@@ -2,6 +2,7 @@ import OpenAI from 'openai';
 import { GeneratedSection, TemplateFamily, SectionType } from './types';
 import { TEMPLATES } from './templates';
 import { TEMPLATE_MANIFESTS, SECTION_LIBRARY } from './section-library';
+import { processImagesInPages } from './unsplash';
 
 let openaiInstance: OpenAI | null = null;
 
@@ -289,27 +290,44 @@ ${sectionInstructions}
 
 ## CRITICAL RULES (Violate these and the store fails)
 1. EVERY headline MUST include "${businessName}" or a specific benefit metric
-2. NO placeholder text. NO "Lorem ipsum". NO "Your text here"
+2. NO placeholder text. NO "Lorem ipsum". NO "Your text here". NO "Add images in the editor"
 3. Testimonials: Use FULL names (not "Sarah M."), specific results ("saved $5,000"), and emotional language
 4. FAQs: Address REAL objections ("What if I hate it?", "How long does it really take?") — NOT generic questions
 5. Pricing: Use REAL market rates. Add "Limited time" or scarcity elements
 6. CTAs: Use urgency words ("Book now", "Get instant access", "Start my transformation") — NEVER "Submit" or "Click here"
-7. Imagery: Leave imageUrl EMPTY — merchant adds their own photos later
+7. **IMAGES: For every imageUrl field, provide a SPECIFIC Unsplash search term (not empty string). Examples: "epoxy garage floor", "taco catering event", "floral wedding bouquet", "personal training session". The system will auto-fetch the image.
 8. Write like a HUMAN expert, not an AI. Use contractions (you're, we're, don't)
 9. Every section must feel CUSTOM — if a visitor saw this, they should think "This was written just for me"
-10. Use the sample copy style above as INSPIRATION only — create ORIGINAL content for ${businessName}
+10. Generate ALL pages: homepage + about + contact (3 pages total, each with appropriate sections)
+11. Use the sample copy style above as INSPIRATION only — create ORIGINAL content for ${businessName}
 
 ## OUTPUT FORMAT
 Return ONLY valid JSON (no markdown, no code fences) in this exact structure:
 
 {
-  "sections": [
-    { "id": "<unique-8-char-id>", "type": "<section-type>", "data": { ... } },
-    ...
+  "pages": [
+    {
+      "slug": "home",
+      "title": "Home",
+      "sections": [
+        { "id": "<unique-8-char-id>", "type": "<section-type>", "data": { ... } },
+        ...
+      ]
+    },
+    {
+      "slug": "about",
+      "title": "About",
+      "sections": [ ... ]
+    },
+    {
+      "slug": "contact",
+      "title": "Contact",
+      "sections": [ ... ]
+    }
   ]
 }
 
-Generate ALL sections. Every field. Real content. POWERFUL copy. Now.`;
+Generate ALL pages. ALL sections. Every field. Real content. POWERFUL copy. Now.`;
 }
 
 function buildSampleData(type: SectionType, businessName: string, offerings: string, funnel: FunnelDef, businessType: string): Record<string, any> {
@@ -546,7 +564,7 @@ export async function generateStorefront(
   offerings: string = '',
   contactEmail: string = '',
   tagline: string = '',
-): Promise<GeneratedSection[]> {
+): Promise<{ pages: Array<{ slug: string; title: string; sections: GeneratedSection[] }> }> {
   const prompt = buildPrompt(businessName, businessType, offerings, contactEmail, tagline);
 
   const openai = getOpenAI();
@@ -566,16 +584,26 @@ export async function generateStorefront(
 
   const parsed = JSON.parse(cleaned);
 
-  // Validate and fix sections
-  const sections: GeneratedSection[] = (parsed.sections || []).map((s: any) => {
-    const type = s.type as SectionType;
-    const def = SECTION_LIBRARY[type];
-    return {
-      id: s.id || genId(),
-      type,
-      data: def ? { ...def.defaultData, ...(s.data || {}) } : (s.data || {}),
-    };
-  });
+  // Handle new pages format or fallback to old sections format
+  const pages = parsed.pages || [{ slug: 'home', title: 'Home', sections: parsed.sections || [] }];
 
-  return sections;
+  // Validate and fix sections in each page
+  const validatedPages = pages.map((page: any) => ({
+    slug: page.slug || 'home',
+    title: page.title || 'Home',
+    sections: (page.sections || []).map((s: any) => {
+      const type = s.type as SectionType;
+      const def = SECTION_LIBRARY[type];
+      return {
+        id: s.id || genId(),
+        type,
+        data: def ? { ...def.defaultData, ...(s.data || {}) } : (s.data || {}),
+      };
+    }),
+  }));
+
+  // Process images - replace search terms with actual Unsplash URLs
+  const pagesWithImages = await processImagesInPages(validatedPages);
+
+  return { pages: pagesWithImages };
 }

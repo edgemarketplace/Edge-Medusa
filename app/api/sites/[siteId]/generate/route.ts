@@ -30,7 +30,7 @@ export async function POST(
 
   const { business_name, business_type, contact_email } = site;
 
-  const sections = await generateStorefront(
+  const { pages } = await generateStorefront(
     business_name,
     business_type,
     '', // offerings no longer collected
@@ -38,7 +38,7 @@ export async function POST(
     '', // tagline no longer collected
   );
 
-  const templateData = { sections };
+  const templateData = { pages };
 
   const { error: updateError } = await supabaseAdmin
     .from('sites')
@@ -55,5 +55,5 @@ export async function POST(
     );
   }
 
-  return NextResponse.json({ sections });
+  return NextResponse.json({ pages });
 }
