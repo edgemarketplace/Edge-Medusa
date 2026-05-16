@@ -104,76 +104,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Example Stores */}
-      <section id="examples" className="max-w-7xl mx-auto px-6 pb-32">
-        <div className="text-center mb-16">
-          <h2 className="text-3xl font-serif italic mb-4">Example stores</h2>
-          <p className="text-black/60 max-w-2xl mx-auto">
-            See what's possible with Edge Marketplace Hub. Real stores, real businesses, real results.
-          </p>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {/* Retail Core */}
-          <a href="/store/retail-example" className="bg-white rounded-3xl p-6 border border-black/5 hover:border-black/20 transition-all hover:scale-[1.02] block">
-            <div className="w-full h-48 bg-[#F9F8F6] rounded-2xl mb-4 flex items-center justify-center">
-              <span className="text-4xl">🛍️</span>
-            </div>
-            <h3 className="font-bold text-lg mb-1">Urban Threads</h3>
-            <p className="text-sm text-black/50 mb-2">Retail Core</p>
-            <p className="text-sm text-black/60">Fashion boutique with full catalog</p>
-          </a>
-
-          {/* Service Pro */}
-          <a href="/store/service-example" className="bg-white rounded-3xl p-6 border border-black/5 hover:border-black/20 transition-all hover:scale-[1.02] block">
-            <div className="w-full h-48 bg-[#F9F8F6] rounded-2xl mb-4 flex items-center justify-center">
-              <span className="text-4xl">🔧</span>
-            </div>
-            <h3 className="font-bold text-lg mb-1">ProFix Solutions</h3>
-            <p className="text-sm text-black/50 mb-2">Service Pro</p>
-            <p className="text-sm text-black/60">Professional services with quotes</p>
-          </a>
-
-          {/* Food & Catering */}
-          <a href="/store/food-example" className="bg-white rounded-3xl p-6 border border-black/5 hover:border-black/20 transition-all hover:scale-[1.02] block">
-            <div className="w-full h-48 bg-[#F9F8F6] rounded-2xl mb-4 flex items-center justify-center">
-              <span className="text-4xl">🍽️</span>
-            </div>
-            <h3 className="font-bold text-lg mb-1">Savory Catering</h3>
-            <p className="text-sm text-black/50 mb-2">Food & Catering</p>
-            <p className="text-sm text-black/60">Menus and event packages</p>
-          </a>
-
-          {/* Artisan Market */}
-          <a href="/store/artisan-example" className="bg-white rounded-3xl p-6 border border-black/5 hover:border-black/20 transition-all hover:scale-[1.02] block">
-            <div className="w-full h-48 bg-[#F9F8F6] rounded-2xl mb-4 flex items-center justify-center">
-              <span className="text-4xl">🎨</span>
-            </div>
-            <h3 className="font-bold text-lg mb-1">Clay & Craft</h3>
-            <p className="text-sm text-black/50 mb-2">Artisan Market</p>
-            <p className="text-sm text-black/60">Handmade goods with story</p>
-          </a>
-
-          {/* Event & Floral */}
-          <a href="/store/floral-example" className="bg-white rounded-3xl p-6 border border-black/5 hover:border-black/20 transition-all hover:scale-[1.02] block">
-            <div className="w-full h-48 bg-[#F9F8F6] rounded-2xl mb-4 flex items-center justify-center">
-              <span className="text-4xl">💐</span>
-            </div>
-            <h3 className="font-bold text-lg mb-1">Petal & Vine</h3>
-            <p className="text-sm text-black/50 mb-2">Event & Floral</p>
-            <p className="text-sm text-black/60">Premium event florals</p>
-          </a>
-
-          {/* Coach & Educator */}
-          <a href="/store/coach-example" className="bg-white rounded-3xl p-6 border border-black/5 hover:border-black/20 transition-all hover:scale-[1.02] block">
-            <div className="w-full h-48 bg-[#F9F8F6] rounded-2xl mb-4 flex items-center justify-center">
-              <span className="text-4xl">🎓</span>
-            </div>
-            <h3 className="font-bold text-lg mb-1">Growth Coach</h3>
-            <p className="text-sm text-black/50 mb-2">Coach & Educator</p>
-            <p className="text-sm text-black/60">Transformational coaching</p>
-          </a>
-        </div>
-      </section>
+      {/* Pricing Preview */}
 
       {/* Pricing Preview */}
       <section id="pricing" className="max-w-7xl mx-auto px-6 pb-32">
@@ -257,52 +188,21 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Demo Sites Showcase */}
-      <section className="max-w-7xl mx-auto px-6 py-20">
-        <h2 className="text-3xl font-serif italic mb-12 text-center">Example stores</h2>
-        
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-          {[
-            { name: 'Noir Atelier', type: 'retail-core', subdomain: 'noiratelier', desc: 'Luxury fashion & accessories' },
-            { name: 'Cedar & Forge', type: 'food-catering', subdomain: 'cedarandforge', desc: 'Farm-to-table catering' },
-            { name: 'Bloom & Lore', type: 'event-floral', subdomain: 'bloomandlore', desc: 'Editorial florals & events' },
-            { name: 'Earth & Ember', type: 'artisan-market', subdomain: 'earthandember', desc: 'Hand-thrown ceramics' },
-            { name: 'Vantage Coaching', type: 'coach-educator', subdomain: 'vantagecoaching', desc: 'Executive coaching' },
-            { name: 'Apex Consulting', type: 'service-pro', subdomain: 'apexconsulting', desc: 'Business transformation' },
-          ].map((site) => (
-            <a
-              key={site.subdomain}
-              href={`https://${site.subdomain}.edgemarketplacehub.com`}
-              target="_blank"
-              className="group block border border-black/5 rounded-2xl p-6 hover:border-black/20 transition-all hover:-translate-y-1"
-            >
-              <div className="aspect-[4/3] bg-[#F9F8F6] rounded-xl mb-4 flex items-center justify-center">
-                <div className="text-center">
-                  <div className="text-lg font-bold mb-1">{site.name}</div>
-                  <div className="text-sm text-black/40">{site.type}</div>
-                </div>
-              </div>
-              <h3 className="font-bold mb-1">{site.name}</h3>
-              <p className="text-sm text-black/60 mb-3">{site.desc}</p>
-              <div className="flex items-center justify-between">
-                <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full">
-                  Generated in under 5 minutes
-                </span>
-                <button className="text-xs bg-black text-white px-3 py-1.5 rounded-full hover:scale-105 transition-transform">
-                  View live site →
-                </button>
-              </div>
-            </a>
-          ))}
-        </div>
-
-        <div className="text-center">
-          <button
-            onClick={handleStart}
-            className="bg-[#2D2D2D] text-white px-8 py-3 rounded-full font-bold hover:scale-[1.02] transition-transform"
-          >
-            Create your own similar site
-          </button>
+      {/* Editorial commerce - Demo Links */}
+      <section className="max-w-7xl mx-auto px-6 py-12 border-t border-black/5">
+        <p className="text-center text-sm text-black/40 mb-6">Editorial commerce platform · Retail Core: Built for shops and product businesses that need strong catalog presentation and fast conversion paths.</p>
+        <div className="flex flex-wrap justify-center gap-4">
+          <a href="https://noiratelier.edgemarketplacehub.com" className="text-sm text-black/60 hover:text-black transition-colors">Noir Atelier</a>
+          <span className="text-black/20">·</span>
+          <a href="https://cedarandforge.edgemarketplacehub.com" className="text-sm text-black/60 hover:text-black transition-colors">Cedar & Forge</a>
+          <span className="text-black/20">·</span>
+          <a href="https://bloomandlore.edgemarketplacehub.com" className="text-sm text-black/60 hover:text-black transition-colors">Bloom & Lore</a>
+          <span className="text-black/20">·</span>
+          <a href="https://earthandember.edgemarketplacehub.com" className="text-sm text-black/60 hover:text-black transition-colors">Earth & Ember</a>
+          <span className="text-black/20">·</span>
+          <a href="https://vantagecoaching.edgemarketplacehub.com" className="text-sm text-black/60 hover:text-black transition-colors">Vantage Coaching</a>
+          <span className="text-black/20">·</span>
+          <a href="https://apexconsulting.edgemarketplacehub.com" className="text-sm text-black/60 hover:text-black transition-colors">Apex Consulting</a>
         </div>
       </section>
 
