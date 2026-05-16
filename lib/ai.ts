@@ -580,6 +580,8 @@ export async function generateStorefront(
       const openai = getOpenAI();
       const prompt = buildPrompt(businessName, businessType, offerings, contactEmail, tagline, preset);
 
+      console.log(`[AI] Starting generation for ${businessName} (${businessType})`);
+
       const response = await openai.chat.completions.create({
         model: 'gpt-4o-2024-08-06',
         messages: [{ role: 'user', content: prompt }],
@@ -588,28 +590,44 @@ export async function generateStorefront(
       });
 
       const content = response.choices[0].message.content || '';
-      const jsonMatch = content.match(/\{[\s\S]*\}/);
-      if (jsonMatch) {
-        const parsed = JSON.parse(jsonMatch[0]);
-        if (parsed.pages && Array.isArray(parsed.pages)) {
-          const pages = parsed.pages.map((page: any) => ({
-            slug: page.slug,
-            title: page.title,
-            sections: page.sections.map((sec: any) => ({
-              id: sec.id || genId(),
-              type: sec.type,
-              data: sec.data || {},
-            })),
-          }));
+      console.log(`[AI] Raw response length: ${content.length} chars`);
+      console.log(`[AI] First 200 chars: ${content.substring(0, 200)}`);
 
-          const pagesWithImages = await processImagesInPages(pages);
-          console.log(`AI generation succeeded for ${businessName}`);
-          return { pages: pagesWithImages };
-        }
+      const jsonMatch = content.match(/\{[\s\S]*\}/);
+      if (!jsonMatch) {
+        console.error(`[AI] No JSON found in response for ${businessName}`);
+        console.error(`[AI] Full response: ${content}`);
+        throw new Error('No JSON in AI response');
+      }
+
+      const parsed = JSON.parse(jsonMatch[0]);
+      console.log(`[AI] Parsed keys: ${Object.keys(parsed)}`);
+      console.log(`[AI] Pages count: ${parsed.pages?.length || 0}`);
+
+      if (parsed.pages && Array.isArray(parsed.pages)) {
+        const pages = parsed.pages.map((page: any) => ({
+          slug: page.slug,
+          title: page.title,
+          sections: page.sections.map((sec: any) => ({
+            id: sec.id || genId(),
+            type: sec.type,
+            data: sec.data || {},
+          })),
+        }));
+
+        const pagesWithImages = await processImagesInPages(pages);
+        console.log(`[AI] SUCCESS for ${businessName} - ${pagesWithImages.length} pages generated`);
+        return { pages: pagesWithImages };
+      } else {
+        console.error(`[AI] Invalid format for ${businessName}:`, parsed);
+        throw new Error('Invalid AI response format');
       }
     } catch (err) {
-      console.error('AI generation failed, falling back to sample data:', err);
+      console.error(`[AI] FAILED for ${businessName}:`, err);
+      console.error(`[AI] Stack:`, err instanceof Error ? err.stack : 'N/A');
     }
+  } else {
+    console.log(`[AI] No OPENAI_API_KEY found, using fallback for ${businessName}`);
   }
 
   // Fallback: Use fixed templates with sample data
