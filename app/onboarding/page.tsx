@@ -17,12 +17,12 @@ const STYLE_PRESETS = [
     preview: ['font-serif italic', 'font-serif italic'],
   },
   {
-    id: 'midnight',
-    name: 'Midnight',
-    desc: 'Dark, dramatic, bold — premium and high contrast',
-    accent: '#6366F1',
-    bg: '#0F0F14',
-    preview: ['text-white', 'text-indigo-400'],
+    id: 'ocean',
+    name: 'Ocean',
+    desc: 'Calm, deep blues and soft teals — professional and soothing',
+    accent: '#0891B2',
+    bg: '#F0F9FF',
+    preview: ['text-sky-900', 'text-cyan-600'],
   },
   {
     id: 'sunlit',
