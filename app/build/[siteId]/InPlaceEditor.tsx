@@ -1,8 +1,8 @@
 'use client';
 
 import { useState, useRef, useCallback } from 'react';
-import type { GeneratedSection, InventoryItem, TemplateDefinition } from '@/lib/types';
-import { SECTION_LIBRARY, SECTION_CATEGORIES, SectionType } from '@/lib/section-library';
+import type { GeneratedSection, InventoryItem, TemplateDefinition, SectionType } from '@/lib/types';
+import { SECTION_LIBRARY, SECTION_CATEGORIES } from '@/lib/section-library';
 
 interface InPlaceEditorProps {
   sections: GeneratedSection[];
