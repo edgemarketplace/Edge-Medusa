@@ -1,16 +1,14 @@
-import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
-import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
+import { supabaseAdmin } from '@/lib/supabase';
 
 export async function GET(
   req: Request,
   { params }: { params: { siteId: string } }
 ) {
   const { siteId } = params;
-  const supabase = createRouteHandlerClient({ cookies });
 
   try {
-    const { data: conversations, error } = await supabase
+    const { data: conversations, error } = await supabaseAdmin
       .from('conversations')
       .select('*')
       .eq('site_id', siteId)

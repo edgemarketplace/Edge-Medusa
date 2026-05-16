@@ -1,6 +1,5 @@
-import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
-import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
+import { supabaseAdmin } from '@/lib/supabase';
 
 export async function POST(
   req: Request,
@@ -13,11 +12,9 @@ export async function POST(
     return NextResponse.json({ error: 'Email and message are required' }, { status: 400 });
   }
 
-  const supabase = createRouteHandlerClient({ cookies });
-
   try {
     // 1. Find or create conversation
-    let { data: conversation, error: convError } = await supabase
+    let { data: conversation, error: convError } = await supabaseAdmin
       .from('conversations')
       .select('id')
       .eq('site_id', siteId)
@@ -27,7 +24,7 @@ export async function POST(
     if (convError && convError.code !== 'PGRST116') throw convError;
 
     if (!conversation) {
-      const { data: newConv, error: createError } = await supabase
+      const { data: newConv, error: createError } = await supabaseAdmin
         .from('conversations')
         .insert({
           site_id: siteId,
@@ -44,7 +41,7 @@ export async function POST(
       conversation = newConv;
     } else {
       // Update existing conversation
-      await supabase
+      await supabaseAdmin
         .from('conversations')
         .update({
           last_message: message,
@@ -55,7 +52,7 @@ export async function POST(
     }
 
     // 2. Insert message
-    const { error: msgError } = await supabase
+    const { error: msgError } = await supabaseAdmin
       .from('messages')
       .insert({
         conversation_id: conversation.id,

@@ -547,7 +547,6 @@ export default function BuildPage({ params }: BuildPageProps) {
   };
 
   return (
-  return (
     <div className="min-h-screen bg-[#F9F8F6] text-[#1A1A1A] flex">
       {/* ── SIDEBAR ── */}
       <div className="w-72 fixed inset-y-0 left-0 bg-white border-r border-black/5 z-50 flex flex-col shadow-[10px_0_40px_-15px_rgba(0,0,0,0.03)]">
