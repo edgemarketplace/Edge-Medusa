@@ -1,5 +1,4 @@
 import OpenAI from 'openai';
-import { GoogleGenerativeAI } from '@google/generative-ai';
 import { GeneratedSection, TemplateFamily, SectionType } from './types';
 import { TEMPLATES } from './templates';
 import { TEMPLATE_MANIFESTS, SECTION_LIBRARY, PAGE_TEMPLATES } from './section-library';
@@ -628,29 +627,7 @@ export async function generateSiteContent(
   const promptText = buildPrompt(businessName, businessType, offerings, contactEmail, tagline, preset);
 
   try {
-    // 1. Try Gemini Path
-    if (process.env.GOOGLE_API_KEY) {
-      try {
-        const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY!);
-        const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
-        
-        const result = await model.generateContent(promptText);
-        const text = result.response.text();
-        
-        const jsonMatch = text.match(/\{[\s\S]*\}/);
-        if (jsonMatch) {
-          const parsed = JSON.parse(jsonMatch[0]);
-          if (parsed && parsed.pages && Array.isArray(parsed.pages) && parsed.pages.length > 0) {
-            await processImagesInPages(parsed.pages);
-            return parsed;
-          }
-        }
-      } catch (geminiError) {
-        console.error('Gemini generation failed, falling back to OpenAI:', geminiError);
-      }
-    }
-    
-    // 2. Try OpenAI Path
+    // Try OpenAI Path
     if (process.env.OPENAI_API_KEY) {
       try {
         const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
@@ -675,7 +652,7 @@ export async function generateSiteContent(
       }
     }
     
-    // 3. Ultimate Fallback
+    // Fallback
     console.warn('All AI paths failed. Using hardcoded fallback structure.');
     return getFallbackSiteStructure(businessName, businessType);
   } catch (error) {
@@ -783,15 +760,6 @@ export async function expandBusinessDescription(
   Expanded Description (Professional, clear, concise):`;
 
   try {
-    if (process.env.GOOGLE_API_KEY) {
-      const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY!);
-      const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
-      
-      const result = await model.generateContent(expansionPrompt);
-      const text = result.response.text().trim();
-      return text.replace(/^"|"$/g, ''); // Remove quotes if present
-    }
-    
     if (process.env.OPENAI_API_KEY) {
       const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
       const response = await openai.chat.completions.create({
@@ -806,7 +774,7 @@ export async function expandBusinessDescription(
     
     return prompt;
   } catch (error) {
-    console.error('Expansion error:', error);
+    console.error('Expansion failed:', error);
     return prompt;
   }
 }
