@@ -8,7 +8,6 @@ const templateEntries = Object.values(TEMPLATES);
 
 export default function HomePage() {
   const router = useRouter();
-  const [showOnboarding, setShowOnboarding] = useState(false);
   const [selectedType, setSelectedType] = useState<string>('');
 
   const handleStart = () => {
@@ -57,7 +56,7 @@ export default function HomePage() {
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <button
-              onClick={() => setShowOnboarding(true)}
+              onClick={handleStart}
               className="bg-[#2D2D2D] text-white px-8 py-5 rounded-full text-lg font-bold hover:scale-[1.02] transition-transform"
             >
               Start building →
@@ -84,7 +83,7 @@ export default function HomePage() {
               key={template.family}
               onClick={() => {
                 setSelectedType(template.family);
-                setShowOnboarding(true);
+                handleStart();
               }}
               className="text-left bg-white rounded-3xl p-8 border border-black/5 hover:border-black/20 hover:shadow-lg transition-all group"
             >
@@ -212,7 +211,7 @@ export default function HomePage() {
               </li>
             </ul>
             <button
-              onClick={() => { setSelectedType(''); setShowOnboarding(true); }}
+              onClick={handleStart}
               className="w-full border border-black/10 py-4 rounded-full font-bold hover:border-black/30 transition-colors"
             >
               Start free
@@ -249,12 +248,38 @@ export default function HomePage() {
               </li>
             </ul>
             <button
-              onClick={() => { setSelectedType(''); setShowOnboarding(true); }}
+              onClick={handleStart}
               className="w-full bg-white text-[#2D2D2D] py-4 rounded-full font-bold hover:bg-white/90 transition-colors"
             >
               Start Pro trial
             </button>
           </div>
+        </div>
+      </section>
+
+      {/* Email Signup */}
+      <section className="max-w-7xl mx-auto px-6 py-20 text-center">
+        <div className="max-w-md mx-auto">
+          <h3 className="font-bold text-2xl mb-2">Get started today</h3>
+          <p className="text-black/60 mb-6 text-sm">
+            No password needed. We'll email you a magic link.
+          </p>
+          <form className="flex flex-col sm:flex-row gap-3" onSubmit={(e) => { e.preventDefault(); handleStart(); }}>
+            <input
+              type="email"
+              placeholder="pembertonventures@gmail.com"
+              className="flex-1 px-4 py-3 border border-black/10 rounded-full text-sm focus:outline-none focus:border-black/30"
+            />
+            <button
+              type="submit"
+              className="bg-[#2D2D2D] text-white px-6 py-3 rounded-full text-sm font-bold hover:scale-[1.02] transition-transform whitespace-nowrap"
+            >
+              Create account & send login link
+            </button>
+          </form>
+          <p className="text-xs text-black/40 mt-4">
+            <a href="/onboarding" className="hover:text-black transition-colors">Continue for later →</a>
+          </p>
         </div>
       </section>
 
@@ -277,33 +302,6 @@ export default function HomePage() {
           </p>
         </div>
       </footer>
-
-      {/* Quick Onboarding Modal */}
-      {showOnboarding && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-6">
-          <div className="bg-white rounded-3xl p-8 max-w-md w-full">
-            <h3 className="font-bold text-2xl mb-4">Quick start</h3>
-            <p className="text-black/60 mb-6">
-              Tell us your business name and email, pick a type, and we'll build your store in minutes.
-            </p>
-            <button
-              onClick={() => {
-                setShowOnboarding(false);
-                handleStart();
-              }}
-              className="w-full bg-[#2D2D2D] text-white py-4 rounded-full font-bold hover:scale-[1.02] transition-transform"
-            >
-              Continue to onboarding →
-            </button>
-            <button
-              onClick={() => setShowOnboarding(false)}
-              className="w-full mt-3 text-sm text-black/40 hover:text-black transition-colors"
-            >
-              Cancel
-            </button>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
