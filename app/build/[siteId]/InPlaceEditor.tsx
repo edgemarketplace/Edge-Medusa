@@ -425,12 +425,12 @@ function SectionPicker({ onSelect, onClose }: { onSelect: (type: string) => void
           <h3 className="font-bold text-lg">Add a section</h3>
           <button onClick={onClose} className="text-black/40 hover:text-black text-xl">✕</button>
         </div>
-        {Object.entries(SECTION_CATEGORIES).map(([cat, types]) => (
-          <div key={cat} className="mb-5">
-            <p className="text-xs uppercase tracking-widest font-bold text-black/35 mb-2">{cat}</p>
+        {SECTION_CATEGORIES.map(cat => (
+          <div key={cat.category} className="mb-5">
+            <p className="text-xs uppercase tracking-widest font-bold text-black/35 mb-2">{cat.label}</p>
             <div className="grid grid-cols-2 gap-2">
-              {(types as string[]).map(type => {
-                const def = SECTION_LIBRARY[type as SectionType];
+              {cat.types.map(type => {
+                const def = SECTION_LIBRARY[type];
                 return def ? (
                   <button
                     key={type}
