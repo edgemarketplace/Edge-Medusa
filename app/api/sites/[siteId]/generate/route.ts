@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
-import { generateStorefront } from '@/lib/ai';
+import { generateSiteContent } from '@/lib/ai';
 
 export async function POST(
   request: NextRequest,
@@ -30,7 +30,7 @@ export async function POST(
 
   const { business_name, business_type, contact_email } = site;
 
-  const { pages } = await generateStorefront(
+  const { pages } = await generateSiteContent(
     business_name,
     business_type,
     '', // offerings no longer collected

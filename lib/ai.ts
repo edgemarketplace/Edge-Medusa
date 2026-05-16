@@ -9,210 +9,277 @@ let openaiInstance: OpenAI | null = null;
 
 function getOpenAI(): OpenAI {
   if (!openaiInstance) {
-    if (!process.env.OPENAI_API_KEY) {
-      throw new Error('OPENAI_API_KEY is required');
+    if (!process.env.OPENAI_API_KEY && !process.env.GOOGLE_API_KEY) {
+      throw new Error('OPENAI_API_KEY or GOOGLE_API_KEY is required');
     }
-    openaiInstance = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+    // Prefer Gemini if available, otherwise OpenAI
+    if (process.env.GOOGLE_API_KEY) {
+      // Will use Gemini via different path
+      throw new Error('Use Gemini path instead');
+    }
+    openaiInstance = new OpenAI({ apiKey: process.env.OPENAI_API_KEY! });
   }
   return openaiInstance;
 }
 
-// --- Vertical-specific funnel definitions ---
+// --- Template System: Fixed Structural Recipes ---
 
-interface FunnelDef {
-  psychology: string;
-  pagePurpose: string;
-  requiredSections: { type: SectionType; purpose: string; tips: string }[];
-  contentTone: string;
-  milanoCues: string;
-  sampleCopy: Record<string, string[]>;
+interface TemplateSystemConfig {
+  templateName: string;
+  industry: string;
+  primaryGoal: string;
+  designPersonality: string;
+  conversionType: string;
+  referenceModel: string;
+  recommendedBusinesses: string[];
+  coreSectionStack: { type: SectionType; purpose: string; required: boolean }[];
+  optionalSections: SectionType[];
+  styleVariations: string[];
+  randomizationRules: {
+    allowed: string[];
+    restricted: string[];
+  };
+  contentPriorities: string[];
+  mobileBehavior: string;
+  trustElements: string[];
+  ctaStrategy: {
+    primary: string[];
+    secondary: string[];
+  };
+  fallbackLogic: string;
 }
 
-const FUNNEL_DEFS: Record<TemplateFamily, FunnelDef> = {
+const TEMPLATE_SYSTEM: Record<TemplateFamily, TemplateSystemConfig> = {
   'retail-core': {
-    psychology: 'discovery + desire + trust. Customers browse, fall in love with products, need social proof to convert.',
-    pagePurpose: 'Establish brand identity, feature collections, drive browsing and purchase.',
-    requiredSections: [
-      { type: 'header-simple', purpose: 'Clean navigation that doesn\'t distract from products', tips: 'Minimal links, prominent logo, subtle CTA' },
-      { type: 'hero-visual', purpose: 'Editorial brand moment — oversized imagery, serif headline', tips: 'Full-bleed lifestyle image, muted overlay, confident serif typography' },
-      { type: 'featured-collection', purpose: 'Curated browsing — 4 hero products with large imagery', tips: 'Large product cards, minimal text, let images sell' },
-      { type: 'product-grid', purpose: 'Full catalog browsing with filters', tips: 'Clean grid, hover states, quick-add buttons' },
-      { type: 'testimonials', purpose: 'Social proof to convert browsers', tips: 'Real-sounding names, specific praise, star ratings' },
-      { type: 'newsletter', purpose: 'Capture emails for return visits', tips: 'Simple signup, promise exclusivity' },
-      { type: 'footer-commerce', purpose: 'Trust signals, links, newsletter', tips: 'Clean columns, payment icons, social links' },
+    templateName: 'CATALOG LUXE',
+    industry: 'Retail Core',
+    primaryGoal: 'Fast product discovery with premium brand perception',
+    designPersonality: 'Editorial luxury storefront',
+    conversionType: 'Direct ecommerce purchase',
+    referenceModel: 'Houseplant',
+    recommendedBusinesses: ['premium retail', 'wellness products', 'gift shops', 'home goods', 'lifestyle brands', 'curated ecommerce'],
+    coreSectionStack: [
+      { type: 'header-promo', purpose: 'Announcement bar for seasonal offers', required: true },
+      { type: 'header-mega', purpose: 'Mega navigation for product discovery', required: true },
+      { type: 'hero-products', purpose: 'Hero with featured products', required: true },
+      { type: 'featured-collection', purpose: 'Curated browsing with large imagery', required: true },
+      { type: 'product-grid', purpose: 'Full catalog browsing', required: true },
+      { type: 'collection-carousel', purpose: 'Category-based shopping', required: true },
+      { type: 'brand-story', purpose: 'Brand identity and mission', required: true },
+      { type: 'founder-note', purpose: 'Founder authenticity and story', required: false },
+      { type: 'reviews', purpose: 'Social proof for conversion', required: true },
+      { type: 'faq', purpose: 'Address purchase objections', required: true },
+      { type: 'newsletter', purpose: 'Email capture for retention', required: true },
+      { type: 'footer-commerce', purpose: 'Trust signals and navigation', required: true },
     ],
-    contentTone: 'Confident, curated, editorial. Short punchy headlines. Product descriptions that evoke feeling, not just features.',
-    milanoCues: 'Oversized editorial imagery. Whitespace-heavy layouts. Serif headlines (playfair display style). Muted luxury palette (cream, charcoal, sage, terracotta). Horizontal collection grids. Magazine-style product spacing.',
-    sampleCopy: {
-      heroHeading: ['Curated for the modern home', 'Thoughtfully designed, beautifully made', 'Where style meets substance', 'Discover your new favorites'],
-      heroSubheading: ['Explore our collection of handpicked pieces designed to elevate everyday living.', 'Each piece is carefully sourced and crafted with intention.', 'Timeless design for the modern lifestyle.'],
-      ctaText: ['Shop the collection', 'Explore now', 'Discover more', 'View all'],
-      testimonialQuotes: [
-        'The quality is incredible — everything arrived beautifully packaged.',
-        'I get compliments every time I wear their pieces. Truly unique.',
-        'Finally found a brand that matches my aesthetic perfectly.',
-        'Fast shipping, beautiful products. Will definitely order again.',
-      ],
+    optionalSections: ['best-sellers', 'logo-bar', 'stats', 'press', 'editorial-split'],
+    styleVariations: ['Dark Luxury', 'Clean Minimal', 'Earthy Maker', 'Colorful Lifestyle', 'Modern Monochrome'],
+    randomizationRules: {
+      allowed: ['hero layout', 'image crop style', 'review density', 'featured collection position', 'founder section placement', 'typography pairing', 'card corner radius', 'product grid spacing'],
+      restricted: ['navigation structure', 'checkout flow', 'product hierarchy', 'CTA placement', 'section order in core stack'],
     },
+    contentPriorities: ['Featured products', 'Collection identity', 'Brand credibility', 'Product storytelling', 'Social proof', 'Purchase confidence'],
+    mobileBehavior: 'Stack sections vertically, maintain CTA visibility, collapse mega menu to hamburger',
+    trustElements: ['customer reviews', 'shipping guarantees', 'featured press', 'sustainability icons', 'secure checkout indicators'],
+    ctaStrategy: {
+      primary: ['Shop Now', 'Explore Collection', 'View Best Sellers'],
+      secondary: ['Learn the Story', 'Meet the Founder'],
+    },
+    fallbackLogic: 'If product images unavailable, use Unsplash search for "[product type] luxury". If reviews empty, generate 3 generic positive reviews.',
   },
 
   'service-pro': {
-    psychology: 'trust + credibility + booking. Customers need proof before they commit. Reduce friction to contact.',
-    pagePurpose: 'Establish trust immediately, showcase work, generate quote requests.',
-    requiredSections: [
-      { type: 'header-simple', purpose: 'Professional navigation with prominent CTA', tips: 'Phone number visible, "Get a quote" button' },
-      { type: 'hero-split', purpose: 'Authority hero — bold headline, service image, trust badges', tips: 'Strong contrast, confidence-driven layout, before/after hint' },
-      { type: 'service-list', purpose: 'Clear service offerings with pricing ranges', tips: 'Structured layout, benefit-focused descriptions, starting prices' },
-      { type: 'before-after', purpose: 'Visual proof of work quality', tips: 'High-quality transformation images, brief context' },
-      { type: 'value-icons', purpose: 'Why choose us — icon grid of differentiators', tips: 'Licensed, insured, satisfaction guarantee, years of experience' },
-      { type: 'testimonials', purpose: 'Customer proof with specific results', tips: 'Before/after context, specific praise, real names' },
-      { type: 'quote-cta', purpose: 'Conversion endpoint — make it easy to request a quote', tips: 'Simple form, fast response promise, no commitment' },
-      { type: 'footer-service', purpose: 'Contact info, service areas, hours', tips: 'Phone, email, service area map, business hours' },
+    templateName: 'AUTHORITY CONVERSION',
+    industry: 'Service Pro / Coach / Educator',
+    primaryGoal: 'Convert visitors into consultations, bookings, or memberships',
+    designPersonality: 'Professional authority with transformation focus',
+    conversionType: 'Lead generation + authority building',
+    referenceModel: 'Pilates By Amanda',
+    recommendedBusinesses: ['coaches', 'consultants', 'therapists', 'fitness professionals', 'educators', 'beauty services', 'online experts'],
+    coreSectionStack: [
+      { type: 'header-promo', purpose: 'Prominent "Book Consult" CTA', required: true },
+      { type: 'hero-trust', purpose: 'Authority hero with transformation headline', required: true },
+      { type: 'stats', purpose: 'Trust badges and credentials', required: true },
+      { type: 'stats', purpose: 'Authority metrics (clients served, success rate)', required: true },
+      { type: 'testimonials', purpose: 'Transformation stories with specific results', required: true },
+      { type: 'service-list', purpose: 'Service offerings with clear outcomes', required: true },
+      { type: 'pricing-tiers', purpose: 'Pricing transparency', required: true },
+      { type: 'video', purpose: 'Video testimonial or demo', required: false },
+      { type: 'booking-cta', purpose: 'Low-friction consultation booking', required: true },
+      { type: 'newsletter', purpose: 'Build email list', required: false },
+      { type: 'faq', purpose: 'Address objections', required: true },
+      { type: 'footer-service', purpose: 'Contact and credentials', required: true },
     ],
-    contentTone: 'Confident, professional, direct. Lead with benefits and results. Use specific numbers (years, customers served, satisfaction rate).',
-    milanoCues: 'Bold typography. Strong contrast (dark backgrounds, white text). Confidence-driven layouts. Clean hierarchy. Professional photography. Icon-driven trust sections.',
-    sampleCopy: {
-      heroHeading: ['Professional results you can see', 'Trusted by 500+ homeowners', 'Your property, perfected', 'Quality work, guaranteed'],
-      heroSubheading: ['We deliver professional [service] with a focus on quality, reliability, and your complete satisfaction.', 'Serving [area] for over X years. Licensed, insured, and committed to excellence.'],
-      ctaText: ['Get a free quote', 'Request estimate', 'Book now', 'Call today'],
-      serviceDescriptions: [
-        'Complete service from start to finish. We handle everything so you don\'t have to.',
-        'Professional-grade results using commercial equipment and proven techniques.',
-        'Customized to your specific needs. No job too big or small.',
-      ],
-      testimonialQuotes: [
-        'They transformed our space completely. Professional, on time, and the results exceeded expectations.',
-        'Best investment we\'ve made in our home. The team was courteous and the work was flawless.',
-        'I\'ve used several services before — these guys are on another level. Highly recommend.',
-        'Quick response, fair pricing, and the quality of work was outstanding. Will use again.',
-      ],
+    optionalSections: ['value-icons', 'press', 'logo-bar'],
+    styleVariations: ['Premium Consultant', 'Warm Mentor', 'Calm Educator', 'Energetic Coach', 'Authority Expert'],
+    randomizationRules: {
+      allowed: ['testimonial density', 'stat display style', 'pricing card layout', 'video placement', 'CTA wording'],
+      restricted: ['conversion flow', 'booking visibility', 'mobile CTA access', 'section hierarchy', 'trust bar placement'],
     },
+    contentPriorities: ['Transformation promise', 'Authority positioning', 'Testimonials', 'Offer clarity', 'Booking CTA', 'Pricing confidence'],
+    mobileBehavior: 'Sticky booking CTA, collapse stats to 2-column, prioritize testimonials',
+    trustElements: ['Years of experience', 'Clients served', 'Success rate', 'Certifications', 'Media features'],
+    ctaStrategy: {
+      primary: ['Book a Free Consult', 'Start Your Journey', 'Get Your Roadmap'],
+      secondary: ['Watch My Story', 'See Client Results'],
+    },
+    fallbackLogic: 'If no testimonials, generate 3 transformation stories with specific metrics. If no video, use hero image with play button overlay.',
   },
 
   'food-catering': {
-    psychology: 'appetite + urgency + event conversion. Customers need to taste with their eyes first, then book for events.',
-    pagePurpose: 'Showcase food quality, highlight packages, drive catering inquiries.',
-    requiredSections: [
-      { type: 'header-promo', purpose: 'Announcement bar for seasonal offers + clean nav', tips: 'Promo banner for holiday/event season' },
-      { type: 'hero-visual', purpose: 'Appetite hero — cinematic food photography with overlay', tips: 'Rich food imagery, warm tones, bold pricing highlight' },
-      { type: 'packages', purpose: 'Event packages with clear pricing tiers', tips: '3 tiers (intimate, standard, premium), per-person pricing, inclusions listed' },
-      { type: 'service-list', purpose: 'Menu categories with descriptions', tips: 'Appetizers, mains, desserts, beverages — brief evocative descriptions' },
-      { type: 'gallery', purpose: 'Visual proof — event photos, plated dishes', tips: 'Masonry grid, warm lighting, professional food photography' },
-      { type: 'testimonials', purpose: 'Event host testimonials', tips: 'Specific event context, praise for food quality and service' },
-      { type: 'booking-cta', purpose: 'Event inquiry form with date/headcount', tips: 'Simple form, quick response promise, deposit info' },
-      { type: 'footer-service', purpose: 'Contact, service areas, social links', tips: 'Phone, email, Instagram, service radius' },
+    templateName: 'HOSPITALITY QUOTE',
+    industry: 'Food & Catering',
+    primaryGoal: 'Generate quote requests quickly while showcasing premium hospitality quality',
+    designPersonality: 'Luxury hospitality presentation',
+    conversionType: 'Lead generation',
+    referenceModel: 'Très LA Group',
+    recommendedBusinesses: ['catering', 'private chefs', 'bakeries', 'event dining', 'hospitality groups', 'venue catering'],
+    coreSectionStack: [
+      { type: 'header-promo', purpose: 'Seasonal offer announcement', required: true },
+      { type: 'header-simple', purpose: 'Clean navigation with inquiry CTA', required: true },
+      { type: 'hero-visual', purpose: 'Cinematic food photography', required: true },
+      { type: 'hero-trust', purpose: 'Trust bar for events completed', required: false },
+      { type: 'packages', purpose: 'Event packages with clear pricing', required: true },
+      { type: 'service-list', purpose: 'Menu categories', required: true },
+      { type: 'gallery', purpose: 'Event photography portfolio', required: true },
+      { type: 'testimonials', purpose: 'Event host testimonials', required: true },
+      { type: 'logo-bar', purpose: 'Venue partnerships', required: false },
+      { type: 'quote-cta', purpose: 'Event inquiry form', required: true },
+      { type: 'booking-cta', purpose: 'Secondary booking CTA', required: false },
+      { type: 'faq', purpose: 'Event planning FAQs', required: true },
+      { type: 'footer-service', purpose: 'Contact and service areas', required: true },
     ],
-    contentTone: 'Warm, inviting, appetite-inducing. Use sensory language (fresh, handcrafted, locally-sourced). Highlight event experience, not just food.',
-    milanoCues: 'Cinematic food photography. Rich textures. Bold pricing highlights. Elegant menu typography. Warm editorial presentation. Visual richness.',
-    sampleCopy: {
-      heroHeading: ['Exceptional food for unforgettable events', 'Crafted with passion, served with pride', 'Your event, elevated', 'Fresh. Local. Unforgettable.'],
-      heroSubheading: ['From intimate gatherings to grand celebrations, we create memorable dining experiences tailored to your vision.', 'Locally sourced ingredients, expertly prepared, beautifully presented.'],
-      ctaText: ['Book your event', 'Request a quote', 'View packages', 'Plan your menu'],
-      packageNames: ['Taco Bar Package', 'Full Catering Spread', 'Premium Fiesta'],
-      testimonialQuotes: [
-        'The food was absolutely incredible. Our guests are still talking about it weeks later!',
-        'Professional, punctual, and the presentation was stunning. Made our event so special.',
-        'Best catering we\'ve ever had. Every dish was fresh, flavorful, and beautifully plated.',
-        'They handled everything perfectly so we could enjoy our own party. Highly recommend!',
-      ],
+    optionalSections: ['value-icons', 'stats', 'press'],
+    styleVariations: ['Wedding Luxury', 'Corporate Catering', 'Boutique Chef', 'Modern Hospitality', 'Venue Hybrid'],
+    randomizationRules: {
+      allowed: ['gallery format', 'package card design', 'trust bar wording', 'image density', 'CTA position'],
+      restricted: ['inquiry flow', 'booking visibility', 'mobile CTA access', 'menu structure'],
     },
+    contentPriorities: ['Prestige imagery', 'Trust indicators', 'Event types', 'Packages', 'Inquiry conversion', 'Testimonials'],
+    mobileBehavior: 'Sticky "Request Quote" CTA, masonry gallery becomes 1-column, collapse packages to accordion',
+    trustElements: ['Events completed', 'Health certifications', 'Venue partnerships', 'Food safety ratings', 'Client testimonials'],
+    ctaStrategy: {
+      primary: ['Book Your Event', 'Request a Quote', 'View Packages'],
+      secondary: ['See Our Work', 'Meet the Chef'],
+    },
+    fallbackLogic: 'If no gallery images, use Unsplash search for "[cuisine type] catering event". Generate 3 event testimonials if empty.',
   },
 
   'artisan-market': {
-    psychology: 'story + authenticity + craftsmanship. Customers buy the maker, not just the product. Emotional connection drives purchase.',
-    pagePurpose: 'Establish artisan identity, tell the story, showcase products with context.',
-    requiredSections: [
-      { type: 'header-simple', purpose: 'Warm, handcrafted feel navigation', tips: 'Simple nav, maker-focused branding' },
-      { type: 'hero-visual', purpose: 'Story-driven hero — maker at work or signature product', tips: 'Warm, textured imagery. Handcrafted feeling. Serif headline.' },
-      { type: 'brand-story', purpose: 'Founder story — why you make what you make', tips: 'Personal, authentic, process-focused. Show the hands behind the work.' },
-      { type: 'product-grid', purpose: 'Curated product showcase with artisan notes', tips: 'Large product images, brief maker notes, materials mentioned' },
-      { type: 'value-icons', purpose: 'Values — handmade, local, sustainable, etc.', tips: 'Icon grid: handmade, locally sourced, small batch, sustainable' },
-      { type: 'testimonials', purpose: 'Customer love — emotional connection stories', tips: 'Customers who love the story, not just the product' },
-      { type: 'newsletter', purpose: 'Build community, announce new products/markets', tips: 'Promise: new products, market dates, behind-the-scenes' },
-      { type: 'footer-basic', purpose: 'Simple, warm footer with social and contact', tips: 'Instagram link, market schedule, email' },
+    templateName: 'MAKER PROVENANCE',
+    industry: 'Artisan Market',
+    primaryGoal: 'Increase perceived product value through craftsmanship storytelling',
+    designPersonality: 'Handcrafted authenticity with editorial elegance',
+    conversionType: 'Editorial ecommerce',
+    referenceModel: 'Farmhouse Pottery',
+    recommendedBusinesses: ['ceramics', 'handmade goods', 'candles', 'apothecary', 'artisan foods', 'local makers'],
+    coreSectionStack: [
+      { type: 'header-mega', purpose: 'Maker-focused branding', required: true },
+      { type: 'hero-split', purpose: 'Split hero with maker at work or signature product', required: true },
+      { type: 'featured-collection', purpose: 'Curated product showcase', required: true },
+      { type: 'product-grid', purpose: 'Full product catalog', required: true },
+      { type: 'brand-story', purpose: 'Maker story and philosophy', required: true },
+      { type: 'value-icons', purpose: 'Values: handmade, local, sustainable', required: true },
+      { type: 'founder-note', purpose: 'Personal note from maker', required: true },
+      { type: 'editorial-split', purpose: 'Process or materials deep-dive', required: false },
+      { type: 'gallery', purpose: 'Workshop or process imagery', required: false },
+      { type: 'reviews', purpose: 'Customer love and connection', required: true },
+      { type: 'newsletter', purpose: 'Community building', required: true },
+      { type: 'footer-commerce', purpose: 'Warm footer with social', required: true },
     ],
-    contentTone: 'Warm, personal, authentic. First-person where appropriate. Focus on process, materials, and the human story behind each piece.',
-    milanoCues: 'Organic spacing. Textured visuals. Handcrafted feeling. Documentary/editorial mix. Warm imagery. Serif headlines with body serif.',
-    sampleCopy: {
-      heroHeading: ['Handcrafted with intention', 'Made by hand, with heart', 'Where craft meets community', 'Thoughtfully made, beautifully yours'],
-      heroSubheading: ['Every piece is carefully crafted by hand using traditional techniques and the finest materials.', 'Born from a passion for [craft], made with love in [location].'],
-      ctaText: ['Shop the collection', 'Meet the maker', 'Explore our story', 'Find us at markets'],
-      storyBody: [
-        'It started with a simple idea: create [products] that honor traditional craftsmanship while fitting beautifully into modern life.',
-        'Every piece begins with carefully selected materials and hours of dedicated handwork. No shortcuts, no mass production — just honest craft.',
-      ],
-      testimonialQuotes: [
-        'You can feel the love and care in every piece. It\'s not just a product, it\'s a story.',
-        'I love knowing exactly who made this and the care that went into it. Truly special.',
-        'The quality is unmatched. These are heirloom pieces that will last for years.',
-      ],
+    optionalSections: ['stats', 'press', 'collection-carousel'],
+    styleVariations: ['Rustic Heritage', 'Scandinavian Craft', 'Handmade Modern', 'Earthy Organic', 'Cozy Farmhouse'],
+    randomizationRules: {
+      allowed: ['hero layout (split vs visual)', 'gallery style', 'typography pairing', 'card spacing', 'color warmth'],
+      restricted: ['craft narrative flow', 'product hierarchy', 'value icon placement', 'founder note position'],
     },
+    contentPriorities: ['Craftsmanship', 'Materials', 'Process', 'Founder authenticity', 'Product detail', 'Slow-living lifestyle positioning'],
+    mobileBehavior: 'Vertical stack, emphasize founder story, large product images, sticky "Shop Collection" CTA',
+    trustElements: ['Handmade badges', 'Local sourcing', 'Small batch indicators', 'Materials transparency', 'Maker guarantees'],
+    ctaStrategy: {
+      primary: ['Shop the Collection', 'Meet the Maker', 'Explore Our Story'],
+      secondary: ['Visit Our Workshop', 'Join Our Community'],
+    },
+    fallbackLogic: 'If no maker photo, use Unsplash "[craft] workshop". Generate maker story focusing on process and materials.',
   },
 
   'event-floral': {
-    psychology: 'aspiration + elegance + trust. Customers are planning once-in-a-lifetime moments. They need to feel confident in their choice.',
-    pagePurpose: 'Create emotional impact, showcase portfolio, capture high-value inquiries.',
-    requiredSections: [
-      { type: 'header-simple', purpose: 'Elegant, minimal navigation', tips: 'Clean typography, subtle branding, inquiry CTA' },
-      { type: 'hero-visual', purpose: 'Cinematic hero — full-screen floral imagery with elegant overlay', tips: 'Full-bleed luxury floral photography, soft serif headline, subtle animation feel' },
-      { type: 'packages', purpose: 'Service tiers — simplify high-ticket buying', tips: '3 tiers (intimate, classic, luxury), starting prices, key inclusions' },
-      { type: 'gallery', purpose: 'Portfolio proof — immersive gallery-first layout', tips: 'Full-bleed images, masonry grid, category filters (weddings, events, installations)' },
-      { type: 'testimonials', purpose: 'Couple/event host testimonials with emotional weight', tips: 'Specific event details, emotional language, photographer credits' },
-      { type: 'value-icons', purpose: 'Trust signals — experience, awards, process', tips: 'Years of experience, events completed, awards, consultation process' },
-      { type: 'quote-cta', purpose: 'Inquiry form — capture event details and budget', tips: 'Event date, venue, guest count, budget range, consultation booking' },
-      { type: 'footer-basic', purpose: 'Minimal, elegant footer', tips: 'Contact, Instagram, service areas' },
+    templateName: 'FLORAL EDITORIAL',
+    industry: 'Event & Floral',
+    primaryGoal: 'Sell visual taste and emotional branding before logistics',
+    designPersonality: 'Editorial visual storytelling',
+    conversionType: 'Luxury inquiry conversion',
+    referenceModel: 'The Naked Florist',
+    recommendedBusinesses: ['florists', 'wedding planners', 'event stylists', 'decorators', 'photographers', 'balloon artists'],
+    coreSectionStack: [
+      { type: 'header-simple', purpose: 'Elegant minimal navigation', required: true },
+      { type: 'hero-visual', purpose: 'Full-screen floral imagery with elegant overlay', required: true },
+      { type: 'brand-story', purpose: 'Floral philosophy and style', required: true },
+      { type: 'founder-note', purpose: 'Founder passion and approach', required: true },
+      { type: 'gallery', purpose: 'Immersive portfolio gallery', required: true },
+      { type: 'editorial-split', purpose: 'Style or process deep-dive', required: false },
+      { type: 'testimonials', purpose: 'Couple/event host emotional testimonials', required: true },
+      { type: 'social-gallery', purpose: 'Instagram-style social proof', required: false },
+      { type: 'booking-cta', purpose: 'Inquiry form for events', required: true },
+      { type: 'faq', purpose: 'Wedding/event planning FAQs', required: true },
+      { type: 'footer-basic', purpose: 'Minimal elegant footer', required: true },
     ],
-    contentTone: 'Elegant, aspirational, confident. Use refined language. Focus on the experience and emotion, not just the product. Photography does the heavy lifting.',
-    milanoCues: 'Full-screen imagery. Luxury editorial feel. Soft transitions. Premium hierarchy. Gallery-first layouts. Serif headlines. Muted romantic palette (blush, sage, cream, gold).',
-    sampleCopy: {
-      heroHeading: ['Floral artistry for life\'s most beautiful moments', 'Where flowers become art', 'Elegant florals, unforgettable events', 'Crafted with passion, designed for you'],
-      heroSubheading: ['From intimate ceremonies to grand celebrations, we create bespoke floral designs that transform spaces and capture hearts.', 'Every arrangement is thoughtfully designed to reflect your unique vision and style.'],
-      ctaText: ['Start your inquiry', 'View our work', 'Book a consultation', 'Explore packages'],
-      packageNames: ['Intimate', 'Classic', 'Luxury'],
-      testimonialQuotes: [
-        'They completely exceeded our expectations. Every detail was perfect and our guests couldn\'t stop talking about the flowers.',
-        'Working with them was an absolute dream. They understood our vision perfectly and brought it to life beautifully.',
-        'The most stunning floral design I\'ve ever seen. Truly works of art that made our day unforgettable.',
-        'Professional, creative, and so easy to work with. The florals were the highlight of our event.',
-      ],
+    optionalSections: ['packages', 'value-icons', 'press', 'logo-bar'],
+    styleVariations: ['Romantic Editorial', 'Fine Art Pastel', 'Moody Luxury', 'Modern Minimal', 'Garden Organic'],
+    randomizationRules: {
+      allowed: ['gallery layout', 'hero image crop', 'typography elegance level', 'section spacing', 'image density'],
+      restricted: ['emotional narrative flow', 'portfolio-first layout', 'inquiry form placement', 'visual hierarchy'],
     },
+    contentPriorities: ['Large visual storytelling', 'Emotional copy', 'Sparse elegant layouts', 'Minimal interface clutter', 'Event type clarity'],
+    mobileBehavior: 'Full-screen hero, 1-column gallery, sticky "Start Your Inquiry" CTA, collapse editorial sections',
+    trustElements: ['Weddings completed', 'Featured venues', 'Awards', 'Press features', 'Photographer partnerships'],
+    ctaStrategy: {
+      primary: ['Start Your Inquiry', 'View Our Work', 'Book a Consultation'],
+      secondary: ['See Wedding Gallery', 'Meet the Florist'],
+    },
+    fallbackLogic: 'If no portfolio images, use Unsplash "wedding florals luxury". Generate 3 emotional wedding testimonials.',
   },
 
   'coach-educator': {
-    psychology: 'trust + transformation + authority. Clients need to believe you can transform their life/skill, then see a clear path to get there.',
-    pagePurpose: 'Establish authority, show transformation proof, drive coaching/consultation bookings.',
-    requiredSections: [
-      { type: 'header-simple', purpose: 'Clean navigation with prominent "Book Consult" CTA', tips: 'Logo, minimal links, "Book Now" button top-right' },
-      { type: 'hero-trust', purpose: 'Authority hero — transformation headline, trust badges (years experience, clients served)', tips: 'Bold claim of transformation, 3 key trust metrics, serif headline' },
-      { type: 'service-list', purpose: 'Coaching packages with clear outcomes', tips: 'Package names like "Career Pivot", "Leadership Mastery", outcomes-driven descriptions, price ranges' },
-      { type: 'testimonials', purpose: 'Transformation stories with specific results', tips: 'Before/after states, specific metrics (got promoted, landed dream job), full names with photos' },
-      { type: 'value-icons', purpose: 'Why choose you — credentials, methodology, results', tips: 'Certifications, years experience, unique methodology, satisfaction rate' },
-      { type: 'faq', purpose: 'Address objections (cost, time, fit)', tips: 'Real concerns: "Is coaching right for me?", "How fast will I see results?", "What if it doesn\'t work?"' },
-      { type: 'booking-cta', purpose: 'Low-friction consultation booking', tips: 'Simple form, promise of 24hr response, no commitment language' },
-      { type: 'footer-basic', purpose: 'Clean footer with social links and credentials', tips: 'LinkedIn, Instagram, certifications listed, contact email' },
+    templateName: 'AUTHORITY CONVERSION',
+    industry: 'Coach / Educator',
+    primaryGoal: 'Convert visitors into consultations, bookings, or memberships',
+    designPersonality: 'Authoritative yet empathetic transformation focus',
+    conversionType: 'Lead generation + authority building',
+    referenceModel: 'Pilates By Amanda',
+    recommendedBusinesses: ['coaches', 'consultants', 'therapists', 'fitness professionals', 'educators', 'online experts'],
+    coreSectionStack: [
+      { type: 'header-promo', purpose: 'Announcement for new program or limited enrollment', required: true },
+      { type: 'hero-trust', purpose: 'Transformation hero with bold claim', required: true },
+      { type: 'stats', purpose: 'Credentials and trust badges', required: true },
+      { type: 'stats', purpose: 'Transformation metrics', required: true },
+      { type: 'testimonials', purpose: 'Specific transformation results', required: true },
+      { type: 'service-list', purpose: 'Coaching programs with outcomes', required: true },
+      { type: 'pricing-tiers', purpose: 'Program pricing tiers', required: true },
+      { type: 'video', purpose: 'Transformation story video', required: false },
+      { type: 'booking-cta', purpose: 'Consultation booking', required: true },
+      { type: 'newsletter', purpose: 'Lead magnet and email list', required: false },
+      { type: 'faq', purpose: 'Address cost and time objections', required: true },
+      { type: 'footer-basic', purpose: 'Clean footer with credentials', required: true },
     ],
-    contentTone: 'Authoritative yet empathetic. Lead with transformation outcomes. Use specific numbers (X clients coached, Y% success rate). Sound like a proven expert who cares.',
-    milanoCues: 'Clean, editorial layout. Serif headlines. Muted purple/charcoal palette. Whitespace-heavy. Testimonial cards with large quotes. Professional photography of you/your workspace.',
-    sampleCopy: {
-      heroHeading: ['Transform your career in 90 days', 'Unlock your leadership potential', 'Go from stuck to thriving', 'Your breakthrough starts here'],
-      heroSubheading: ['I help professionals like you break through barriers and achieve the career you\'ve always wanted. Proven methodology, real results.', 'Over 500 professionals coached. 94% report measurable progress within 60 days.'],
-      ctaText: ['Book a free consult', 'Start your journey', 'See how I help', 'Get your roadmap'],
-      serviceDescriptions: [
-        '6-week intensive coaching program with weekly 1:1 sessions, customized action plan, and lifetime access to resource library.',
-        'Group coaching mastermind with peer accountability, bi-weekly calls, and exclusive workshops for accelerated growth.',
-        'Executive leadership coaching for senior leaders ready to step into C-suite roles with confidence and strategy.',
-      ],
-      testimonialQuotes: [
-        'Working with [Name] changed my entire trajectory. I went from feeling stuck to landing my dream role in just 3 months!',
-        'The clarity I gained from our sessions was priceless. I finally understand my value and how to communicate it.',
-        'Best investment I\'ve ever made in myself. The ROI isn\'t just financial — it\'s a complete mindset shift.',
-        'I was skeptical at first, but the methodology really works. I\'ve been promoted twice in 8 months!',
-      ],
+    optionalSections: ['value-icons', 'press', 'logo-bar'],
+    styleVariations: ['Premium Consultant', 'Warm Mentor', 'Calm Educator', 'Energetic Coach', 'Authority Expert'],
+    randomizationRules: {
+      allowed: ['testimonial format', 'stat presentation', 'pricing card style', 'video placement', 'CTA wording variety'],
+      restricted: ['transformation narrative', 'booking flow', 'mobile CTA access', 'authority positioning'],
     },
+    contentPriorities: ['Transformation promise', 'Authority positioning', 'Testimonials', 'Offer clarity', 'Booking CTA', 'Pricing confidence'],
+    mobileBehavior: 'Sticky "Book Consult" CTA, 2-column stats, prioritize video testimonial, collapse pricing to accordion',
+    trustElements: ['Certifications', 'Years experience', 'Clients coached', 'Success rate', 'Media appearances', 'Methodology'],
+    ctaStrategy: {
+      primary: ['Book a Free Consult', 'Start Your Transformation', 'Get Your Roadmap'],
+      secondary: ['Watch My Story', 'See Client Results', 'Download Free Guide'],
+    },
+    fallbackLogic: 'If no testimonials, generate 3 specific transformation stories with metrics. If no video, use founder photo with play overlay.',
   },
 };
 
-// --- Prompt Builder ---
+// --- Prompt Builder with Fixed Structural Recipes ---
 
 function buildPrompt(
   businessName: string,
@@ -224,22 +291,60 @@ function buildPrompt(
 ): string {
   const template = TEMPLATES[businessType];
   const manifest = TEMPLATE_MANIFESTS[businessType];
-  const funnel = FUNNEL_DEFS[businessType];
+  const systemConfig = TEMPLATE_SYSTEM[businessType];
 
-  // Build section-by-section instructions
-  const sectionInstructions = funnel.requiredSections.map((sec, idx) => {
+  // Build core section stack instructions
+  const coreSectionInstructions = systemConfig.coreSectionStack.map((sec, idx) => {
     const def = SECTION_LIBRARY[sec.type];
-    const sampleData = buildSampleData(sec.type, businessName, offerings, funnel, businessType);
-    return `  ${idx + 1}. ${def.label} (${sec.type})
+    return `  ${idx + 1}. ${def.label} (${sec.type}) — ${sec.required ? 'REQUIRED' : 'OPTIONAL'}
     Purpose: ${sec.purpose}
-    Tips: ${sec.tips}
-    Data: ${JSON.stringify(sampleData, null, 6)}`;
+    Data: ${JSON.stringify(buildSampleData(sec.type, businessName, offerings, businessType), null, 6)}`;
   }).join('\n\n');
 
   return `You are an ELITE, conversion-focused copywriter creating a premium storefront for "${businessName}" — a ${template.label} business.
 
-## YOUR MISSION
-Generate content that makes visitors IMMEDIATELY want to buy/book. This is NOT a template — it's a custom, high-converting storefront for THIS specific business.
+## SYSTEM ARCHITECTURE
+You are generating content for the **${systemConfig.templateName}** template system.
+- Industry: ${systemConfig.industry}
+- Design Personality: ${systemConfig.designPersonality}
+- Reference Model: ${systemConfig.referenceModel}
+- Conversion Type: ${systemConfig.conversionType}
+
+## FIXED STRUCTURAL RECIPE (DO NOT DEVIATE)
+
+You MUST use this EXACT section order for the homepage. This is a LOCKED structure:
+
+${coreSectionInstructions}
+
+Optional sections you MAY add (max 2 total): ${systemConfig.optionalSections.join(', ')}
+
+## RANDOMIZATION RULES (ENFORCE STRICTLY)
+
+### ALLOWED randomization (you MAY vary):
+${systemConfig.randomizationRules.allowed.map(r => `- ${r}`).join('\n')}
+
+### RESTRICTED randomization (you MUST NOT change):
+${systemConfig.randomizationRules.restricted.map(r => `- ${r}`).join('\n')}
+
+## CONTENT PRIORITIES
+Focus on (in order):
+${systemConfig.contentPriorities.map((p, i) => `${i + 1}. ${p}`).join('\n')}
+
+## CTA STRATEGY
+Primary CTAs (use these exact phrases):
+${systemConfig.ctaStrategy.primary.map(c => `- "${c}"`).join('\n')}
+
+Secondary CTAs:
+${systemConfig.ctaStrategy.secondary.map(c => `- "${c}"`).join('\n')}
+
+## TRUST ELEMENTS TO INCLUDE
+${systemConfig.trustElements.map(t => `- ${t}`).join('\n')}
+
+## MOBILE BEHAVIOR
+${systemConfig.mobileBehavior}
+
+## FALLBACK LOGIC
+${systemConfig.fallbackLogic}
 
 ## BUSINESS DNA
 - Name: "${businessName}" (USE THIS IN EVERY HEADLINE)
@@ -247,9 +352,6 @@ Generate content that makes visitors IMMEDIATELY want to buy/book. This is NOT a
 - What they sell: ${offerings}
 - Contact: ${contactEmail}
 - Tagline: ${tagline || 'N/A'}
-
-## VERTICAL PSYCHOLOGY
-${funnel.psychology}
 
 ## ⚠️ CRITICAL: VERTICAL-SPECIFIC LANGUAGE
 You MUST use language appropriate for ${businessType}:
@@ -259,12 +361,6 @@ You MUST use language appropriate for ${businessType}:
 - artisan-market: Talk about CRAFT, handmade, materials, process, provenance. Use "piece", "maker", "workshop".
 - event-floral: Talk about BLOOMS, arrangements, weddings, events, seasonal. Use "bouquet", "centerpiece", "ceremony".
 - coach-educator: Talk about GROWTH, programs, coaching, mindset, results. Use "client", "transformation", "breakthrough".
-
-## CONTENT TONE
-${funnel.contentTone}
-
-## MILANO VISUAL STYLE
-${funnel.milanoCues}
 
 ## ⚠️ FORBIDDEN WORDS (Never use these — they're generic/template-speak)
 - "Professional" (unless part of a certification name)
@@ -276,51 +372,17 @@ ${funnel.milanoCues}
 - "High-quality" (empty phrase)
 - "Experienced team" (show experience, don't claim it)
 
-## ✅ POWER WORDS TO USE (Make copy sticky)
+## ✅ POWER WORDS TO USE
 Transform, Unlock, Breakthrough, Proven, Secret, Revealed, Finally, Exposed, Truth, Myth, Shocking, Counter-intuitive, Never, Ever, Always, Imagine, Instant, Effortless, Guaranteed, Risk-free, Exclusive, Limited, Now, Today
 
-## HEADLINE FORMULAS (Follow these patterns)
-1. "[Business Name]: [Specific Benefit] in [Timeframe]"
-2. "The [Truth/Secret] About [Industry] That [Authority Figure] Won't Tell You"
-3. "Why [Number]% of [Customers] Fire Their [Competitor Type] (And Why You Should Too)"
-4. "[Business Name] vs. Everyone Else: Here's the [Number]X Difference"
-5. "Stop [Pain Point]. Start [Desired Outcome] with [Business Name]"
-
-## BAD VS GOOD EXAMPLES
-❌ BAD: "Professional results you can see"
-✅ GOOD: "${businessName}: See Why 94% of Our Customers Never Call Anyone Else"
-
-❌ BAD: "We deliver professional epoxy flooring services"
-✅ GOOD: "${businessName}: Your Garage Floor Shouldn't Embarrass You When Neighbors Visit"
-
-❌ BAD: "Complete professional service"
-✅ GOOD: "We've Transformed 500+ Floors in 2 Years — Here's What We Discovered About What Actually Lasts"
-
-## SECTIONS TO GENERATE
-${sectionInstructions}
-
-## CRITICAL RULES (Violate these and the store fails)
-1. EVERY headline MUST include "${businessName}" OR a specific benefit metric
-2. NO placeholder text. NO "Lorem ipsum". NO "Your text here". NO "Add images in the editor"
-3. Testimonials: Use FULL names (not "Sarah M."), specific results ("saved $5,000"), and emotional language
-4. FAQs: Address REAL objections ("What if I hate it?", "How long does it really take?") — NOT generic questions
-5. Pricing: Use REAL market rates. Add "Limited time" or scarcity elements
-6. CTAs: Use urgency words ("Book now", "Get instant access", "Start my transformation") — NEVER "Submit" or "Click here"
-7. **IMAGES: For every imageUrl field, provide a SPECIFIC Unsplash search term (not empty string). Examples: "epoxy garage floor", "taco catering event", "floral wedding bouquet", "personal training session". The system will auto-fetch the image.
-8. Write like a HUMAN expert, not an AI. Use contractions (you're, we're, don't)
-9. Every section must feel CUSTOM — if a visitor saw this, they should think "This was written just for me"
-10. Generate ALL pages: homepage + about + contact (3 pages total, each with appropriate sections)
-11. Use the sample copy style above as INSPIRATION only — create ORIGINAL content for ${businessName}
-12. **⚠️ MANIFEST CONSTRAINTS — MUST FOLLOW EXACTLY:**
-    - Required sections: ${manifest.requiredSections.join(', ')}
-    - Max duplicates: ${Object.entries(manifest.maxDuplicates).map(([k,v]) => `${k} (max ${v})`).join(', ')}
-    - YOU MUST NOT generate more than the max allowed for any section type
-    - Example: if max is 1 for service-list, generate ONLY ONE service-list section TOTAL (not per page)
-    - **ONLY ONE header section per site** (pick ONE type: header-simple, header-promo, or header-mega)
-    - **ONLY ONE hero section per site** (pick ONE type: hero-split, hero-visual, hero-products, hero-cta, or hero-trust)
-    - **ONLY ONE footer section per site** (pick ONE type: footer-basic or footer-service)
-    - Count your sections BEFORE returning JSON: if you generated 2 heroes, DELETE one
-    - Pages: homepage (main page), about page, contact page — each with appropriate sections for the business type
+## MANIFEST CONSTRAINTS — MUST FOLLOW EXACTLY:
+- Required sections: ${manifest.requiredSections.join(', ')}
+- Max duplicates: ${Object.entries(manifest.maxDuplicates).map(([k, v]) => `${k} (max ${v})`).join(', ')}
+- YOU MUST NOT generate more than the max allowed for any section type
+- **ONLY ONE header section per site** (pick ONE type: header-simple, header-promo, or header-mega)
+- **ONLY ONE hero section per site** (pick ONE type: hero-split, hero-visual, hero-products, hero-cta, or hero-trust)
+- **ONLY ONE footer section per site** (pick ONE type: footer-basic or footer-service)
+- Count your sections BEFORE returning JSON: if you generated 2 heroes, DELETE one
 
 ## OUTPUT FORMAT
 Return ONLY valid JSON (no markdown, no code fences) in this exact structure:
@@ -351,8 +413,7 @@ Return ONLY valid JSON (no markdown, no code fences) in this exact structure:
 Generate ALL pages. ALL sections. Every field. Real content. POWERFUL copy. Now.`;
 }
 
-function buildSampleData(type: SectionType, businessName: string, offerings: string, funnel: FunnelDef, businessType: string, preset?: StylePreset): Record<string, any> {
-  // Generate powerful, specific sample data that matches our "forbidden words" / "power words" style
+function buildSampleData(type: SectionType, businessName: string, offerings: string, businessType: string): Record<string, any> {
   const businessLower = businessName.toLowerCase();
   
   const samples: Record<string, any> = {
@@ -366,6 +427,12 @@ function buildSampleData(type: SectionType, businessName: string, offerings: str
       announcement: '🔥 Limited: Free shipping on $50+ orders — ends Friday', 
       logoText: businessName, 
       links: [{ label: 'Home', url: '#' }, { label: 'Menu', url: '#menu' }, { label: 'Contact', url: '#contact' }] 
+    },
+    'header-mega': {
+      logoText: businessName,
+      links: [{ label: 'Shop', url: '#', children: [{ label: 'New Arrivals', url: '#' }, { label: 'Best Sellers', url: '#' }] }],
+      ctaText: 'Shop Now',
+      ctaUrl: '#shop'
     },
     'hero-split': { 
       heading: `${businessName}: Your ${offerings.split(',')[0] || 'Space'} Transformed in 48 Hours`, 
@@ -397,8 +464,8 @@ function buildSampleData(type: SectionType, businessName: string, offerings: str
       heading: `${businessName}: The 1% of ${businessType} You've Been Looking For`, 
       subheading: `Over 500 customers transformed. 94% report measurable results within 60 days. The numbers don't lie.`, 
       ctaText: 'See my transformation', 
-      trustBadges: ['500+ Transformed', '94% Success Rate', '5-Star Rated'],
-      imageUrl: ''
+      trustBadges: ['500+ Transformed', '94% Success Rate', '5-Star Rated'], 
+      imageUrl: '' 
     },
     'featured-collection': { 
       title: `${businessName} Bestsellers`, 
@@ -489,198 +556,145 @@ function buildSampleData(type: SectionType, businessName: string, offerings: str
       ] 
     },
     'packages': { 
-      title: `${funnel.sampleCopy.packageNames?.[0] || 'Transformation'} Packages`, 
+      title: `Event Packages`, 
       packages: [
-        { name: funnel.sampleCopy.packageNames?.[0] || 'Starter', description: `The fastest way to experience what ${businessName} can do for you.`, price: '$45', features: ['48-hour turnaround', 'Premium materials'] }, 
-        { name: funnel.sampleCopy.packageNames?.[1] || 'Professional', description: `Our most popular choice — the perfect balance of speed and luxury.`, price: '$75', features: ['Everything in Starter', '5-year warranty', 'Priority support'] }
+        { name: 'Intimate', description: `Perfect for small gatherings — the fastest way to experience what ${businessName} can do for you.`, price: '$45/person', features: ['48-hour turnaround', 'Premium ingredients'] }, 
+        { name: 'Classic', description: `Our most popular choice — the perfect balance of quality and value.`, price: '$75/person', features: ['Everything in Intimate', '5-star service', 'Custom menu'] }
       ] 
     },
     'quote-cta': { 
       headline: `Get Your Free ${businessName} Quote`, 
       subheading: `Tell us about your project. We'll get back to you within 24 hours with a customized plan.`, 
-      ctaText: 'Get my quote', 
-      showForm: true 
+      ctaText: 'Request Quote',
+      showForm: true
     },
     'booking-cta': { 
-      headline: `Book Your ${businessName} Consultation`, 
-      subheading: `Pick a time that works for you. Meet with our experts and see why 94% of customers say yes.`, 
-      ctaText: 'Book now' 
+      headline: `Book Your ${businessName} Experience`, 
+      subheading: `Ready to get started? Book your consultation today — no commitment required.`, 
+      ctaText: 'Book Now',
+      showCalendar: true
+    },
+    'video': {
+      title: `See ${businessName} in Action`,
+      videoUrl: '',
+      thumbnailUrl: '',
+      description: `Watch how ${businessName} transforms spaces in record time.`
     },
     'gallery': { 
-      title: `${businessName} Transformations`, 
-      images: [] 
+      title: `${businessName} Gallery`, 
+      images: [],
+      layout: 'masonry'
     },
-    'video': { 
-      title: `${businessName} in Action`, 
-      videoUrl: '', 
-      thumbnailUrl: '' 
-    },
-    'before-after': { 
-      title: `${businessName} Before & After`, 
-      pairs: [{ beforeUrl: '', afterUrl: '', label: `Recent ${businessName} project` }] 
-    },
-    'social-gallery': { 
-      title: `Follow ${businessName} on Instagram`, 
-      images: [] 
+    'social-gallery': {
+      title: `Follow ${businessName} on Instagram`,
+      instagramUrl: 'https://instagram.com',
+      images: []
     },
     'faq': { 
-      title: `Your ${businessName} Questions, Answered`, 
-      questions: [
-        { question: `Why is ${businessName} more expensive than competitors?`, answer: `We don't cut corners. Every material, every technique, every hour spent is an investment in your satisfaction. Cheap alternatives cost 3X more in the long run.` }, 
-        { question: `What if I hate the result?`, answer: `That's why we have a 100% satisfaction guarantee. If you're not thrilled, we'll make it right — no questions asked.` }, 
-        { question: `How fast can ${businessName} really deliver?`, answer: `Most projects are completed in 48 hours. We've optimized our process to be 2X faster than industry standard without sacrificing quality.` }
+      title: `Frequently Asked Questions About ${businessName}`, 
+      faqs: [
+        { question: `How long does ${businessName} take?`, answer: `Most projects are completed within 48 hours. We'll give you an exact timeline during consultation.` }, 
+        { question: `What if I don't like the result?`, answer: `We offer a 100% satisfaction guarantee. If you're not happy, we'll make it right — no questions asked.` }, 
+        { question: `How much does ${businessName} cost?`, answer: `Pricing starts at $150 for essentials. Most customers invest $200-400 for full service. Get your free quote today.` }
       ] 
     },
     'newsletter': { 
-      headline: `Join the ${businessName} Inner Circle`, 
-      subheading: `Get insider-only discounts, early access to new services, and exclusive tips.`, 
-      ctaText: 'Join free' 
-    },
-    'promo-banner': { 
-      text: `🎉 Limited: ${businessName} is booking 48 hours out — secure your spot now!`, 
-      ctaText: 'Book now', 
-      backgroundColor: '#1A1A1A', 
-      textColor: '#FFFFFF' 
-    },
-    'sticky-cta': { 
-      text: `Ready to transform with ${businessName}?`, 
-      ctaText: 'Start now', 
-      position: 'bottom' 
-    },
-    'footer-basic': { 
-      logoText: businessName, 
-      links: [{ label: 'Privacy', url: '#' }, { label: 'Terms', url: '#' }, { label: 'Contact', url: '#' }], 
-      copyright: `© ${new Date().getFullYear()} ${businessName}. All rights reserved.` 
+      title: `Join the ${businessName} Community`, 
+      description: `Get exclusive access to new products, insider discounts, and behind-the-scenes content.`, 
+      placeholder: 'Enter your email', 
+      buttonText: 'Join Now' 
     },
     'footer-commerce': { 
-      logoText: businessName, 
-      newsletter: true, 
       columns: [
-        { title: 'Shop', links: [{ label: 'New Arrivals', url: '#' }, { label: 'Bestsellers', url: '#' }, { label: 'Sale', url: '#' }] }, 
-        { title: 'Help', links: [{ label: 'FAQ', url: '#' }, { label: 'Shipping', url: '#' }, { label: 'Returns', url: '#' }] }
+        { title: 'Shop', links: [{ label: 'New Arrivals', url: '#' }, { label: 'Best Sellers', url: '#' }] }, 
+        { title: 'Support', links: [{ label: 'Contact Us', url: '#contact' }, { label: 'FAQ', url: '#faq' }] }
       ], 
-      copyright: `© ${new Date().getFullYear()} ${businessName}. All rights reserved.` 
+      socialLinks: [{ platform: 'instagram', url: '#' }, { platform: 'facebook', url: '#' }] 
     },
     'footer-service': { 
-      logoText: businessName, 
-      showContact: true, 
-      showHours: true, 
-      hours: 'Mon-Fri 8am-6pm, Sat 9am-3pm', 
-      copyright: `© ${new Date().getFullYear()} ${businessName}. All rights reserved.` 
+      columns: [
+        { title: 'Services', links: [{ label: 'All Services', url: '#services' }, { label: 'Get a Quote', url: '#quote' }] }, 
+        { title: 'Contact', links: [{ label: 'Call Us', url: 'tel:555-123-4567' }, { label: 'Email', url: 'mailto:info@example.com' }] }
+      ], 
+      socialLinks: [{ platform: 'instagram', url: '#' }] 
+    },
+    'footer-basic': { 
+      columns: [
+        { title: 'About', links: [{ label: 'Our Story', url: '#about' }, { label: 'Contact', url: '#contact' }] }
+      ], 
+      socialLinks: [{ platform: 'instagram', url: '#' }] 
     },
   };
 
-  return samples[type] || SECTION_LIBRARY[type]?.defaultData || {};
+  return samples[type] || {};
 }
 
-function genId(): string {
-  return Math.random().toString(36).slice(2, 10);
-}
+// --- API: Generate Site Content ---
 
-// --- Main Generation Function ---
-
-export async function generateStorefront(
+export async function generateSiteContent(
   businessName: string,
   businessType: TemplateFamily,
-  offerings: string = '',
-  contactEmail: string = '',
-  tagline: string = '',
-): Promise<{ pages: Array<{ slug: string; title: string; sections: GeneratedSection[] }> }> {
+  offerings: string,
+  contactEmail: string,
+  tagline: string,
+  stylePreset?: StylePreset,
+ ): Promise<{ pages: { slug: string; title: string; sections: GeneratedSection[] }[] }> {
+  const preset = stylePreset || pickRandomPreset(businessType);
+  const promptText = buildPrompt(businessName, businessType, offerings, contactEmail, tagline, preset);
 
-  const templates = PAGE_TEMPLATES[businessType] || [];
-  const funnel = FUNNEL_DEFS[businessType] || FUNNEL_DEFS['retail-core'];
-  const preset = pickRandomPreset(businessType);
-
-  console.log(`Generating ${businessName} with preset: ${preset.name}`);
-
-  // Try AI generation first
-  if (process.env.OPENAI_API_KEY) {
-    try {
-      const openai = getOpenAI();
-      const prompt = buildPrompt(businessName, businessType, offerings, contactEmail, tagline, preset);
-
-      console.log(`[AI] Starting generation for ${businessName} (${businessType})`);
-
-      const response = await openai.chat.completions.create({
-        model: 'gpt-4o-2024-08-06',
-        messages: [{ role: 'user', content: prompt }],
-        temperature: 0.7,
-        max_tokens: 4000,
-      });
-
-      const content = response.choices[0].message.content || '';
-      console.log(`[AI] Raw response length: ${content.length} chars`);
-      console.log(`[AI] First 200 chars: ${content.substring(0, 200)}`);
-
-      const jsonMatch = content.match(/\{[\s\S]*\}/);
+  try {
+    // Try Gemini first if available
+    if (process.env.GOOGLE_API_KEY) {
+      const { GoogleGenerativeAI } = await import('@google/generative-ai');
+      const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY!);
+      const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
+      
+      const result = await model.generateContent(promptText);
+      const text = result.response.text();
+      
+      // Extract JSON from response
+      const jsonMatch = text.match(/\{[\s\S]*\}/);
       if (!jsonMatch) {
-        console.error(`[AI] No JSON found in response for ${businessName}`);
-        console.error(`[AI] Full response: ${content}`);
-        throw new Error('No JSON in AI response');
+        throw new Error('No JSON found in Gemini response');
       }
-
+      
       const parsed = JSON.parse(jsonMatch[0]);
-      console.log(`[AI] Parsed keys: ${Object.keys(parsed)}`);
-      console.log(`[AI] Pages count: ${parsed.pages?.length || 0}`);
-
-      if (parsed.pages && Array.isArray(parsed.pages)) {
-        const pages = parsed.pages.map((page: any) => ({
-          slug: page.slug,
-          title: page.title,
-          sections: page.sections.map((sec: any) => ({
-            id: sec.id || genId(),
-            type: sec.type,
-            data: sec.data || {},
-          })),
-        }));
-
-        const pagesWithImages = await processImagesInPages(pages);
-        console.log(`[AI] SUCCESS for ${businessName} - ${pagesWithImages.length} pages generated`);
-        return { pages: pagesWithImages };
-      } else {
-        console.error(`[AI] Invalid format for ${businessName}:`, parsed);
-        throw new Error('Invalid AI response format');
+      
+      // Process images
+      if (parsed.pages) {
+        await processImagesInPages(parsed.pages);
       }
-    } catch (err) {
-      console.error(`[AI] FAILED for ${businessName}:`, err);
-      console.error(`[AI] Stack:`, err instanceof Error ? err.stack : 'N/A');
+      
+      return parsed;
     }
-  } else {
-    console.log(`[AI] No OPENAI_API_KEY found, using fallback for ${businessName}`);
-  }
-
-  // Fallback: Use fixed templates with sample data
-  console.log(`Using fallback sample data for ${businessName}`);
-  const pages = templates.map(template => {
-    const sections = template.sections.map(section => {
-      const def = SECTION_LIBRARY[section.type];
-      const generatedData = buildSampleData(
-        section.type,
-        businessName,
-        offerings,
-        funnel,
-        businessType,
-        preset
-      );
-
-      return {
-        id: genId(),
-        type: section.type as SectionType,
-        data: {
-          ...def?.defaultData,
-          ...generatedData,
-          ...section.data
-        }
-      };
+    
+    // Fallback to OpenAI
+    const openai = getOpenAI();
+    const response = await openai.chat.completions.create({
+      model: 'gpt-4-turbo-preview',
+      messages: [{ role: 'user', content: promptText }],
+      temperature: 0.7,
+      max_tokens: 8000,
     });
 
-    return {
-      slug: template.slug,
-      title: template.title,
-      sections
-    };
-  });
-
-  const pagesWithImages = await processImagesInPages(pages);
-  return { pages: pagesWithImages };
+    const text = response.choices[0].message.content || '';
+    
+    // Extract JSON from response
+    const jsonMatch = text.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) {
+      throw new Error('No JSON found in OpenAI response');
+    }
+    
+    const parsed = JSON.parse(jsonMatch[0]);
+    
+    // Process images
+    if (parsed.pages) {
+      await processImagesInPages(parsed.pages);
+    }
+    
+    return parsed;
+  } catch (error) {
+    console.error('Content generation error:', error);
+    throw new Error(`Failed to generate content: ${error instanceof Error ? error.message : 'Unknown error'}`);
+  }
 }

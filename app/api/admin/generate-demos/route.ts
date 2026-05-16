@@ -6,7 +6,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
-import { generateStorefront } from '@/lib/ai';
+import { generateSiteContent } from '@/lib/ai';
 import type { TemplateFamily } from '@/lib/types';
 
 interface DemoSite {
@@ -130,7 +130,7 @@ export async function POST(req: NextRequest) {
       }
 
       // Generate content
-      const { pages } = await generateStorefront(
+      const { pages } = await generateSiteContent(
         site.brandName,
         site.businessType,
         site.offerings,
