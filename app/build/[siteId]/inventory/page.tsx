@@ -328,6 +328,7 @@ export default function InventoryPage({ params }: { params: Promise<{ siteId: st
             setEditingItem(null);
           }}
           saving={saving}
+          siteId={siteId}
         />
       )}
     </div>
@@ -339,11 +340,13 @@ function InventoryModal({
   onSave,
   onClose,
   saving,
+  siteId,
 }: {
   item: InventoryItem | null;
   onSave: (item: InventoryItem) => void;
   onClose: () => void;
   saving: boolean;
+  siteId: string;
 }) {
   const [form, setForm] = useState<InventoryItem>(
     item || {
