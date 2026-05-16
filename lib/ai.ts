@@ -3,6 +3,7 @@ import { GeneratedSection, TemplateFamily, SectionType } from './types';
 import { TEMPLATES } from './templates';
 import { TEMPLATE_MANIFESTS, SECTION_LIBRARY, PAGE_TEMPLATES } from './section-library';
 import { processImagesInPages } from './unsplash';
+import { pickRandomPreset, type StylePreset } from './style-presets';
 
 let openaiInstance: OpenAI | null = null;
 
@@ -330,7 +331,7 @@ Return ONLY valid JSON (no markdown, no code fences) in this exact structure:
 Generate ALL pages. ALL sections. Every field. Real content. POWERFUL copy. Now.`;
 }
 
-function buildSampleData(type: SectionType, businessName: string, offerings: string, funnel: FunnelDef, businessType: string): Record<string, any> {
+function buildSampleData(type: SectionType, businessName: string, offerings: string, funnel: FunnelDef, businessType: string, preset?: StylePreset): Record<string, any> {
   // Generate powerful, specific sample data that matches our "forbidden words" / "power words" style
   const businessLower = businessName.toLowerCase();
   
@@ -571,17 +572,23 @@ export async function generateStorefront(
   
   const funnel = FUNNEL_DEFS[businessType] || FUNNEL_DEFS['retail-core'];
   
+  // Pick a random style preset for this vertical
+  const preset = pickRandomPreset(businessType);
+  
+  console.log(`Generating ${businessName} with preset: ${preset.name}`);
+  
   // Generate pages using fixed template structure
   const pages = templates.map(template => {
     const sections = template.sections.map(section => {
-      const def = SECTION_LIBRARY[section.type];
-      // Generate content using AI-powered sample data
+      const def = SECTION_LIBRARY[section.type ];
+      // Generate content using AI-powered sample data with style preset
       const generatedData = buildSampleData(
-        section.type, 
-        businessName, 
-        offerings, 
+        section.type,
+        businessName,
+        offerings,
         funnel,
-        businessType
+        businessType,
+        preset // Pass the style preset
       );
       
       return {
