@@ -2,7 +2,17 @@ import { NextRequest, NextResponse } from 'next/server';
 import Stripe from 'stripe';
 import { supabaseAdmin } from '@/lib/supabase';
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
+let stripeInstance: Stripe | null = null;
+
+function getStripe(): Stripe {
+  if (!stripeInstance) {
+    if (!process.env.STRIPE_SECRET_KEY) {
+      throw new Error('STRIPE_SECRET_KEY is not set');
+    }
+    stripeInstance = new Stripe(process.env.STRIPE_SECRET_KEY);
+  }
+  return stripeInstance;
+}
 
 // Stripe Connect OAuth start
 export async function GET(request: NextRequest) {
@@ -50,6 +60,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Exchange code for Stripe account ID
+    const stripe = getStripe();
     const response = await stripe.oauth.token({
       grant_type: 'authorization_code',
       code,

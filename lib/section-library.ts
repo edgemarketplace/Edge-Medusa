@@ -369,6 +369,13 @@ export const TEMPLATE_MANIFESTS: Record<TemplateFamily, TemplateManifest> = {
     allowedSections: ['header-simple', 'header-promo', 'hero-split', 'hero-visual', 'hero-cta', 'hero-trust', 'packages', 'quote-cta', 'booking-cta', 'brand-story', 'value-icons', 'editorial-split', 'founder-note', 'testimonials', 'reviews', 'logo-bar', 'stats', 'press', 'gallery', 'video', 'before-after', 'social-gallery', 'faq', 'newsletter', 'promo-banner', 'footer-basic', 'footer-service'],
     maxDuplicates: { 'packages': 1, 'hero-visual': 1, 'gallery': 2, 'testimonials': 1 },
   },
+  'coach-educator': {
+    family: 'coach-educator',
+    requiredSections: ['header-simple', 'hero-trust', 'service-list', 'testimonials', 'booking-cta', 'footer-basic'],
+    recommendedSections: ['value-icons', 'pricing-tiers', 'faq', 'newsletter'],
+    allowedSections: ['header-simple', 'header-promo', 'hero-split', 'hero-visual', 'hero-cta', 'hero-trust', 'service-list', 'pricing-tiers', 'packages', 'booking-cta', 'brand-story', 'value-icons', 'editorial-split', 'founder-note', 'testimonials', 'reviews', 'logo-bar', 'stats', 'gallery', 'video', 'faq', 'newsletter', 'promo-banner', 'footer-basic', 'footer-service'],
+    maxDuplicates: { 'service-list': 1, 'pricing-tiers': 1, 'testimonials': 1, 'hero-trust': 1 },
+  },
 };
 
 // --- Vertical Page Templates ---
@@ -469,9 +476,32 @@ export const PAGE_TEMPLATES: Record<TemplateFamily, PageTemplate[]> = {
       { type: 'footer-basic', data: { logoText: '', links: [{ label: 'Privacy', url: '#' }], copyright: '' } },
     ]},
     { slug: 'contact', title: 'Contact', description: 'Inquiry form', sections: [
-      { type: 'header-simple', data: { logoText: '', links: [{ label: 'Home', url: '/' }, { label: 'Packages', url: '/packages' }], ctaText: 'Inquire', ctaUrl: '#form' } },
+      { type: 'header-simple', data: { logoText: '', links: [{ label: 'Home', url: '/' }, { label: 'Packages', url: '/packages' }], ctaText: 'Inquire', ctaUrl: '/contact' } },
       { type: 'hero-visual', data: { heading: 'Let\'s Create Something Beautiful', subheading: 'Tell us your vision', imageUrl: '', overlayOpacity: 0.4 } },
       { type: 'quote-cta', data: { headline: 'Start Your Inquiry', subheading: 'We\'ll respond within 24 hours.', ctaText: 'Send Inquiry', showForm: true } },
+      { type: 'footer-basic', data: { logoText: '', links: [{ label: 'Privacy', url: '#' }], copyright: '' } },
+    ]},
+  ],
+  'coach-educator': [
+    { slug: 'services', title: 'Coaching Services', description: 'Programs and pricing', sections: [
+      { type: 'header-simple', data: { logoText: '', links: [{ label: 'Home', url: '/' }, { label: 'Services', url: '/services' }], ctaText: 'Book Call', ctaUrl: '/contact' } },
+      { type: 'hero-trust', data: { heading: 'Transform Your Career', subheading: 'Proven coaching programs that deliver results.', ctaText: 'View Programs', trustBadges: ['500+ Clients', '94% Success Rate', '5-Star Rated'] } },
+      { type: 'service-list', data: { title: 'Coaching Programs', services: [{ name: 'Career Pivot', description: '6-week intensive for professionals ready for change.', price: '$997' }, { name: 'Leadership Mastery', description: 'Executive coaching for senior leaders.', price: '$2,497' }] } },
+      { type: 'value-icons', data: { title: 'Why Choose Me', values: [{ icon: '🎓', title: 'Certified Coach', description: 'ICF accredited' }, { icon: '📈', title: 'Proven Results', description: '500+ success stories' }, { icon: '⏱', title: 'Fast Track', description: 'Results in 90 days' }] } },
+      { type: 'footer-basic', data: { logoText: '', links: [{ label: 'Privacy', url: '#' }], copyright: '' } },
+    ]},
+    { slug: 'about', title: 'About Me', description: 'My story and credentials', sections: [
+      { type: 'header-simple', data: { logoText: '', links: [{ label: 'Home', url: '/' }, { label: 'Services', url: '/services' }], ctaText: 'Book Call', ctaUrl: '/contact' } },
+      { type: 'hero-trust', data: { heading: 'Meet Your Coach', subheading: 'A decade of helping professionals thrive.', ctaText: 'My Story', trustBadges: ['10+ Years', 'ICF Certified', '500+ Clients'] } },
+      { type: 'brand-story', data: { headline: 'My Journey', body: 'From corporate burnout to coaching full-time, I help others find their path.', imageUrl: '' } },
+      { type: 'testimonials', data: { title: 'Client Transformations', testimonials: [{ name: 'Sarah M.', quote: 'Went from stuck to dream job in 3 months!', rating: 5 }, { name: 'James K.', quote: 'Best investment I\'ve ever made in myself.', rating: 5 }] } },
+      { type: 'footer-basic', data: { logoText: '', links: [{ label: 'Privacy', url: '#' }], copyright: '' } },
+    ]},
+    { slug: 'contact', title: 'Book a Call', description: 'Free consultation booking', sections: [
+      { type: 'header-simple', data: { logoText: '', links: [{ label: 'Home', url: '/' }, { label: 'Services', url: '/services' }], ctaText: 'Book Call', ctaUrl: '/contact' } },
+      { type: 'hero-trust', data: { heading: 'Ready to Transform?', subheading: 'Book your free 30-minute consultation.', ctaText: 'Book Now', trustBadges: ['Free Call', 'No Obligation', '24hr Response'] } },
+      { type: 'booking-cta', data: { headline: 'Schedule Your Call', subheading: 'Pick a time that works for you.', ctaText: 'Book Consultation' } },
+      { type: 'faq', data: { title: 'Common Questions', questions: [{ question: 'Is coaching right for me?', answer: 'If you\'re ready for change and willing to do the work, yes!' }, { question: 'How fast will I see results?', answer: 'Most clients see shifts within 30 days.' }] } },
       { type: 'footer-basic', data: { logoText: '', links: [{ label: 'Privacy', url: '#' }], copyright: '' } },
     ]},
   ],

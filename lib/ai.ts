@@ -3,11 +3,17 @@ import { GeneratedSection, TemplateFamily, SectionType } from './types';
 import { TEMPLATES } from './templates';
 import { TEMPLATE_MANIFESTS, SECTION_LIBRARY } from './section-library';
 
-if (!process.env.OPENAI_API_KEY) {
-  throw new Error('OPENAI_API_KEY is required');
-}
+let openaiInstance: OpenAI | null = null;
 
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+function getOpenAI(): OpenAI {
+  if (!openaiInstance) {
+    if (!process.env.OPENAI_API_KEY) {
+      throw new Error('OPENAI_API_KEY is required');
+    }
+    openaiInstance = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+  }
+  return openaiInstance;
+}
 
 // --- Vertical-specific funnel definitions ---
 
@@ -337,6 +343,7 @@ export async function generateStorefront(
 ): Promise<GeneratedSection[]> {
   const prompt = buildPrompt(businessName, businessType, offerings, contactEmail, tagline);
 
+  const openai = getOpenAI();
   const response = await openai.chat.completions.create({
     model: 'gpt-4o',
     messages: [{ role: 'user', content: prompt }],
