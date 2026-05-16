@@ -1,7 +1,7 @@
 import OpenAI from 'openai';
 import { GeneratedSection, TemplateFamily, SectionType } from './types';
 import { TEMPLATES } from './templates';
-import { TEMPLATE_MANIFESTS, SECTION_LIBRARY } from './section-library';
+import { TEMPLATE_MANIFESTS, SECTION_LIBRARY, PAGE_TEMPLATES } from './section-library';
 import { processImagesInPages } from './unsplash';
 
 let openaiInstance: OpenAI | null = null;
@@ -565,45 +565,45 @@ export async function generateStorefront(
   contactEmail: string = '',
   tagline: string = '',
 ): Promise<{ pages: Array<{ slug: string; title: string; sections: GeneratedSection[] }> }> {
-  const prompt = buildPrompt(businessName, businessType, offerings, contactEmail, tagline);
-
-  const openai = getOpenAI();
-  const response = await openai.chat.completions.create({
-    model: 'gpt-4o',
-    messages: [{ role: 'user', content: prompt }],
-    response_format: { type: 'json_object' },
-    temperature: 0.8, // Slightly creative but consistent
-  });
-
-  const rawText = response.choices[0].message.content || '{}';
-  const cleaned = rawText
-    .replace(/^```json\s*/i, '')
-    .replace(/^```\s*/, '')
-    .replace(/\s*```$/, '')
-    .trim();
-
-  const parsed = JSON.parse(cleaned);
-
-  // Handle new pages format or fallback to old sections format
-  const pages = parsed.pages || [{ slug: 'home', title: 'Home', sections: parsed.sections || [] }];
-
-  // Validate and fix sections in each page
-  const validatedPages = pages.map((page: any) => ({
-    slug: page.slug || 'home',
-    title: page.title || 'Home',
-    sections: (page.sections || []).map((s: any) => {
-      const type = s.type as SectionType;
-      const def = SECTION_LIBRARY[type];
+  
+  // Get fixed templates for this business type
+  const templates = PAGE_TEMPLATES[businessType] || [];
+  
+  const funnel = FUNNEL_DEFS[businessType] || FUNNEL_DEFS['retail-core'];
+  
+  // Generate pages using fixed template structure
+  const pages = templates.map(template => {
+    const sections = template.sections.map(section => {
+      const def = SECTION_LIBRARY[section.type];
+      // Generate content using AI-powered sample data
+      const generatedData = buildSampleData(
+        section.type, 
+        businessName, 
+        offerings, 
+        funnel,
+        businessType
+      );
+      
       return {
-        id: s.id || genId(),
-        type,
-        data: def ? { ...def.defaultData, ...(s.data || {}) } : (s.data || {}),
+        id: genId(),
+        type: section.type as SectionType,
+        data: {
+          ...def?.defaultData,
+          ...generatedData,
+          ...section.data // Override with any template-specific data
+        }
       };
-    }),
-  }));
-
+    });
+    
+    return {
+      slug: template.slug,
+      title: template.title,
+      sections
+    };
+  });
+  
   // Process images - replace search terms with actual Unsplash URLs
-  const pagesWithImages = await processImagesInPages(validatedPages);
-
+  const pagesWithImages = await processImagesInPages(pages);
+  
   return { pages: pagesWithImages };
 }
