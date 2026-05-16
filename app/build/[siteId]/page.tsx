@@ -96,6 +96,9 @@ export default function BuildPage({ params }: BuildPageProps) {
       // Load pages from template_data (new multi-page format)
       if (data.template_data?.pages) {
         setPages(data.template_data.pages);
+        // Extract all sections from pages for preview compatibility
+        const allSections = data.template_data.pages.flatMap((p: any) => p.sections || []);
+        setSections(allSections);
       } else if (data.template_data?.sections) {
         // Legacy: migrate old sections format
         const migrated = migrateSections(data.template_data.sections);
@@ -171,6 +174,9 @@ export default function BuildPage({ params }: BuildPageProps) {
       const data = await res.json();
       if (data.pages) {
         setPages(data.pages);
+        // Extract sections from pages for preview
+        const allSections = data.pages.flatMap((p: any) => p.sections || []);
+        setSections(allSections);
       }
       const siteRes = await fetch(`/api/sites/${siteId}`);
       const siteData = await siteRes.json();
