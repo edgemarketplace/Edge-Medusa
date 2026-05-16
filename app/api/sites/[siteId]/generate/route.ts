@@ -8,6 +8,7 @@ export async function POST(
 ) {
   const { siteId } = await params;
 
+  try {
   const { data: site, error: fetchError } = await supabaseAdmin
     .from('sites')
     .select('*')
@@ -15,6 +16,7 @@ export async function POST(
     .single();
 
   if (fetchError) {
+    console.error('Supabase fetch error:', fetchError);
     return NextResponse.json(
       { error: fetchError.message },
       { status: fetchError.code === 'PGRST116' ? 404 : 500 }
@@ -49,6 +51,7 @@ export async function POST(
     .eq('id', siteId);
 
   if (updateError) {
+    console.error('Supabase update error:', updateError);
     return NextResponse.json(
       { error: updateError.message },
       { status: 500 }
@@ -56,4 +59,11 @@ export async function POST(
   }
 
   return NextResponse.json({ pages });
+} catch (error) {
+  console.error('Generate route fatal error:', error);
+  return NextResponse.json(
+    { error: error instanceof Error ? error.message : 'Unknown error', stack: error instanceof Error ? error.stack : undefined },
+    { status: 500 }
+  );
+}
 }
