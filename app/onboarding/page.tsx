@@ -18,6 +18,17 @@ export default function OnboardingPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
+  // Pre-select template from URL param (e.g., ?type=service-pro)
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const typeParam = params.get('type');
+      if (typeParam && Object.keys(TEMPLATES).includes(typeParam)) {
+        setSelectedType(typeParam as TemplateFamily);
+      }
+    }
+  }, []);
+
   const canSubmit = businessName.trim() && email.trim() && selectedType && !loading;
 
   const [generationStep, setGenerationStep] = useState(0);

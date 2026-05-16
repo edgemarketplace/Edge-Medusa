@@ -300,7 +300,7 @@ Transform, Unlock, Breakthrough, Proven, Secret, Revealed, Finally, Exposed, Tru
 ${sectionInstructions}
 
 ## CRITICAL RULES (Violate these and the store fails)
-1. EVERY headline MUST include "${businessName}" or a specific benefit metric
+1. EVERY headline MUST include "${businessName}" OR a specific benefit metric
 2. NO placeholder text. NO "Lorem ipsum". NO "Your text here". NO "Add images in the editor"
 3. Testimonials: Use FULL names (not "Sarah M."), specific results ("saved $5,000"), and emotional language
 4. FAQs: Address REAL objections ("What if I hate it?", "How long does it really take?") — NOT generic questions
@@ -311,6 +311,12 @@ ${sectionInstructions}
 9. Every section must feel CUSTOM — if a visitor saw this, they should think "This was written just for me"
 10. Generate ALL pages: homepage + about + contact (3 pages total, each with appropriate sections)
 11. Use the sample copy style above as INSPIRATION only — create ORIGINAL content for ${businessName}
+12. **⚠️ MANIFEST CONSTRAINTS — MUST FOLLOW EXACTLY:**
+    - Required sections: ${manifest.requiredSections.join(', ')}
+    - Max duplicates: ${Object.entries(manifest.maxDuplicates).map(([k,v]) => `${k} (max ${v})`).join(', ')}
+    - YOU MUST NOT generate more than the max allowed for any section type
+    - Example: if max is 1 for service-list, generate ONLY ONE service-list section per page
+    - Count your sections before returning JSON to ensure compliance
 
 ## OUTPUT FORMAT
 Return ONLY valid JSON (no markdown, no code fences) in this exact structure:

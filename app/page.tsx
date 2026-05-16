@@ -79,14 +79,11 @@ export default function HomePage() {
         <h2 className="text-3xl font-serif italic text-center mb-16">Built for how you do business</h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {templateEntries.map((template) => (
-            <button
-              key={template.family}
-              onClick={() => {
-                setSelectedType(template.family);
-                handleStart();
-              }}
-              className="text-left bg-white rounded-3xl p-8 border border-black/5 hover:border-black/20 hover:shadow-lg transition-all group"
-            >
+              <button
+                key={template.family}
+                onClick={() => router.push(`/onboarding?type=${template.family}`)}
+                className="text-left bg-white rounded-3xl p-8 border border-black/5 hover:border-black/20 hover:shadow-lg transition-all group"
+              >
               <p className="text-[10px] uppercase tracking-[0.2em] font-bold text-black/35 mb-2">
                 {template.kicker}
               </p>
