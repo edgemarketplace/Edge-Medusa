@@ -5,6 +5,7 @@ import Link from 'next/link';
 import type { SiteData, GeneratedSection, InventoryItem, TemplateFamily, PageData, SectionType, PublishValidation } from '@/lib/types';
 import { TEMPLATES } from '@/lib/templates';
 import { SECTION_LIBRARY, SECTION_CATEGORIES, TEMPLATE_MANIFESTS, validatePublish, PAGE_TEMPLATES } from '@/lib/section-library';
+import InPlaceEditor from './InPlaceEditor';
 
 interface BuildPageProps {
   params: Promise<{ siteId: string }>;
@@ -53,8 +54,15 @@ export default function BuildPage({ params }: BuildPageProps) {
   const [saving, setSaving] = useState(false);
   const [launching, setLaunching] = useState(false);
   const [error, setError] = useState('');
-  const [activeTab, setActiveTab] = useState<'preview' | 'inventory' | 'pages'>('preview');
+  const [activeTab, setActiveTab] = useState<'design' | 'pages' | 'inventory' | 'settings' | 'orders' | 'clients'>('design');
+  const [settingsName, setSettingsName] = useState('');
+  const [settingsTagline, setSettingsTagline] = useState('');
+  const [settingsEmail, setSettingsEmail] = useState('');
+  const [settingsSaving, setSettingsSaving] = useState(false);
   const [stripeConnected, setStripeConnected] = useState(!!site?.stripe_account_id);
+  const [orders, setOrders] = useState<any[]>([]);
+  const [clients, setClients] = useState<any[]>([]);
+  const [loadingData, setLoadingData] = useState(false);
 
   // Section editor state
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -317,6 +325,36 @@ export default function BuildPage({ params }: BuildPageProps) {
     } catch (err: any) { setError(err.message); }
   }
 
+  // --- Fetch Tab Data ---
+
+  useEffect(() => {
+    if (activeTab === 'orders' && stripeConnected) {
+      fetchOrders();
+    } else if (activeTab === 'clients' && stripeConnected) {
+      fetchClients();
+    }
+  }, [activeTab, stripeConnected]);
+
+  async function fetchOrders() {
+    setLoadingData(true);
+    try {
+      const res = await fetch(`/api/sites/${siteId}/orders`);
+      const data = await res.json();
+      if (data.orders) setOrders(data.orders);
+    } catch (err) { console.error(err); }
+    finally { setLoadingData(false); }
+  }
+
+  async function fetchClients() {
+    setLoadingData(true);
+    try {
+      const res = await fetch(`/api/sites/${siteId}/clients`);
+      const data = await res.json();
+      if (data.clients) setClients(data.clients);
+    } catch (err) { console.error(err); }
+    finally { setLoadingData(false); }
+  }
+
   // --- Inventory ---
 
   function addInventoryItem() {
@@ -441,15 +479,19 @@ export default function BuildPage({ params }: BuildPageProps) {
     );
   }
 
-  const template = TEMPLATES[site.business_type as TemplateFamily];
+  const baseTemplate = TEMPLATES[site.business_type as TemplateFamily];
+  const template = {
+    ...baseTemplate,
+    ...(site.template_data || {})
+  };
 
   return (
     <div className="min-h-screen bg-[#F9F8F6] text-[#1A1A1A]">
       {/* Top bar */}
       <div className="sticky top-0 z-20 bg-white border-b border-black/5 px-6 py-4 flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <Link href="/account" className="text-sm text-black/60 hover:text-black font-medium">
-            ← My account
+          <Link href="/dashboard" className="text-sm text-black/60 hover:text-black font-medium">
+            ← Dashboard
           </Link>
           <span className="text-black/20">|</span>
           <span className="font-bold">{site.business_name}</span>
@@ -471,8 +513,8 @@ export default function BuildPage({ params }: BuildPageProps) {
           <button onClick={handleGenerate} disabled={generating} className="px-4 py-2 rounded-full border border-black/10 text-sm font-bold hover:bg-black/5 disabled:opacity-50">
             {generating ? 'Generating...' : '↻ Regenerate'}
           </button>
-          <button onClick={handleLaunch} disabled={launching || !inventory.length} className="px-6 py-2 rounded-full bg-black text-white text-sm font-bold disabled:opacity-40 hover:scale-105 transition-transform">
-            {launching ? 'Launching...' : '🚀 Launch store'}
+          <button onClick={handleLaunch} disabled={launching} className="px-6 py-2 rounded-full bg-black text-white text-sm font-bold disabled:opacity-40 hover:scale-105 transition-transform">
+            {launching ? 'Launching...' : '🚀 Publish'}
           </button>
         </div>
       </div>
@@ -497,11 +539,20 @@ export default function BuildPage({ params }: BuildPageProps) {
 
       {/* Tabs */}
       <div className="border-b border-black/5 bg-white">
-        <div className="max-w-7xl mx-auto px-6 flex gap-6">
-          {(['preview', 'inventory', 'pages'] as const).map(tab => (
-            <button key={tab} onClick={() => setActiveTab(tab)}
-              className={`py-4 text-sm font-bold border-b-2 transition-colors capitalize ${activeTab === tab ? 'border-black text-black' : 'border-transparent text-black/40'}`}>
-              {tab === 'preview' ? 'Edit page' : tab} {tab === 'inventory' ? `(${inventory.length})` : tab === 'pages' ? `(${pages.length})` : ''}
+        <div className="max-w-7xl mx-auto px-6 flex gap-1 overflow-x-auto">
+          {([
+            { id: 'design', label: '✏️ Design', count: null },
+            { id: 'pages', label: '📄 Pages', count: pages.length },
+            { id: 'inventory', label: '📦 Inventory', count: inventory.length },
+            { id: 'settings', label: '⚙️ Settings', count: null },
+            { id: 'orders', label: '📊 Orders', count: null },
+            { id: 'clients', label: '👥 Clients', count: null },
+          ] as const).map(tab => (
+            <button key={tab.id} onClick={() => setActiveTab(tab.id as any)}
+              className={`py-4 px-4 text-sm font-bold border-b-2 transition-colors whitespace-nowrap ${
+                activeTab === tab.id ? 'border-black text-black' : 'border-transparent text-black/40 hover:text-black/70'
+              }`}>
+              {tab.label}{tab.count !== null ? ` (${tab.count})` : ''}
             </button>
           ))}
         </div>
@@ -509,8 +560,194 @@ export default function BuildPage({ params }: BuildPageProps) {
 
       {/* Main content */}
       <div className="max-w-7xl mx-auto">
-        {activeTab === 'preview' && (
-          <div className="flex">
+
+        {/* ── SETTINGS TAB ── */}
+        {activeTab === 'settings' && (
+          <div className="max-w-2xl mx-auto py-10 px-6 space-y-8">
+            <div>
+              <h2 className="text-2xl font-serif italic mb-1">Store Settings</h2>
+              <p className="text-black/50 text-sm">Update your business info and payment setup.</p>
+            </div>
+            <div className="bg-white rounded-2xl p-6 border border-black/5 space-y-5">
+              <h3 className="font-bold text-sm uppercase tracking-widest text-black/40">Business Info</h3>
+              <div>
+                <label className="block text-sm font-bold mb-2">Business name</label>
+                <input value={settingsName || site.business_name} onChange={e => setSettingsName(e.target.value)}
+                  className="w-full border border-black/10 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-black/30" />
+              </div>
+              <div>
+                <label className="block text-sm font-bold mb-2">Tagline</label>
+                <input value={settingsTagline !== '' ? settingsTagline : (site as any).tagline || ''} onChange={e => setSettingsTagline(e.target.value)}
+                  placeholder="What makes you unique?"
+                  className="w-full border border-black/10 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-black/30" />
+              </div>
+              <div>
+                <label className="block text-sm font-bold mb-2">Contact email</label>
+                <input value={settingsEmail || site.contact_email} onChange={e => setSettingsEmail(e.target.value)}
+                  className="w-full border border-black/10 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-black/30" />
+              </div>
+              <button
+                disabled={settingsSaving}
+                onClick={async () => {
+                  setSettingsSaving(true);
+                  await fetch(`/api/sites/${siteId}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ business_name: settingsName || site.business_name, tagline: settingsTagline, contact_email: settingsEmail || site.contact_email }) });
+                  await loadSite();
+                  setSettingsSaving(false);
+                }}
+                className="bg-black text-white text-sm font-bold px-5 py-2.5 rounded-full disabled:opacity-50"
+              >
+                {settingsSaving ? 'Saving…' : 'Save changes'}
+              </button>
+            </div>
+            <div className="bg-white rounded-2xl p-6 border border-black/5 space-y-4">
+              <h3 className="font-bold text-sm uppercase tracking-widest text-black/40">Payments</h3>
+              {site.stripe_account_id ? (
+                <div className="flex items-center gap-3">
+                  <span className="w-2 h-2 rounded-full bg-emerald-500" />
+                  <p className="text-sm font-bold text-emerald-700">Stripe connected</p>
+                  <a href="https://dashboard.stripe.com" target="_blank" className="text-xs text-black/40 underline ml-auto">Open Stripe →</a>
+                </div>
+              ) : (
+                <div>
+                  <p className="text-sm text-black/60 mb-3">Connect Stripe to accept payments on your store.</p>
+                  <a href={`/api/stripe/connect?siteId=${siteId}`}
+                    className="inline-block bg-blue-600 text-white text-sm font-bold px-5 py-2.5 rounded-full hover:bg-blue-700">
+                    Connect Stripe
+                  </a>
+                </div>
+              )}
+            </div>
+            {site.subdomain && (
+              <div className="bg-white rounded-2xl p-6 border border-black/5">
+                <h3 className="font-bold text-sm uppercase tracking-widest text-black/40 mb-3">Your store URL</h3>
+                <a href={`/store/${site.subdomain}`} target="_blank"
+                  className="text-sm font-mono text-blue-600 underline">
+                  {site.subdomain}.edgemarketplacehub.com
+                </a>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ── ORDERS TAB ── */}
+        {activeTab === 'orders' && (
+          <div className="max-w-4xl mx-auto py-10 px-6">
+            <h2 className="text-2xl font-serif italic mb-1">Orders</h2>
+            <p className="text-black/50 text-sm mb-8">Recent customer purchases from your store.</p>
+            
+            {!stripeConnected ? (
+              <div className="bg-white rounded-2xl p-10 text-center border border-black/5">
+                <div className="text-4xl mb-4">💳</div>
+                <h3 className="font-bold text-lg mb-2">Connect Stripe to see orders</h3>
+                <p className="text-black/50 text-sm mb-6">Once connected, every order will appear here with customer details and revenue.</p>
+                <a href={`/api/stripe/connect?siteId=${siteId}`}
+                  className="inline-block bg-blue-600 text-white font-bold px-6 py-3 rounded-full hover:bg-blue-700">
+                  Connect Stripe
+                </a>
+              </div>
+            ) : loadingData ? (
+              <div className="flex justify-center py-20">
+                <div className="animate-spin h-8 w-8 border-2 border-black border-t-transparent rounded-full" />
+              </div>
+            ) : orders.length > 0 ? (
+              <div className="bg-white rounded-2xl border border-black/5 overflow-hidden">
+                <table className="w-full text-left text-sm">
+                  <thead>
+                    <tr className="bg-[#FAFAF9] border-b border-black/5">
+                      <th className="px-6 py-4 font-bold">Order ID</th>
+                      <th className="px-6 py-4 font-bold">Customer</th>
+                      <th className="px-6 py-4 font-bold">Date</th>
+                      <th className="px-6 py-4 font-bold">Status</th>
+                      <th className="px-6 py-4 font-bold text-right">Amount</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-black/5">
+                    {orders.map((order) => (
+                      <tr key={order.id} className="hover:bg-black/2 transition-colors">
+                        <td className="px-6 py-4 font-mono text-[10px] text-black/40">{order.id}</td>
+                        <td className="px-6 py-4 font-medium">{order.email}</td>
+                        <td className="px-6 py-4 text-black/50">{new Date(order.date).toLocaleDateString()}</td>
+                        <td className="px-6 py-4">
+                          <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${
+                            order.status === 'succeeded' ? 'bg-emerald-50 text-emerald-600' : 'bg-amber-50 text-amber-600'
+                          }`}>
+                            {order.status}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 text-right font-bold">${order.amount.toFixed(2)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <div className="bg-white rounded-2xl p-12 text-center border border-black/5">
+                <div className="text-3xl mb-3">📊</div>
+                <h3 className="font-bold mb-1">No orders yet</h3>
+                <p className="text-black/50 text-sm">Orders will appear here once customers start purchasing.</p>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ── CLIENTS TAB ── */}
+        {activeTab === 'clients' && (
+          <div className="max-w-4xl mx-auto py-10 px-6">
+            <h2 className="text-2xl font-serif italic mb-1">Clients</h2>
+            <p className="text-black/50 text-sm mb-8">People who have purchased from your store.</p>
+            
+            {!stripeConnected ? (
+              <div className="bg-white rounded-2xl p-10 text-center border border-black/5">
+                <div className="text-4xl mb-4">👥</div>
+                <h3 className="font-bold text-lg mb-2">Connect Stripe to see clients</h3>
+                <p className="text-black/50 text-sm mb-6">Your customer list builds automatically from orders.</p>
+                <a href={`/api/stripe/connect?siteId=${siteId}`}
+                  className="inline-block bg-blue-600 text-white font-bold px-6 py-3 rounded-full hover:bg-blue-700">
+                  Connect Stripe
+                </a>
+              </div>
+            ) : loadingData ? (
+              <div className="flex justify-center py-20">
+                <div className="animate-spin h-8 w-8 border-2 border-black border-t-transparent rounded-full" />
+              </div>
+            ) : clients.length > 0 ? (
+              <div className="bg-white rounded-2xl border border-black/5 overflow-hidden">
+                <table className="w-full text-left text-sm">
+                  <thead>
+                    <tr className="bg-[#FAFAF9] border-b border-black/5">
+                      <th className="px-6 py-4 font-bold">Client Name</th>
+                      <th className="px-6 py-4 font-bold">Email</th>
+                      <th className="px-6 py-4 font-bold">First Purchase</th>
+                      <th className="px-6 py-4 text-right">Action</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-black/5">
+                    {clients.map((client) => (
+                      <tr key={client.id} className="hover:bg-black/2 transition-colors">
+                        <td className="px-6 py-4 font-medium">{client.name}</td>
+                        <td className="px-6 py-4 text-black/50">{client.email}</td>
+                        <td className="px-6 py-4 text-black/40 text-xs">{new Date(client.created).toLocaleDateString()}</td>
+                        <td className="px-6 py-4 text-right">
+                          <button className="text-xs font-bold text-blue-600 hover:underline">View History</button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <div className="bg-white rounded-2xl p-12 text-center border border-black/5">
+                <div className="text-3xl mb-3">👥</div>
+                <h3 className="font-bold mb-1">No clients yet</h3>
+                <p className="text-black/50 text-sm">Clients will appear here once orders come in.</p>
+              </div>
+            )}
+          </div>
+        )}
+
+        {activeTab === 'design' && (
+          <div className="flex" style={{ minHeight: 'calc(100vh - 130px)' }}>
             {/* Left rail — Section library */}
             <div className="w-64 shrink-0 border-r border-black/5 bg-white min-h-[calc(100vh-120px)] overflow-y-auto sticky top-[120px]">
               <div className="p-4">
@@ -550,8 +787,19 @@ export default function BuildPage({ params }: BuildPageProps) {
               </div>
             </div>
 
-            {/* Canvas */}
-            <div className="flex-1 p-8">
+            {/* Canvas — live in-place editor */}
+            <div className="flex-1 bg-white rounded-2xl border border-black/5 overflow-hidden shadow-sm">
+              <div className="bg-[#FAFAF9] border-b border-black/5 px-4 py-2 flex items-center gap-2">
+                <div className="flex gap-1.5">
+                  <div className="w-3 h-3 rounded-full bg-red-400/60" />
+                  <div className="w-3 h-3 rounded-full bg-amber-400/60" />
+                  <div className="w-3 h-3 rounded-full bg-emerald-400/60" />
+                </div>
+                <span className="text-xs text-black/35 mx-auto">
+                  Click any text to edit · Hover a section to move or delete it
+                </span>
+              </div>
+
               {generating && (
                 <div className="flex items-center justify-center py-20">
                   <div className="text-center">
@@ -571,6 +819,18 @@ export default function BuildPage({ params }: BuildPageProps) {
               )}
 
               {!generating && sections.length > 0 && (
+                <InPlaceEditor
+                  sections={sections}
+                  inventory={inventory}
+                  template={template}
+                  siteId={siteId}
+                  onSave={handleSaveSections}
+                />
+              )}
+            </div>
+
+            {/* This div is now unused — kept as empty anchor so later section-map code compiles */}
+            {false && sections.length > 0 && (
                 <div className="space-y-3">
                   {sections.map((section, i) => {
                     const def = SECTION_LIBRARY[section.type];

@@ -35,8 +35,10 @@ export async function PUT(
   if (body.template_data !== undefined) allowedFields.template_data = body.template_data;
   if (body.status !== undefined) allowedFields.status = body.status;
   if (body.subdomain !== undefined) allowedFields.subdomain = body.subdomain;
-  if (body.stripe_account_id !== undefined)
-    allowedFields.stripe_account_id = body.stripe_account_id;
+  if (body.stripe_account_id !== undefined) allowedFields.stripe_account_id = body.stripe_account_id;
+  if (body.business_name !== undefined) allowedFields.business_name = body.business_name;
+  if (body.tagline !== undefined) (allowedFields as any).tagline = body.tagline;
+  if (body.contact_email !== undefined) allowedFields.contact_email = body.contact_email;
 
   const { data, error } = await supabaseAdmin
     .from('sites')

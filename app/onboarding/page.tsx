@@ -3,292 +3,370 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { TEMPLATES } from '@/lib/templates';
-import type { TemplateFamily, TemplateDefinition } from '@/lib/types';
-import { THEME_PRESETS } from '@/lib/types';
+import type { TemplateFamily } from '@/lib/types';
 
 const templateEntries = Object.values(TEMPLATES);
 
+const STYLE_PRESETS = [
+  {
+    id: 'milano',
+    name: 'Milano',
+    desc: 'Luxury serif typography, airy white space, editorial feel',
+    accent: '#1A1A1A',
+    bg: '#F9F8F6',
+    preview: ['font-serif italic', 'font-serif italic'],
+  },
+  {
+    id: 'midnight',
+    name: 'Midnight',
+    desc: 'Dark, dramatic, bold — premium and high contrast',
+    accent: '#6366F1',
+    bg: '#0F0F14',
+    preview: ['text-white', 'text-indigo-400'],
+  },
+  {
+    id: 'sunlit',
+    name: 'Sunlit',
+    desc: 'Warm, inviting, California-casual with bright warmth',
+    accent: '#F59E0B',
+    bg: '#FFFBF0',
+    preview: ['text-amber-800', 'text-amber-600'],
+  },
+  {
+    id: 'sage',
+    name: 'Sage',
+    desc: 'Earthy, organic, wellness-forward with natural tones',
+    accent: '#6B7C6A',
+    bg: '#F4F7F4',
+    preview: ['text-green-900', 'text-green-700'],
+  },
+];
+
+type Step = 1 | 2 | 3;
+
 export default function OnboardingPage() {
   const router = useRouter();
+  const [step, setStep] = useState<Step>(1);
   const [businessName, setBusinessName] = useState('');
+  const [offerings, setOfferings] = useState('');
+  const [tagline, setTagline] = useState('');
   const [email, setEmail] = useState('');
   const [selectedType, setSelectedType] = useState<TemplateFamily | null>(null);
-  const [selectedTheme, setSelectedTheme] = useState<string>('milano');
-  const [customColors, setCustomColors] = useState({ primary: '#2D2D2D', accent: '#B8860B', background: '#F9F8F6' });
+  const [selectedStyle, setSelectedStyle] = useState<string>('milano');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  // Pre-select template from URL param (e.g., ?type=service-pro)
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const params = new URLSearchParams(window.location.search);
-      const typeParam = params.get('type');
-      if (typeParam && Object.keys(TEMPLATES).includes(typeParam)) {
-        setSelectedType(typeParam as TemplateFamily);
-      }
-    }
-  }, []);
+  const step1Valid = businessName.trim() && offerings.trim() && email.trim() && selectedType;
 
-  const canSubmit = businessName.trim() && email.trim() && selectedType && !loading;
-
-  const [generationStep, setGenerationStep] = useState(0);
-  const generationSteps = [
-    'Analyzing your business model...',
-    'Writing high-converting copy...',
-    'Sourcing imagery...',
-    'Assembling your layout...',
-    'Applying your theme...',
-    'Finalizing your store...',
-  ];
-
-  useEffect(() => {
-    if (!loading) { setGenerationStep(0); return; }
-    const interval = setInterval(() => {
-      setGenerationStep(prev => (prev < generationSteps.length - 1 ? prev + 1 : prev));
-    }, 1000);
-    return () => clearInterval(interval);
-  }, [loading, generationSteps.length]);
-
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    if (!canSubmit) return;
-
+  async function handleSubmit() {
+    if (!step1Valid || loading) return;
     setLoading(true);
     setError('');
-
     try {
-      const body = {
-        business_name: businessName.trim(),
-        business_type: selectedType,
-        contact_email: email.trim(),
-        theme_id: selectedTheme,
-      } as any;
-      
-      if (selectedTheme === 'custom') {
-        body.custom_colors = customColors;
-      }
-
       const res = await fetch('/api/sites', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body),
+        body: JSON.stringify({
+          business_name: businessName.trim(),
+          business_type: selectedType,
+          offerings: offerings.trim(),
+          tagline: tagline.trim(),
+          contact_email: email.trim(),
+          style_preset: selectedStyle,
+        }),
       });
-
       if (!res.ok) {
         const data = await res.json();
         throw new Error(data.error || 'Failed to create site');
       }
-
       const site = await res.json();
       router.push(`/build/${site.id}`);
     } catch (err: any) {
       setError(err.message || 'Something went wrong. Please try again.');
-    } finally {
       setLoading(false);
+      setStep(1);
     }
   }
 
   return (
-    <div className="min-h-screen bg-[#F9F8F6] text-[#1A1A1A] font-sans">
-      <div className="max-w-3xl mx-auto px-6 py-12">
-        {/* Header */}
-        <div className="text-center mb-12">
-          <div className="flex items-center justify-center gap-2 mb-8">
-            <div className="w-8 h-8 bg-black rounded-sm flex items-center justify-center font-serif italic font-bold text-white text-xl">
-              E
-            </div>
-            <span className="font-bold tracking-tight text-xl">Edge Marketplace Hub</span>
+    <div className="min-h-screen bg-[#F9F8F6] text-[#1A1A1A] font-sans flex flex-col">
+
+      {/* ── Top bar ── */}
+      <div className="px-6 py-4 flex items-center justify-between border-b border-black/5">
+        <div className="flex items-center gap-2">
+          <div className="w-7 h-7 bg-[#1A1A1A] rounded-md flex items-center justify-center">
+            <span className="font-serif italic font-bold text-white text-base">E</span>
           </div>
-          <h1 className="text-4xl md:text-5xl font-serif italic tracking-tight mb-4">
-            Tell us about your business
-          </h1>
-          <p className="text-black/60 text-lg">
-            This takes about 30 seconds. We&apos;ll handle the rest.
-          </p>
+          <span className="font-bold tracking-tight text-sm">Edge Marketplace Hub</span>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-8">
-          {/* Business Name */}
-          <div>
-            <label htmlFor="businessName" className="block text-sm font-bold mb-2">Business name *</label>
-            <input
-              id="businessName"
-              name="businessName"
-              type="text"
-              value={businessName}
-              onChange={(e) => setBusinessName(e.target.value)}
-              placeholder="e.g. Bella's Blooms"
-              className="w-full border border-black/10 rounded-2xl px-5 py-4 text-lg focus:outline-none focus:border-black/30 bg-white"
-              required
-              autoComplete="organization"
-            />
-          </div>
-
-          {/* Email */}
-          <div>
-            <label htmlFor="email" className="block text-sm font-bold mb-2">Email *</label>
-            <input
-              id="email"
-              name="email"
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="you@yourbusiness.com"
-              className="w-full border border-black/10 rounded-2xl px-5 py-4 text-lg focus:outline-none focus:border-black/30 bg-white"
-              required
-              autoComplete="email"
-            />
-          </div>
-
-          {/* Template picker */}
-          <div>
-            <label className="block text-sm font-bold mb-4">Pick your business type *</label>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {templateEntries.map((template) => (
-                <button
-                  key={template.family}
-                  type="button"
-                  onClick={() => setSelectedType(template.family)}
-                  className={`text-left rounded-2xl border p-5 transition-all ${
-                    selectedType === template.family
-                      ? 'border-black bg-white shadow-md'
-                      : 'border-black/10 bg-white hover:border-black/20'
-                  }`}
-                >
-                  <p className="text-[10px] uppercase tracking-[0.2em] font-bold text-black/35 mb-1">
-                    {template.kicker}
-                  </p>
-                  <h3 className="font-bold text-lg mb-1">{template.label}</h3>
-                  <p className="text-sm text-black/50 leading-relaxed">{template.summary}</p>
-                </button>
-              ))}
+        {/* Step indicator */}
+        <div className="flex items-center gap-2">
+          {[1, 2, 3].map(n => (
+            <div key={n} className="flex items-center gap-1">
+              <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold transition-all ${
+                step === n ? 'bg-[#1A1A1A] text-white' :
+                step > n ? 'bg-emerald-500 text-white' :
+                'bg-black/10 text-black/40'
+              }`}>
+                {step > n ? '✓' : n}
+              </div>
+              {n < 3 && <div className={`w-8 h-0.5 transition-all ${step > n ? 'bg-emerald-500' : 'bg-black/10'}`} />}
             </div>
-          </div>
+          ))}
+        </div>
+      </div>
 
-          {/* Theme picker */}
-          <div>
-            <label className="block text-sm font-bold mb-4">Pick your style *</label>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-              {THEME_PRESETS.map((theme) => (
-                <button
-                  key={theme.id}
-                  type="button"
-                  onClick={() => setSelectedTheme(theme.id)}
-                  className={`text-left rounded-2xl border p-4 transition-all ${
-                    selectedTheme === theme.id
-                      ? 'border-black bg-white shadow-md ring-1 ring-black'
-                      : 'border-black/10 bg-white hover:border-black/20'
-                  }`}
-                >
-                  <div className="flex items-center gap-2 mb-1.5">
-                    <span className="text-lg">{theme.preview}</span>
-                    <h3 className="font-bold text-sm">{theme.name}</h3>
-                  </div>
-                  <p className="text-[11px] text-black/50 leading-relaxed">{theme.description}</p>
-                  <div className="flex gap-1 mt-2">
-                    <div className="w-4 h-4 rounded-full border border-black/10" style={{ backgroundColor: theme.tokens.primary }} />
-                    <div className="w-4 h-4 rounded-full border border-black/10" style={{ backgroundColor: theme.tokens.accent }} />
-                    <div className="w-4 h-4 rounded-full border border-black/10" style={{ backgroundColor: theme.tokens.background }} />
-                  </div>
-                </button>
-              ))}
-            </div>
-            
-            {/* Custom Color Picker */}
-            {selectedTheme === 'custom' && (
-              <div className="mt-6 p-6 bg-white rounded-2xl border border-black/10">
-                <p className="text-sm font-bold mb-4">Choose 3 brand colors</p>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                  <div>
-                    <label className="block text-xs text-black/50 mb-1">Primary</label>
-                    <div className="flex items-center gap-2">
-                      <input
-                        type="color"
-                        value={customColors.primary}
-                        onChange={(e) => setCustomColors({ ...customColors, primary: e.target.value })}
-                        className="w-10 h-10 rounded-lg border border-black/10 cursor-pointer"
-                      />
-                      <input
-                        type="text"
-                        value={customColors.primary}
-                        onChange={(e) => setCustomColors({ ...customColors, primary: e.target.value })}
-                        className="flex-1 px-3 py-2 border border-black/10 rounded-lg text-sm font-mono"
-                        maxLength={7}
-                      />
-                    </div>
-                  </div>
-                  <div>
-                    <label className="block text-xs text-black/50 mb-1">Accent</label>
-                    <div className="flex items-center gap-2">
-                      <input
-                        type="color"
-                        value={customColors.accent}
-                        onChange={(e) => setCustomColors({ ...customColors, accent: e.target.value })}
-                        className="w-10 h-10 rounded-lg border border-black/10 cursor-pointer"
-                      />
-                      <input
-                        type="text"
-                        value={customColors.accent}
-                        onChange={(e) => setCustomColors({ ...customColors, accent: e.target.value })}
-                        className="flex-1 px-3 py-2 border border-black/10 rounded-lg text-sm font-mono"
-                        maxLength={7}
-                      />
-                    </div>
-                  </div>
-                  <div>
-                    <label className="block text-xs text-black/50 mb-1">Background</label>
-                    <div className="flex items-center gap-2">
-                      <input
-                        type="color"
-                        value={customColors.background}
-                        onChange={(e) => setCustomColors({ ...customColors, background: e.target.value })}
-                        className="w-10 h-10 rounded-lg border border-black/10 cursor-pointer"
-                      />
-                      <input
-                        type="text"
-                        value={customColors.background}
-                        onChange={(e) => setCustomColors({ ...customColors, background: e.target.value })}
-                        className="flex-1 px-3 py-2 border border-black/10 rounded-lg text-sm font-mono"
-                        maxLength={7}
-                      />
-                    </div>
+      <div className="flex-1 flex items-start justify-center px-6 py-12 md:py-16">
+        <div className="w-full max-w-2xl">
+
+          {/* ── STEP 1: Business basics ── */}
+          {step === 1 && (
+            <div className="space-y-8">
+              <div>
+                <p className="text-xs uppercase tracking-[0.2em] font-bold text-black/35 mb-2">Step 1 of 3</p>
+                <h1 className="text-4xl md:text-5xl font-serif italic tracking-tight mb-3">
+                  Tell us about your business
+                </h1>
+                <p className="text-black/55 text-lg">30 seconds. We handle the rest.</p>
+              </div>
+
+              <div className="space-y-5">
+                <div>
+                  <label htmlFor="businessName" className="block text-sm font-bold mb-2">Business name *</label>
+                  <input
+                    id="businessName" name="businessName" type="text"
+                    value={businessName} onChange={e => setBusinessName(e.target.value)}
+                    placeholder="e.g. Bella's Blooms"
+                    className="w-full border border-black/10 rounded-2xl px-5 py-4 text-lg focus:outline-none focus:border-black/30 bg-white"
+                    autoFocus autoComplete="organization"
+                  />
+                </div>
+
+                <div>
+                  <label htmlFor="offerings" className="block text-sm font-bold mb-2">What do you sell or offer? *</label>
+                  <textarea
+                    id="offerings" name="offerings"
+                    value={offerings} onChange={e => setOfferings(e.target.value)}
+                    placeholder="e.g. Custom floral arrangements for weddings and events in Portland, OR"
+                    rows={3}
+                    className="w-full border border-black/10 rounded-2xl px-5 py-4 text-lg focus:outline-none focus:border-black/30 bg-white resize-none"
+                  />
+                </div>
+
+                <div>
+                  <label htmlFor="tagline" className="block text-sm font-bold mb-2">
+                    Tagline <span className="text-black/30 font-normal">(optional)</span>
+                  </label>
+                  <input
+                    id="tagline" name="tagline" type="text"
+                    value={tagline} onChange={e => setTagline(e.target.value)}
+                    placeholder="e.g. Where every bloom tells your story"
+                    className="w-full border border-black/10 rounded-2xl px-5 py-4 text-lg focus:outline-none focus:border-black/30 bg-white"
+                  />
+                </div>
+
+                <div>
+                  <label htmlFor="email" className="block text-sm font-bold mb-2">Your email *</label>
+                  <input
+                    id="email" name="email" type="email"
+                    value={email} onChange={e => setEmail(e.target.value)}
+                    placeholder="you@yourbusiness.com"
+                    className="w-full border border-black/10 rounded-2xl px-5 py-4 text-lg focus:outline-none focus:border-black/30 bg-white"
+                    autoComplete="email"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-bold mb-4">What type of business? *</label>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {templateEntries.map(t => (
+                      <button
+                        key={t.family} type="button"
+                        onClick={() => setSelectedType(t.family)}
+                        className={`text-left rounded-2xl border p-5 transition-all ${
+                          selectedType === t.family
+                            ? 'border-black bg-white shadow-md'
+                            : 'border-black/10 bg-white hover:border-black/20'
+                        }`}
+                      >
+                        <p className="text-[10px] uppercase tracking-[0.2em] font-bold text-black/35 mb-1">{t.kicker}</p>
+                        <h3 className="font-bold mb-1">{t.label}</h3>
+                        <p className="text-sm text-black/50 leading-relaxed">{t.summary}</p>
+                      </button>
+                    ))}
                   </div>
                 </div>
               </div>
-            )}
-          </div>
 
-          {error && (
-            <div className="bg-red-50 border border-red-200 rounded-2xl px-5 py-4 text-red-700 text-sm">
-              {error}
+              <button
+                onClick={() => step1Valid && setStep(2)}
+                disabled={!step1Valid}
+                className="w-full bg-[#1A1A1A] text-white py-5 rounded-full text-lg font-bold disabled:opacity-40 disabled:cursor-not-allowed hover:scale-[1.02] transition-transform"
+              >
+                Choose your style →
+              </button>
             </div>
           )}
 
-          {/* Submit */}
-          <button
-            type="submit"
-            disabled={!canSubmit}
-            className="w-full bg-black text-white py-5 rounded-full text-lg font-bold disabled:opacity-40 disabled:cursor-not-allowed hover:scale-[1.02] transition-transform"
-          >
-            {loading ? (
-              <div className="flex flex-col items-center gap-1">
-                <span>{generationSteps[generationStep]}</span>
-                <div className="flex gap-1 mt-1">
-                  {generationSteps.map((_, i) => (
-                    <div key={i} className={`w-1.5 h-1.5 rounded-full transition-colors ${i <= generationStep ? 'bg-white' : 'bg-white/30'}`} />
-                  ))}
-                </div>
+          {/* ── STEP 2: Style preset ── */}
+          {step === 2 && (
+            <div className="space-y-8">
+              <div>
+                <p className="text-xs uppercase tracking-[0.2em] font-bold text-black/35 mb-2">Step 2 of 3</p>
+                <h1 className="text-4xl md:text-5xl font-serif italic tracking-tight mb-3">
+                  Pick your visual style
+                </h1>
+                <p className="text-black/55 text-lg">This shapes your entire storefront's look and feel.</p>
               </div>
-            ) : (
-              'Get started today'
-            )}
-          </button>
-          
-          <p className="text-sm text-black/40 mt-4 text-center">
-            Already have an account? <a href="/login" className="underline hover:text-black">Sign in</a>
-          </p>
-        </form>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {STYLE_PRESETS.map(preset => (
+                  <button
+                    key={preset.id} type="button"
+                    onClick={() => setSelectedStyle(preset.id)}
+                    className={`relative rounded-3xl overflow-hidden border-2 transition-all text-left ${
+                      selectedStyle === preset.id ? 'border-black shadow-lg scale-[1.02]' : 'border-transparent hover:border-black/20'
+                    }`}
+                  >
+                    {/* Preview swatch */}
+                    <div
+                      className="h-28 flex flex-col items-center justify-center gap-2 px-4"
+                      style={{ backgroundColor: preset.bg }}
+                    >
+                      <div className={`text-lg font-serif italic ${preset.preview[0]}`} style={{ color: preset.accent }}>
+                        {businessName || 'Your Business'}
+                      </div>
+                      <div className="flex gap-2">
+                        <div className="px-3 py-1 rounded-full text-xs font-bold" style={{ backgroundColor: preset.accent, color: preset.bg }}>
+                          Shop Now
+                        </div>
+                        <div className="px-3 py-1 rounded-full text-xs border" style={{ borderColor: preset.accent, color: preset.accent }}>
+                          Learn More
+                        </div>
+                      </div>
+                    </div>
+                    {/* Label */}
+                    <div className="bg-white px-4 py-3 border-t border-black/5">
+                      <div className="flex items-center justify-between mb-0.5">
+                        <p className="font-bold">{preset.name}</p>
+                        {selectedStyle === preset.id && (
+                          <span className="text-xs bg-black text-white px-2 py-0.5 rounded-full">Selected</span>
+                        )}
+                      </div>
+                      <p className="text-xs text-black/50">{preset.desc}</p>
+                    </div>
+                  </button>
+                ))}
+              </div>
+
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setStep(1)}
+                  className="px-6 py-4 rounded-full border border-black/15 text-sm font-bold hover:border-black/30 transition-colors"
+                >
+                  ← Back
+                </button>
+                <button
+                  onClick={() => setStep(3)}
+                  className="flex-1 bg-[#1A1A1A] text-white py-4 rounded-full text-lg font-bold hover:scale-[1.02] transition-transform"
+                >
+                  Build my store →
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* ── STEP 3: Generating ── */}
+          {step === 3 && (
+            <GeneratingScreen
+              businessName={businessName}
+              vertical={templateEntries.find(t => t.family === selectedType)?.label || ''}
+              style={STYLE_PRESETS.find(p => p.id === selectedStyle)?.name || 'Milano'}
+              onReady={handleSubmit}
+            />
+          )}
+
+          {error && (
+            <div className="mt-4 bg-red-50 border border-red-200 rounded-2xl px-5 py-4 text-red-700 text-sm">
+              {error}
+            </div>
+          )}
+        </div>
       </div>
+    </div>
+  );
+}
+
+function GeneratingScreen({ businessName, vertical, style, onReady }: {
+  businessName: string; vertical: string; style: string; onReady: () => void;
+}) {
+  const [currentStep, setCurrentStep] = useState(0);
+
+  const steps = [
+    { label: 'Analyzing your business', duration: 1200 },
+    { label: `Mapping your ${vertical.toLowerCase()} funnel`, duration: 1400 },
+    { label: `Applying ${style} design tokens`, duration: 1000 },
+    { label: 'Writing your headlines & copy', duration: 1600 },
+    { label: 'Assembling your sections', duration: 1200 },
+    { label: 'Finalizing your storefront', duration: 800 },
+  ];
+
+  useEffect(() => {
+    let i = 0;
+    function advance() {
+      if (i < steps.length) {
+        setCurrentStep(i);
+        setTimeout(() => { i++; advance(); }, steps[i]?.duration || 1000);
+      } else {
+        onReady();
+      }
+    }
+    const timeout = setTimeout(advance, 100);
+    return () => clearTimeout(timeout);
+  }, [onReady]);
+
+  return (
+    <div className="text-center py-8 space-y-10">
+      <div>
+        <p className="text-xs uppercase tracking-[0.2em] font-bold text-black/35 mb-2">Step 3 of 3</p>
+        <h1 className="text-4xl md:text-5xl font-serif italic tracking-tight mb-3">
+          Building {businessName}
+        </h1>
+        <p className="text-black/55 text-lg">AI is designing your store right now.</p>
+      </div>
+
+      {/* Animated loader */}
+      <div className="w-20 h-20 mx-auto relative">
+        <div className="absolute inset-0 border-4 border-black/5 rounded-full" />
+        <div
+          className="absolute inset-0 border-4 border-[#1A1A1A] rounded-full border-t-transparent animate-spin"
+          style={{ animationDuration: '0.8s' }}
+        />
+        <div className="absolute inset-0 flex items-center justify-center text-2xl">
+          {['🤖', '✨', '🎨', '✍️', '🧩', '🚀'][currentStep] || '🚀'}
+        </div>
+      </div>
+
+      {/* Step list */}
+      <div className="space-y-3 max-w-sm mx-auto text-left">
+        {steps.map((s, i) => (
+          <div key={s.label} className={`flex items-center gap-3 transition-all duration-300 ${
+            i < currentStep ? 'opacity-100' : i === currentStep ? 'opacity-100' : 'opacity-25'
+          }`}>
+            <div className={`w-5 h-5 rounded-full flex-shrink-0 flex items-center justify-center text-xs transition-all ${
+              i < currentStep ? 'bg-emerald-500 text-white' :
+              i === currentStep ? 'bg-[#1A1A1A] text-white animate-pulse' :
+              'bg-black/10'
+            }`}>
+              {i < currentStep ? '✓' : i === currentStep ? '●' : ''}
+            </div>
+            <span className={`text-sm ${i === currentStep ? 'font-bold' : 'text-black/50'}`}>{s.label}</span>
+          </div>
+        ))}
+      </div>
+
+      <p className="text-black/35 text-xs">This usually takes 10–15 seconds</p>
     </div>
   );
 }
