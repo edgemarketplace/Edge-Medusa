@@ -572,6 +572,8 @@ export default function BuildPage({ params }: BuildPageProps) {
             { id: 'design', label: '✏️ Design', count: null },
             { id: 'pages', label: '📄 Pages', count: pages.length },
             { id: 'inventory', label: '📦 Inventory', count: inventory.length },
+            { id: 'mailbox', label: '📨 Mailbox', count: null },
+            { id: 'marketing', label: '📈 Marketing', count: null },
             { id: 'settings', label: '⚙️ Settings', count: null },
             { id: 'orders', label: '📊 Orders', count: null },
             { id: 'clients', label: '👥 Clients', count: null },
@@ -812,6 +814,87 @@ export default function BuildPage({ params }: BuildPageProps) {
                 <p className="text-black/50 text-sm">Clients will appear here once orders come in.</p>
               </div>
             )}
+          </div>
+        )}
+        {/* ── MAILBOX TAB ── */}
+        {activeTab === 'mailbox' && (
+          <div className="max-w-4xl mx-auto py-10 px-6 space-y-6">
+            <div className="flex justify-between items-end">
+              <div>
+                <h2 className="text-2xl font-serif italic mb-1">Mailbox</h2>
+                <p className="text-black/50 text-sm">Unified inbox for site inquiries and customer messages.</p>
+              </div>
+            </div>
+            
+            <div className="bg-white rounded-3xl border border-black/5 min-h-[400px] flex items-center justify-center text-center p-10">
+              <div className="max-w-sm">
+                <div className="text-4xl mb-4">📨</div>
+                <h3 className="text-lg font-bold mb-2">No messages yet</h3>
+                <p className="text-sm text-black/50">
+                  When customers contact you through your site forms or social channels, their messages will appear here.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ── MARKETING TAB ── */}
+        {activeTab === 'marketing' && (
+          <div className="max-w-5xl mx-auto py-10 px-6 space-y-10">
+            <div className="flex justify-between items-end">
+              <div>
+                <h2 className="text-2xl font-serif italic mb-1">Marketing & Growth</h2>
+                <p className="text-black/50 text-sm">Manage your Google presence and social media calendar.</p>
+              </div>
+            </div>
+
+            <div className="grid md:grid-cols-2 gap-6">
+              {/* GMB Card */}
+              <div className="bg-white rounded-3xl p-8 border border-black/5 space-y-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-[#4285F4]/10 rounded-xl flex items-center justify-center text-[#4285F4]">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+                  </div>
+                  <h3 className="font-bold">Google Business Profile</h3>
+                </div>
+                <p className="text-sm text-black/55 leading-relaxed">
+                  Track your business reviews, ratings, and search visibility directly in your hub.
+                </p>
+                <div className="pt-2">
+                  <button className="px-5 py-2.5 bg-black text-white rounded-full text-xs font-bold hover:bg-black/80 transition-colors">
+                    Connect Google Business
+                  </button>
+                </div>
+              </div>
+
+              {/* Social Planner Card */}
+              <div className="bg-white rounded-3xl p-8 border border-black/5 space-y-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-emerald-500/10 rounded-xl flex items-center justify-center text-emerald-600">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><path d="m9 16 2 2 4-4"/></svg>
+                  </div>
+                  <h3 className="font-bold">Social Planner</h3>
+                </div>
+                <p className="text-sm text-black/55 leading-relaxed">
+                  Schedule posts to Instagram, X, and Facebook. Keep your audience engaged consistently.
+                </p>
+                <div className="pt-2">
+                  <button className="px-5 py-2.5 bg-black text-white rounded-full text-xs font-bold hover:bg-black/80 transition-colors">
+                    Create New Post
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Upcoming Posts Placeholder */}
+            <div className="bg-white rounded-3xl border border-black/5 overflow-hidden">
+              <div className="px-8 py-6 border-b border-black/5">
+                <h4 className="font-bold text-sm uppercase tracking-widest text-black/40">Upcoming Content</h4>
+              </div>
+              <div className="p-12 text-center text-black/30 text-sm">
+                No posts scheduled. Start planning your week's content.
+              </div>
+            </div>
           </div>
         )}
 
