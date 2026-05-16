@@ -3,9 +3,9 @@ import { supabaseAdmin } from '@/lib/supabase';
 
 export async function POST(
   req: Request,
-  { params }: { params: { siteId: string } }
+  { params }: { params: Promise<{ siteId: string }> }
 ) {
-  const { siteId } = params;
+  const { siteId } = await params;
   const { name, email, subject, message } = await req.json();
 
   if (!email || !message) {
