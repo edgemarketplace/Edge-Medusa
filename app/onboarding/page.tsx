@@ -143,8 +143,57 @@ export default function OnboardingPage() {
                   />
                 </div>
 
-                <div>
-                  <label htmlFor="offerings" className="block text-sm font-bold mb-2">What do you sell or offer? *</label>
+                <div className="relative">
+                  <div className="flex items-center justify-between mb-2">
+                    <label htmlFor="offerings" className="block text-sm font-bold">What do you sell or offer? *</label>
+                    <div className="flex gap-2">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const samples = [
+                            { name: "Urban Grind Coffee", type: "retail-core", desc: "Small-batch roasted coffee beans, brewing equipment, and artisanal syrups for home baristas.", tagline: "Fuel your daily ritual", email: "hello@urbangrind.com" },
+                            { name: "Zenith Marketing", type: "service-pro", desc: "Full-service digital marketing agency specializing in SEO, PPC, and content strategy for B2B SaaS companies.", tagline: "Scale your growth with precision", email: "growth@zenith.com" },
+                            { name: "The Pastry Box", type: "food-catering", desc: "Custom cakes, cupcakes, and dessert tables for weddings, birthdays, and corporate events.", tagline: "Baking memories, one bite at a time", email: "orders@thepastrybox.com" },
+                            { name: "Iron & Oak Furniture", type: "artisan-market", desc: "Hand-crafted industrial furniture made from reclaimed wood and steel for modern homes.", tagline: "Timeless craftsmanship for modern living", email: "custom@ironandoak.com" },
+                            { name: "Velvet Petals", type: "event-floral", desc: "Luxury floral design for weddings, galas, and upscale events. Specialized in rare blooms.", tagline: "Floral artistry for unforgettable moments", email: "studio@velvetpetals.com" }
+                          ];
+                          const random = samples[Math.floor(Math.random() * samples.length)];
+                          setBusinessName(random.name);
+                          setOfferings(random.desc);
+                          setTagline(random.tagline);
+                          setEmail(random.email);
+                          setSelectedType(random.type as TemplateFamily);
+                        }}
+                        className="text-[10px] font-bold uppercase tracking-widest text-black/40 hover:text-black transition-colors"
+                      >
+                        🎲 Random
+                      </button>
+                      <button
+                        type="button"
+                        disabled={!offerings.trim() || loading}
+                        onClick={async () => {
+                          if (!offerings.trim()) return;
+                          setLoading(true);
+                          try {
+                            const res = await fetch('/api/ai/expand', {
+                              method: 'POST',
+                              headers: { 'Content-Type': 'application/json' },
+                              body: JSON.stringify({ prompt: offerings, businessName, businessType: selectedType })
+                            });
+                            const data = await res.json();
+                            if (data.expanded) setOfferings(data.expanded);
+                          } catch (err) {
+                            console.error('Expansion failed', err);
+                          } finally {
+                            setLoading(false);
+                          }
+                        }}
+                        className="text-[10px] font-bold uppercase tracking-widest text-blue-600 hover:text-blue-700 transition-colors disabled:opacity-30"
+                      >
+                        {loading ? '...' : '✨ Expand with AI'}
+                      </button>
+                    </div>
+                  </div>
                   <textarea
                     id="offerings" name="offerings"
                     value={offerings} onChange={e => setOfferings(e.target.value)}

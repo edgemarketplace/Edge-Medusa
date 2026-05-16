@@ -761,3 +761,41 @@ function getFallbackSiteStructure(businessName: string, businessType: TemplateFa
     ]
   };
 }
+
+export async function expandBusinessDescription(
+  prompt: string,
+  businessName: string,
+  businessType: string
+): Promise<string> {
+  const expansionPrompt = `You are an expert business consultant and copywriter. 
+  Take this brief description for a ${businessType} business called "${businessName}" and expand it into a professional, compelling, and clear 2-3 sentence description of exactly what they sell or offer.
+  
+  Input: "${prompt}"
+  
+  Expanded Description (Professional, clear, concise):`;
+
+  try {
+    if (process.env.GOOGLE_API_KEY) {
+      const { GoogleGenerativeAI } = await import('@google/generative-ai');
+      const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY!);
+      const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+      
+      const result = await model.generateContent(expansionPrompt);
+      const text = result.response.text().trim();
+      return text.replace(/^"|"$/g, ''); // Remove quotes if present
+    }
+    
+    const openai = getOpenAI();
+    const response = await openai.chat.completions.create({
+      model: 'gpt-4-turbo-preview',
+      messages: [{ role: 'user', content: expansionPrompt }],
+      temperature: 0.7,
+      max_tokens: 200,
+    });
+
+    return response.choices[0].message.content?.trim().replace(/^"|"$/g, '') || prompt;
+  } catch (error) {
+    console.error('Expansion error:', error);
+    return prompt;
+  }
+}
