@@ -105,7 +105,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Space for Example Stores (populated later) */}
+      {/* Example Stores */}
       <section id="examples" className="max-w-7xl mx-auto px-6 pb-32">
         <div className="text-center mb-16">
           <h2 className="text-3xl font-serif italic mb-4">Example stores</h2>
@@ -114,18 +114,65 @@ export default function HomePage() {
           </p>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {/* Placeholder cards for future examples */}
-          {[1, 2, 3].map((i) => (
-            <div key={i} className="bg-white rounded-3xl p-8 border border-black/5 text-center">
-              <div className="w-full h-48 bg-[#F9F8F6] rounded-2xl mb-6 flex items-center justify-center">
-                <span className="text-black/20 text-sm">Example Store {i}</span>
-              </div>
-              <h3 className="font-bold text-lg mb-2">Coming Soon</h3>
-              <p className="text-sm text-black/50">
-                We're building example stores for each vertical. Check back soon!
-              </p>
+          {/* Retail Core */}
+          <a href="/store/retail-example" className="bg-white rounded-3xl p-6 border border-black/5 hover:border-black/20 transition-all hover:scale-[1.02] block">
+            <div className="w-full h-48 bg-[#F9F8F6] rounded-2xl mb-4 flex items-center justify-center">
+              <span className="text-4xl">🛍️</span>
             </div>
-          ))}
+            <h3 className="font-bold text-lg mb-1">Urban Threads</h3>
+            <p className="text-sm text-black/50 mb-2">Retail Core</p>
+            <p className="text-sm text-black/60">Fashion boutique with full catalog</p>
+          </a>
+
+          {/* Service Pro */}
+          <a href="/store/service-example" className="bg-white rounded-3xl p-6 border border-black/5 hover:border-black/20 transition-all hover:scale-[1.02] block">
+            <div className="w-full h-48 bg-[#F9F8F6] rounded-2xl mb-4 flex items-center justify-center">
+              <span className="text-4xl">🔧</span>
+            </div>
+            <h3 className="font-bold text-lg mb-1">ProFix Solutions</h3>
+            <p className="text-sm text-black/50 mb-2">Service Pro</p>
+            <p className="text-sm text-black/60">Professional services with quotes</p>
+          </a>
+
+          {/* Food & Catering */}
+          <a href="/store/food-example" className="bg-white rounded-3xl p-6 border border-black/5 hover:border-black/20 transition-all hover:scale-[1.02] block">
+            <div className="w-full h-48 bg-[#F9F8F6] rounded-2xl mb-4 flex items-center justify-center">
+              <span className="text-4xl">🍽️</span>
+            </div>
+            <h3 className="font-bold text-lg mb-1">Savory Catering</h3>
+            <p className="text-sm text-black/50 mb-2">Food & Catering</p>
+            <p className="text-sm text-black/60">Menus and event packages</p>
+          </a>
+
+          {/* Artisan Market */}
+          <a href="/store/artisan-example" className="bg-white rounded-3xl p-6 border border-black/5 hover:border-black/20 transition-all hover:scale-[1.02] block">
+            <div className="w-full h-48 bg-[#F9F8F6] rounded-2xl mb-4 flex items-center justify-center">
+              <span className="text-4xl">🎨</span>
+            </div>
+            <h3 className="font-bold text-lg mb-1">Clay & Craft</h3>
+            <p className="text-sm text-black/50 mb-2">Artisan Market</p>
+            <p className="text-sm text-black/60">Handmade goods with story</p>
+          </a>
+
+          {/* Event & Floral */}
+          <a href="/store/floral-example" className="bg-white rounded-3xl p-6 border border-black/5 hover:border-black/20 transition-all hover:scale-[1.02] block">
+            <div className="w-full h-48 bg-[#F9F8F6] rounded-2xl mb-4 flex items-center justify-center">
+              <span className="text-4xl">💐</span>
+            </div>
+            <h3 className="font-bold text-lg mb-1">Petal & Vine</h3>
+            <p className="text-sm text-black/50 mb-2">Event & Floral</p>
+            <p className="text-sm text-black/60">Premium event florals</p>
+          </a>
+
+          {/* Coach & Educator */}
+          <a href="/store/coach-example" className="bg-white rounded-3xl p-6 border border-black/5 hover:border-black/20 transition-all hover:scale-[1.02] block">
+            <div className="w-full h-48 bg-[#F9F8F6] rounded-2xl mb-4 flex items-center justify-center">
+              <span className="text-4xl">🎓</span>
+            </div>
+            <h3 className="font-bold text-lg mb-1">Growth Coach</h3>
+            <p className="text-sm text-black/50 mb-2">Coach & Educator</p>
+            <p className="text-sm text-black/60">Transformational coaching</p>
+          </a>
         </div>
       </section>
 
