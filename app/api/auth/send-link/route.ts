@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
+import { Resend } from 'resend';
 
 // Send magic link email
 export async function POST(request: NextRequest) {
@@ -41,8 +42,7 @@ export async function POST(request: NextRequest) {
 
     // Send email via Resend
     if (process.env.RESEND_API_KEY) {
-      const { Resend } = await import('resend');
-      const resend = new Resend(process.env.RESEND_API_KEY);
+      const resend = new Resend(process.env.RESEND_API_KEY!);
 
       await resend.emails.send({
         from: 'Edge Marketplace Hub <login@edgemarketplacehub.com>',
