@@ -94,7 +94,15 @@ export default function HomePage() {
                 {template.summary}
               </p>
               <div className="flex items-center gap-2 text-sm font-bold text-[#2D2D2D]">
-                View Site →
+                <a
+                  href={template.demoUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={(e) => e.stopPropagation()}
+                  className="hover:underline"
+                >
+                  View Site →
+                </a>
               </div>
             </button>
           ))}

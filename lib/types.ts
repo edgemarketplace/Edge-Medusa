@@ -142,6 +142,7 @@ export interface TemplateDefinition {
   kicker: string;
   headline: string;
   summary: string;
+  demoUrl: string;
   primaryColor: string;
   fontFamily: string;
   borderRadius: string;

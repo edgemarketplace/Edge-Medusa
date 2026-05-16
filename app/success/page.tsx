@@ -37,18 +37,20 @@ export default async function SuccessPage({ searchParams }: SuccessPageProps) {
           </a>
         )}
 
-        {/* Email signup prompt */}
+        {/* Back to editor prompt */}
         <div className="bg-white border border-black/10 rounded-2xl p-6 mb-6">
-          <h2 className="font-bold text-lg mb-2">Don&apos;t lose your store</h2>
+          <h2 className="font-bold text-lg mb-2">Continue editing</h2>
           <p className="text-black/60 text-sm mb-4">
-            Create an account to save your progress, edit your site anytime, and manage orders.
+            Want to make changes? Jump back into the editor anytime.
           </p>
-          <Link
-            href={siteId ? `/email-gate?siteId=${siteId}` : '/login'}
-            className="inline-flex items-center gap-2 px-6 py-3 rounded-full border border-black/10 text-sm font-bold hover:bg-black/5 transition-colors"
-          >
-            Create account →
-          </Link>
+          {siteId && (
+            <Link
+              href={`/build/${siteId}`}
+              className="inline-flex items-center gap-2 px-6 py-3 rounded-full border border-black/10 text-sm font-bold hover:bg-black/5 transition-colors"
+            >
+              Back to editor →
+            </Link>
+          )}
         </div>
 
         <div className="flex flex-col items-center gap-3">
