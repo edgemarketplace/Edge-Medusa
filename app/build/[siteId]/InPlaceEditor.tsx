@@ -212,10 +212,17 @@ function EditableSection({ section, template, inventory, onUpdate, primary }: {
     }
     if (data.textColor) bgStyle.color = data.textColor;
     
+    const handleImageClick = () => {
+      const url = prompt('Enter image URL:', data.imageUrl || '');
+      if (url !== null && url !== data.imageUrl) onUpdate('imageUrl', url);
+    };
+    
     return (
       <div
         className={`px-8 py-20 text-center relative ${hasImage ? 'min-h-[420px] flex flex-col items-center justify-center' : 'bg-[#F9F8F6]'}`}
         style={Object.keys(bgStyle).length > 0 ? bgStyle : undefined}
+        onClick={hasImage ? handleImageClick : undefined}
+        title={hasImage ? 'Click to change background image' : undefined}
       >
         <Editable tag="h1" value={data.heading || data.headline || 'Your headline'} onChange={v => onUpdate('heading', v)}
           className={`text-4xl md:text-6xl font-serif italic tracking-tight mb-6 block ${hasImage ? 'text-white' : ''}`}
@@ -227,6 +234,13 @@ function EditableSection({ section, template, inventory, onUpdate, primary }: {
           <Editable value={data.ctaText} onChange={v => onUpdate('ctaText', v)}
             className="inline-block px-8 py-4 rounded-full text-white font-bold text-lg cursor-text"
             style={{ backgroundColor: primary } as any} />
+        )}
+        {hasImage && (
+          <div className="absolute inset-0 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity pointer-events-none">
+            <div className="bg-black/70 text-white text-xs px-3 py-1.5 rounded-full pointer-events-auto cursor-pointer" onClick={handleImageClick}>
+              🖼 Change image
+            </div>
+          </div>
         )}
       </div>
     );
