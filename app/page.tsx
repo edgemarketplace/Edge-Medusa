@@ -79,10 +79,12 @@ export default function HomePage() {
         <h2 className="text-3xl font-serif italic text-center mb-16">Built for how you do business</h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {templateEntries.map((template) => (
-              <button
+              <a
                 key={template.family}
-                onClick={() => router.push(`/onboarding?type=${template.family}`)}
-                className="text-left bg-white rounded-3xl p-8 border border-black/5 hover:border-black/20 hover:shadow-lg transition-all group"
+                href={template.demoUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-left bg-white rounded-3xl p-8 border border-black/5 hover:border-black/20 hover:shadow-lg transition-all group block"
               >
               <p className="text-[10px] uppercase tracking-[0.2em] font-bold text-black/35 mb-2">
                 {template.kicker}
@@ -94,17 +96,9 @@ export default function HomePage() {
                 {template.summary}
               </p>
               <div className="flex items-center gap-2 text-sm font-bold text-[#2D2D2D]">
-                <a
-                  href={template.demoUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  onClick={(e) => e.stopPropagation()}
-                  className="hover:underline"
-                >
-                  View Site →
-                </a>
+                View Site →
               </div>
-            </button>
+            </a>
           ))}
         </div>
       </section>
@@ -193,51 +187,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Editorial commerce - Demo Links */}
-      <section className="max-w-7xl mx-auto px-6 py-12 border-t border-black/5">
-        <p className="text-center text-sm text-black/40 mb-6">Editorial commerce platform · Retail Core: Built for shops and product businesses that need strong catalog presentation and fast conversion paths.</p>
-        <div className="flex flex-wrap justify-center gap-4">
-          <a href="https://cedarandforge.edgemarketplacehub.com" className="text-sm text-black/60 hover:text-black transition-colors">Cedar & Forge</a>
-          <span className="text-black/20">·</span>
-          <a href="https://bloomandlore.edgemarketplacehub.com" className="text-sm text-black/60 hover:text-black transition-colors">Bloom & Lore</a>
-          <span className="text-black/20">·</span>
-          <a href="https://earthandember.edgemarketplacehub.com" className="text-sm text-black/60 hover:text-black transition-colors">Earth & Ember</a>
-          <span className="text-black/20">·</span>
-          <a href="https://vantagecoaching.edgemarketplacehub.com" className="text-sm text-black/60 hover:text-black transition-colors">Vantage Coaching</a>
-          <span className="text-black/20">·</span>
-          <a href="https://apexconsulting.edgemarketplacehub.com" className="text-sm text-black/60 hover:text-black transition-colors">Apex Consulting</a>
-        </div>
-      </section>
-
-      {/* Email Signup */}
-      <section className="max-w-7xl mx-auto px-6 py-20 text-center">
-        <div className="max-w-md mx-auto">
-          <h3 className="font-bold text-2xl mb-2">Get started today</h3>
-          <p className="text-black/60 mb-6 text-sm">
-            No password needed. We'll email you a magic link.
-          </p>
-          <div className="flex flex-col sm:flex-row gap-3 mb-4">
-            <input
-              type="email"
-              placeholder="pembertonventures@gmail.com"
-              className="flex-1 px-4 py-3 border border-black/10 rounded-full text-sm focus:outline-none focus:border-black/30"
-            />
-            <button
-              type="button"
-              onClick={() => handleStart()}
-              className="bg-[#2D2D2D] text-white px-6 py-3 rounded-full text-sm font-bold hover:scale-[1.02] transition-transform whitespace-nowrap"
-            >
-              Create account & send login link
-            </button>
-          </div>
-          <button
-            onClick={() => router.push('/onboarding')}
-            className="w-full border border-black/10 py-3 rounded-full text-sm font-medium hover:border-black/30 transition-colors"
-          >
-            Continue as guest →
-          </button>
-        </div>
-      </section>
+      {/* Email Signup - removed, relocated to onboarding page */}
 
       {/* Footer */}
       <footer className="border-t border-black/5 py-12">
