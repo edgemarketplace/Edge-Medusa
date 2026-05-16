@@ -15,7 +15,7 @@ interface DemoSite {
   subdomain: string;
   tagline: string;
   offerings: string;
-  email: string;
+  contactEmail: string;
 }
 
 const DEMO_SITES: DemoSite[] = [
@@ -25,7 +25,7 @@ const DEMO_SITES: DemoSite[] = [
     subdomain: 'noiratelier',
     tagline: 'Curated luxury for the modern wardrobe',
     offerings: 'Women\'s fashion, accessories, jewelry',
-    email: 'hello@noiratelier.demo',
+    contactEmail: 'hello@noiratelier.demo',
   },
   {
     brandName: 'Cedar & Forge',
@@ -33,7 +33,7 @@ const DEMO_SITES: DemoSite[] = [
     subdomain: 'cedarandforge',
     tagline: 'Farm-to-table catering with rustic elegance',
     offerings: 'Wedding catering, corporate events, private dinners',
-    email: 'events@cedarandforge.demo',
+    contactEmail: 'events@cedarandforge.demo',
   },
   {
     brandName: 'Bloom & Lore',
@@ -41,7 +41,7 @@ const DEMO_SITES: DemoSite[] = [
     subdomain: 'bloomandlore',
     tagline: 'Editorial florals for life\'s most beautiful moments',
     offerings: 'Wedding flowers, event decor, installations',
-    email: 'studio@bloomandlore.demo',
+    contactEmail: 'studio@bloomandlore.demo',
   },
   {
     brandName: 'Earth & Ember',
@@ -49,7 +49,7 @@ const DEMO_SITES: DemoSite[] = [
     subdomain: 'earthandember',
     tagline: 'Hand-thrown ceramics for intentional living',
     offerings: 'Pottery, dinnerware, home decor, custom commissions',
-    email: 'maker@earthandember.demo',
+    contactEmail: 'maker@earthandember.demo',
   },
   {
     brandName: 'Vantage Coaching',
@@ -57,7 +57,7 @@ const DEMO_SITES: DemoSite[] = [
     subdomain: 'vantagecoaching',
     tagline: 'Executive coaching for leaders ready to level up',
     offerings: 'Executive coaching, leadership development, career transitions',
-    email: 'coach@vantagecoaching.demo',
+    contactEmail: 'coach@vantagecoaching.demo',
   },
   {
     brandName: 'Apex Consulting',
@@ -65,7 +65,7 @@ const DEMO_SITES: DemoSite[] = [
     subdomain: 'apexconsulting',
     tagline: 'Business transformation for high-growth companies',
     offerings: 'Strategy consulting, operations optimization, team scaling',
-    email: 'team@apexconsulting.demo',
+    contactEmail: 'team@apexconsulting.demo',
   },
 ];
 
@@ -99,7 +99,7 @@ export async function POST(req: NextRequest) {
           business_name: site.brandName,
           business_type: site.businessType,
           subdomain: site.subdomain,
-          email: site.email,
+          contact_email: site.contactEmail,
           tagline: site.tagline,
           published: false,
         })
@@ -116,7 +116,7 @@ export async function POST(req: NextRequest) {
         site.brandName,
         site.businessType,
         site.offerings,
-        site.email,
+        site.contactEmail,
         site.tagline
       );
 
