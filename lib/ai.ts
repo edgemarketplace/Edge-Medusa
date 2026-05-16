@@ -220,6 +220,7 @@ function buildPrompt(
   offerings: string,
   contactEmail: string,
   tagline: string,
+  preset: StylePreset,
 ): string {
   const template = TEMPLATES[businessType];
   const manifest = TEMPLATE_MANIFESTS[businessType];
@@ -566,51 +567,83 @@ export async function generateStorefront(
   contactEmail: string = '',
   tagline: string = '',
 ): Promise<{ pages: Array<{ slug: string; title: string; sections: GeneratedSection[] }> }> {
-  
-  // Get fixed templates for this business type
+
   const templates = PAGE_TEMPLATES[businessType] || [];
-  
   const funnel = FUNNEL_DEFS[businessType] || FUNNEL_DEFS['retail-core'];
-  
-  // Pick a random style preset for this vertical
   const preset = pickRandomPreset(businessType);
-  
+
   console.log(`Generating ${businessName} with preset: ${preset.name}`);
-  
-  // Generate pages using fixed template structure
+
+  // Try AI generation first
+  if (process.env.OPENAI_API_KEY) {
+    try {
+      const openai = getOpenAI();
+      const prompt = buildPrompt(businessName, businessType, offerings, contactEmail, tagline, preset);
+
+      const response = await openai.chat.completions.create({
+        model: 'gpt-4-turbo-preview',
+        messages: [{ role: 'user', content: prompt }],
+        temperature: 0.7,
+        max_tokens: 4000,
+      });
+
+      const content = response.choices[0].message.content || '';
+      const jsonMatch = content.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        const parsed = JSON.parse(jsonMatch[0]);
+        if (parsed.pages && Array.isArray(parsed.pages)) {
+          const pages = parsed.pages.map((page: any) => ({
+            slug: page.slug,
+            title: page.title,
+            sections: page.sections.map((sec: any) => ({
+              id: sec.id || genId(),
+              type: sec.type,
+              data: sec.data || {},
+            })),
+          }));
+
+          const pagesWithImages = await processImagesInPages(pages);
+          console.log(`AI generation succeeded for ${businessName}`);
+          return { pages: pagesWithImages };
+        }
+      }
+    } catch (err) {
+      console.error('AI generation failed, falling back to sample data:', err);
+    }
+  }
+
+  // Fallback: Use fixed templates with sample data
+  console.log(`Using fallback sample data for ${businessName}`);
   const pages = templates.map(template => {
     const sections = template.sections.map(section => {
-      const def = SECTION_LIBRARY[section.type ];
-      // Generate content using AI-powered sample data with style preset
+      const def = SECTION_LIBRARY[section.type];
       const generatedData = buildSampleData(
         section.type,
         businessName,
         offerings,
         funnel,
         businessType,
-        preset // Pass the style preset
+        preset
       );
-      
+
       return {
         id: genId(),
         type: section.type as SectionType,
         data: {
           ...def?.defaultData,
           ...generatedData,
-          ...section.data // Override with any template-specific data
+          ...section.data
         }
       };
     });
-    
+
     return {
       slug: template.slug,
       title: template.title,
       sections
     };
   });
-  
-  // Process images - replace search terms with actual Unsplash URLs
+
   const pagesWithImages = await processImagesInPages(pages);
-  
   return { pages: pagesWithImages };
 }
