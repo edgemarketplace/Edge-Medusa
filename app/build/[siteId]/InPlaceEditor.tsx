@@ -203,15 +203,21 @@ function EditableSection({ section, template, inventory, onUpdate, primary }: {
   // ── Hero ──
   if (type.startsWith('hero-')) {
     const hasImage = !!data.imageUrl;
+    const bgStyle: React.CSSProperties = {};
+    if (data.background) bgStyle.backgroundColor = data.background;
+    if (hasImage) {
+      bgStyle.backgroundImage = `linear-gradient(rgba(0,0,0,${data.overlayOpacity || 0.45}), rgba(0,0,0,${data.overlayOpacity || 0.45})), url(${data.imageUrl})`;
+      bgStyle.backgroundSize = 'cover';
+      bgStyle.backgroundPosition = 'center';
+    }
+    if (data.textColor) bgStyle.color = data.textColor;
+    
     return (
       <div
         className={`px-8 py-20 text-center relative ${hasImage ? 'min-h-[420px] flex flex-col items-center justify-center' : 'bg-[#F9F8F6]'}`}
-        style={hasImage ? {
-          backgroundImage: `linear-gradient(rgba(0,0,0,${data.overlayOpacity || 0.45}),rgba(0,0,0,${data.overlayOpacity || 0.45})),url(${data.imageUrl})`,
-          backgroundSize: 'cover', backgroundPosition: 'center',
-        } : undefined}
+        style={Object.keys(bgStyle).length > 0 ? bgStyle : undefined}
       >
-        <Editable tag="h1" value={data.heading || 'Your headline'} onChange={v => onUpdate('heading', v)}
+        <Editable tag="h1" value={data.heading || data.headline || 'Your headline'} onChange={v => onUpdate('heading', v)}
           className={`text-4xl md:text-6xl font-serif italic tracking-tight mb-6 block ${hasImage ? 'text-white' : ''}`}
           placeholder="Headline" />
         <Editable tag="p" value={data.subheading || 'Your subheading'} onChange={v => onUpdate('subheading', v)}
