@@ -226,7 +226,7 @@ function buildPrompt(
   // Build section-by-section instructions
   const sectionInstructions = funnel.requiredSections.map((sec, idx) => {
     const def = SECTION_LIBRARY[sec.type];
-    const sampleData = buildSampleData(sec.type, businessName, offerings, funnel);
+    const sampleData = buildSampleData(sec.type, businessName, offerings, funnel, businessType);
     return `  ${idx + 1}. ${def.label} (${sec.type})
     Purpose: ${sec.purpose}
     Tips: ${sec.tips}
@@ -312,7 +312,7 @@ Return ONLY valid JSON (no markdown, no code fences) in this exact structure:
 Generate ALL sections. Every field. Real content. POWERFUL copy. Now.`;
 }
 
-function buildSampleData(type: SectionType, businessName: string, offerings: string, funnel: FunnelDef): Record<string, any> {
+function buildSampleData(type: SectionType, businessName: string, offerings: string, funnel: FunnelDef, businessType: string): Record<string, any> {
   // Generate powerful, specific sample data that matches our "forbidden words" / "power words" style
   const businessLower = businessName.toLowerCase();
   
