@@ -1632,7 +1632,6 @@ function PagesPanel({ pages, site, showNewPage, newPageTitle, newPageSlug, editi
             )}
           </div>
         ))}
-        </div>
       </div>
     </div>
   );
