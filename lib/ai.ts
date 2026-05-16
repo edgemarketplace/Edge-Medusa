@@ -134,7 +134,13 @@ Generate a JSON response with this structure:
 }
 
 IMPORTANT: Use ONLY these section types: hero-products, brand-story, quote-cta, featured-collection, product-grid, testimonials, gallery, faq, newsletter, contact-simple.
-Each section MUST have an "id", "type", and "data" field. The "data" field should match the expected fields for that section type.`;
+Each section MUST have an "id", "type", and "data" field. The "data" field should match the expected fields for that section type.
+
+CRITICAL IMAGE RULES:
+- For imageUrl fields, use Unsplash URLs in this format: https://images.unsplash.com/photo-{ID}?w=1200&h=600&fit=crop&auto=format
+- Use relevant Unsplash photo IDs for the business type (e.g., coffee shop = photo-1495474171907, retail = photo-1607089264410)
+- OR leave imageUrl as empty string "" if you cannot find a suitable image
+- NEVER use relative paths like "images/hero.jpg" - these will not work!`;
 }
 
 function getFallbackSiteStructure(
