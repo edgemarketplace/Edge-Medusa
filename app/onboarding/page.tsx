@@ -280,7 +280,7 @@ export default function OnboardingPage() {
                 </div>
               </div>
             ) : (
-              'Generate my store →'
+              'Get started today'
             )}
           </button>
         </form>
