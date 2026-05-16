@@ -259,16 +259,8 @@ export default function HomePage() {
 
       {/* Demo Sites Showcase */}
       <section className="max-w-7xl mx-auto px-6 py-20">
-        <div className="text-center mb-12">
-          <h2 className="font-bold text-3xl md:text-4xl mb-4">
-            See what you can build
-          </h2>
-          <p className="text-black/60 max-w-2xl mx-auto">
-            Real sites generated in minutes. Each one is a fully functional, 
-            conversion-ready storefront tailored to a specific industry.
-          </p>
-        </div>
-
+        <h2 className="text-3xl font-serif italic mb-12 text-center">Example stores</h2>
+        
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
           {[
             { name: 'Noir Atelier', type: 'retail-core', subdomain: 'noiratelier', desc: 'Luxury fashion & accessories' },
@@ -282,11 +274,11 @@ export default function HomePage() {
               key={site.subdomain}
               href={`https://${site.subdomain}.edgemarketplacehub.com`}
               target="_blank"
-              className="group border border-black/10 rounded-2xl p-6 hover:border-black/30 transition-all hover:shadow-lg"
+              className="group block border border-black/5 rounded-2xl p-6 hover:border-black/20 transition-all hover:-translate-y-1"
             >
-              <div className="aspect-video bg-black/5 rounded-xl mb-4 flex items-center justify-center">
+              <div className="aspect-[4/3] bg-[#F9F8F6] rounded-xl mb-4 flex items-center justify-center">
                 <div className="text-center">
-                  <div className="text-2xl font-bold mb-2">{site.name}</div>
+                  <div className="text-lg font-bold mb-1">{site.name}</div>
                   <div className="text-sm text-black/40">{site.type}</div>
                 </div>
               </div>
@@ -296,18 +288,15 @@ export default function HomePage() {
                 <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full">
                   Generated in under 5 minutes
                 </span>
-                <span className="text-sm text-black/40 group-hover:text-black transition-colors">
+                <button className="text-xs bg-black text-white px-3 py-1.5 rounded-full hover:scale-105 transition-transform">
                   View live site →
-                </span>
+                </button>
               </div>
             </a>
           ))}
         </div>
 
         <div className="text-center">
-          <p className="text-black/60 mb-4">
-            Each demo is a complete, published site with homepage, about page, and contact page.
-          </p>
           <button
             onClick={handleStart}
             className="bg-[#2D2D2D] text-white px-8 py-3 rounded-full font-bold hover:scale-[1.02] transition-transform"
