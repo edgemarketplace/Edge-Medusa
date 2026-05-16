@@ -12,7 +12,6 @@
     "@stripe/react-stripe-js": "^6.3.0",
     "@stripe/stripe-js": "^9.5.0",
     "@supabase/ssr": "^0.10.3",
-    "@supabase/supabase-js": "^2.105.4",
     "next": "16.2.6",
     "openai": "^6.37.0",
     "react": "19.2.4",
@@ -21,6 +20,7 @@
     "stripe": "^22.1.1"
   },
   "devDependencies": {
+    "@supabase/supabase-js": "^2.105.4",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/react": "^19",
@@ -28,6 +28,7 @@
     "eslint": "^9",
     "eslint-config-next": "16.2.6",
     "tailwindcss": "^4",
+    "tsx": "^4.22.0",
     "typescript": "^5"
   }
 }
