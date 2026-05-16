@@ -257,6 +257,66 @@ export default function HomePage() {
         </div>
       </section>
 
+      {/* Demo Sites Showcase */}
+      <section className="max-w-7xl mx-auto px-6 py-20">
+        <div className="text-center mb-12">
+          <h2 className="font-bold text-3xl md:text-4xl mb-4">
+            See what you can build
+          </h2>
+          <p className="text-black/60 max-w-2xl mx-auto">
+            Real sites generated in minutes. Each one is a fully functional, 
+            conversion-ready storefront tailored to a specific industry.
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+          {[
+            { name: 'Noir Atelier', type: 'retail-core', subdomain: 'noiratelier', desc: 'Luxury fashion & accessories' },
+            { name: 'Cedar & Forge', type: 'food-catering', subdomain: 'cedarandforge', desc: 'Farm-to-table catering' },
+            { name: 'Bloom & Lore', type: 'event-floral', subdomain: 'bloomandlore', desc: 'Editorial florals & events' },
+            { name: 'Earth & Ember', type: 'artisan-market', subdomain: 'earthandember', desc: 'Hand-thrown ceramics' },
+            { name: 'Vantage Coaching', type: 'coach-educator', subdomain: 'vantagecoaching', desc: 'Executive coaching' },
+            { name: 'Apex Consulting', type: 'service-pro', subdomain: 'apexconsulting', desc: 'Business transformation' },
+          ].map((site) => (
+            <a
+              key={site.subdomain}
+              href={`https://${site.subdomain}.edgemarketplacehub.com`}
+              target="_blank"
+              className="group border border-black/10 rounded-2xl p-6 hover:border-black/30 transition-all hover:shadow-lg"
+            >
+              <div className="aspect-video bg-black/5 rounded-xl mb-4 flex items-center justify-center">
+                <div className="text-center">
+                  <div className="text-2xl font-bold mb-2">{site.name}</div>
+                  <div className="text-sm text-black/40">{site.type}</div>
+                </div>
+              </div>
+              <h3 className="font-bold mb-1">{site.name}</h3>
+              <p className="text-sm text-black/60 mb-3">{site.desc}</p>
+              <div className="flex items-center justify-between">
+                <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full">
+                  Generated in under 5 minutes
+                </span>
+                <span className="text-sm text-black/40 group-hover:text-black transition-colors">
+                  View live site →
+                </span>
+              </div>
+            </a>
+          ))}
+        </div>
+
+        <div className="text-center">
+          <p className="text-black/60 mb-4">
+            Each demo is a complete, published site with homepage, about page, and contact page.
+          </p>
+          <button
+            onClick={handleStart}
+            className="bg-[#2D2D2D] text-white px-8 py-3 rounded-full font-bold hover:scale-[1.02] transition-transform"
+          >
+            Create your own similar site
+          </button>
+        </div>
+      </section>
+
       {/* Email Signup */}
       <section className="max-w-7xl mx-auto px-6 py-20 text-center">
         <div className="max-w-md mx-auto">

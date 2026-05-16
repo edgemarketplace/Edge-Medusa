@@ -101,7 +101,6 @@ export async function POST(req: NextRequest) {
           subdomain: site.subdomain,
           email: site.email,
           tagline: site.tagline,
-          demo: true,
           published: false,
         })
         .select()
