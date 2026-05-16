@@ -191,6 +191,101 @@ export default function StorefrontRenderer({
   );
 }
 
+// --- Contact Form Component ---
+
+function ContactForm({ siteId, primaryColor, onCancel }: { siteId: string; primaryColor: string; onCancel?: () => void }) {
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [message, setMessage] = useState('');
+  const [sending, setSending] = useState(false);
+  const [sent, setSent] = useState(false);
+  const [error, setError] = useState('');
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setSending(true);
+    setError('');
+    try {
+      const res = await fetch(`/api/sites/${siteId}/contact`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, email, message }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setSent(true);
+      } else {
+        setError(data.error || 'Failed to send message');
+      }
+    } catch (err) {
+      setError('Connection error. Please try again.');
+    } finally {
+      setSending(false);
+    }
+  }
+
+  if (sent) {
+    return (
+      <div className="bg-emerald-50 rounded-3xl p-8 text-center animate-in fade-in zoom-in duration-500">
+        <div className="text-4xl mb-4">✨</div>
+        <h3 className="text-xl font-bold text-emerald-900 mb-2">Message Sent</h3>
+        <p className="text-emerald-700/70 mb-6">Thank you for reaching out! We've received your inquiry and will get back to you shortly.</p>
+        {onCancel && (
+          <button onClick={onCancel} className="px-6 py-2 rounded-full bg-emerald-600 text-white font-bold">Close</button>
+        )}
+      </div>
+    );
+  }
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-4">
+      {error && <p className="text-red-500 text-sm font-medium">{error}</p>}
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <label className="block text-xs font-bold text-black/40 uppercase mb-1 ml-1">Name</label>
+          <input 
+            required 
+            value={name} 
+            onChange={e => setName(e.target.value)} 
+            placeholder="John Doe" 
+            className="w-full px-4 py-3 rounded-2xl border border-black/10 focus:outline-none focus:border-black/30 bg-white"
+          />
+        </div>
+        <div>
+          <label className="block text-xs font-bold text-black/40 uppercase mb-1 ml-1">Email</label>
+          <input 
+            required 
+            type="email" 
+            value={email} 
+            onChange={e => setEmail(e.target.value)} 
+            placeholder="john@example.com" 
+            className="w-full px-4 py-3 rounded-2xl border border-black/10 focus:outline-none focus:border-black/30 bg-white"
+          />
+        </div>
+      </div>
+      <div>
+        <label className="block text-xs font-bold text-black/40 uppercase mb-1 ml-1">Message</label>
+        <textarea 
+          required 
+          value={message} 
+          onChange={e => setMessage(e.target.value)} 
+          placeholder="How can we help you?" 
+          rows={4}
+          className="w-full px-4 py-3 rounded-2xl border border-black/10 focus:outline-none focus:border-black/30 bg-white resize-none"
+        />
+      </div>
+      <button 
+        type="submit" 
+        disabled={sending}
+        className="w-full py-4 rounded-full text-white font-bold text-lg shadow-lg hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50"
+        style={{ backgroundColor: primaryColor }}
+      >
+        {sending ? 'Sending...' : 'Send Inquiry'}
+      </button>
+    </form>
+  );
+}
+
 // --- Section Renderer ---
 
 function SectionRenderer({ section, template, inventory, onAddToCart, site }: {
@@ -420,12 +515,21 @@ function SectionRenderer({ section, template, inventory, onAddToCart, site }: {
   // Quote CTA / Booking CTA
   if (['quote-cta', 'booking-cta'].includes(type)) {
     return (
-      <div className="px-8 py-16 text-center">
-        <h2 className="text-3xl font-serif italic mb-4">{data.headline || 'Get in touch'}</h2>
-        <p className="text-black/60 mb-8 max-w-lg mx-auto">{data.subheading || 'Tell us about your project.'}</p>
-        <button className="px-8 py-4 rounded-full text-white font-bold text-lg" style={{ backgroundColor: primary }}>
-          {data.ctaText || 'Contact us'}
-        </button>
+      <div className="px-8 py-20 text-center relative overflow-hidden">
+        <div className="max-w-xl mx-auto">
+          <h2 className="text-3xl font-serif italic mb-4">{data.headline || 'Get in touch'}</h2>
+          <p className="text-black/60 mb-10">{data.subheading || 'Tell us about your project.'}</p>
+          
+          {data.showForm ? (
+            <div className="bg-[#F9F8F6] p-8 rounded-[40px] border border-black/5 text-left">
+              <ContactForm siteId={site.id} primaryColor={primary} />
+            </div>
+          ) : (
+            <button className="px-8 py-4 rounded-full text-white font-bold text-lg shadow-lg hover:scale-105 transition-transform" style={{ backgroundColor: primary }}>
+              {data.ctaText || 'Contact us'}
+            </button>
+          )}
+        </div>
       </div>
     );
   }

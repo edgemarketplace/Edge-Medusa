@@ -54,7 +54,7 @@ export default function BuildPage({ params }: BuildPageProps) {
   const [saving, setSaving] = useState(false);
   const [launching, setLaunching] = useState(false);
   const [error, setError] = useState('');
-  const [activeTab, setActiveTab] = useState<'design' | 'pages' | 'inventory' | 'settings' | 'orders' | 'clients'>('design');
+  const [activeTab, setActiveTab] = useState<'design' | 'pages' | 'inventory' | 'settings' | 'orders' | 'clients' | 'mailbox' | 'marketing'>('design');
   const [settingsName, setSettingsName] = useState('');
   const [settingsTagline, setSettingsTagline] = useState('');
   const [settingsEmail, setSettingsEmail] = useState('');
@@ -62,6 +62,7 @@ export default function BuildPage({ params }: BuildPageProps) {
   const [stripeConnected, setStripeConnected] = useState(!!site?.stripe_account_id);
   const [orders, setOrders] = useState<any[]>([]);
   const [clients, setClients] = useState<any[]>([]);
+  const [conversations, setConversations] = useState<any[]>([]);
   const [loadingData, setLoadingData] = useState(false);
 
   // Section editor state
@@ -139,6 +140,38 @@ export default function BuildPage({ params }: BuildPageProps) {
       setPages([]);
     }
   }
+  async function loadCommerceData() {
+    if (!siteId) return;
+    setLoadingData(true);
+    try {
+      const ordersRes = await fetch(`/api/sites/${siteId}/orders`);
+      const ordersData = await ordersRes.json();
+      setOrders(ordersData);
+
+      const clientsRes = await fetch(`/api/sites/${siteId}/clients`);
+      const clientsData = await clientsRes.json();
+      setClients(clientsData);
+    } catch (err) { console.warn('Commerce data failed'); }
+    finally { setLoadingData(false); }
+  }
+
+  async function loadConversations() {
+    if (!siteId) return;
+    try {
+      const res = await fetch(`/api/sites/${siteId}/conversations`);
+      const data = await res.json();
+      if (Array.isArray(data)) setConversations(data);
+    } catch (err) { console.warn('Conversations failed'); }
+  }
+
+  useEffect(() => {
+    if (activeTab === 'orders' || activeTab === 'clients') {
+      loadCommerceData();
+    }
+    if (activeTab === 'mailbox') {
+      loadConversations();
+    }
+  }, [activeTab, siteId]);
 
   function migrateSections(oldSections: any[]): GeneratedSection[] {
     return oldSections.map(s => {
@@ -514,79 +547,103 @@ export default function BuildPage({ params }: BuildPageProps) {
   };
 
   return (
-    <div className="min-h-screen bg-[#F9F8F6] text-[#1A1A1A]">
-      {/* Top bar */}
-      <div className="sticky top-0 z-20 bg-white border-b border-black/5 px-6 py-4 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <Link href="/dashboard" className="text-sm text-black/60 hover:text-black font-medium">
-            ← Dashboard
+  return (
+    <div className="min-h-screen bg-[#F9F8F6] text-[#1A1A1A] flex">
+      {/* ── SIDEBAR ── */}
+      <div className="w-72 fixed inset-y-0 left-0 bg-white border-r border-black/5 z-50 flex flex-col shadow-[10px_0_40px_-15px_rgba(0,0,0,0.03)]">
+        <div className="p-8 pb-4">
+          <Link href="/dashboard" className="flex items-center gap-2 group mb-8">
+            <div className="w-8 h-8 rounded-xl bg-black flex items-center justify-center text-white font-black text-lg group-hover:scale-105 transition-transform">E</div>
+            <span className="font-bold tracking-tight text-xl">Edge Hub</span>
           </Link>
-          <span className="text-black/20">|</span>
-          <span className="font-bold">{site.business_name}</span>
-          <span className="text-xs text-black/30 bg-black/5 px-2 py-0.5 rounded-full">{template.label}</span>
-          {saving && <span className="text-xs text-black/40 ml-2">Saving...</span>}
-        </div>
-        <div className="flex items-center gap-3">
-          {!stripeConnected && (
-            <a href={`/api/stripe/connect?siteId=${siteId}`} className="px-4 py-2 rounded-full border border-blue-200 bg-blue-50 text-blue-700 text-sm font-bold hover:bg-blue-100">
-              Connect Stripe
-            </a>
-          )}
-          <button
-            onClick={() => window.open(`/store/${site?.subdomain || siteId}?preview=true`, '_blank')}
-            className="px-6 py-2 rounded-full border border-black/10 text-sm font-bold hover:bg-black/5 flex items-center gap-2"
-          >
-            👁 Preview Shop
-          </button>
-          <button onClick={handleGenerate} disabled={generating} className="px-4 py-2 rounded-full border border-black/10 text-sm font-bold hover:bg-black/5 disabled:opacity-50">
-            {generating ? 'Generating...' : '↻ Regenerate'}
-          </button>
-          <button onClick={handleLaunch} disabled={launching} className="px-6 py-2 rounded-full bg-black text-white text-sm font-bold disabled:opacity-40 hover:scale-105 transition-transform">
-            {launching ? 'Launching...' : '🚀 Publish'}
-          </button>
-        </div>
-      </div>
-
-      {/* Publish validation modal */}
-      {showValidation && publishValidation && !publishValidation.valid && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30" onClick={() => setShowValidation(false)}>
-          <div className="bg-white rounded-3xl p-8 max-w-md w-full mx-4 shadow-2xl" onClick={e => e.stopPropagation()}>
-            <h2 className="text-xl font-bold mb-4">Cannot launch yet</h2>
-            <div className="space-y-2 mb-6">
-              {publishValidation.errors.map((err, i) => (
-                <p key={i} className="text-sm text-red-600 flex items-start gap-2"><span className="mt-0.5">✕</span> {err}</p>
-              ))}
-              {publishValidation.warnings.map((warn, i) => (
-                <p key={i} className="text-sm text-amber-600 flex items-start gap-2"><span className="mt-0.5">⚠</span> {warn}</p>
-              ))}
-            </div>
-            <button onClick={() => setShowValidation(false)} className="w-full px-4 py-3 rounded-full bg-black text-white font-bold">Got it</button>
+          
+          <div className="space-y-1">
+            {([
+              { id: 'design', label: 'Design', icon: '✏️', count: null },
+              { id: 'pages', label: 'Pages', icon: '📄', count: pages.length },
+              { id: 'inventory', label: 'Inventory', icon: '📦', count: inventory.length },
+              { id: 'mailbox', label: 'Mailbox', icon: '📨', count: conversations.length || null },
+              { id: 'marketing', label: 'Marketing', icon: '📈', count: null },
+              { id: 'orders', label: 'Orders', icon: '📊', count: orders.length || null },
+              { id: 'clients', label: 'Clients', icon: '👥', count: null },
+              { id: 'settings', label: 'Settings', icon: '⚙️', count: null },
+            ] as const).map(tab => (
+              <button 
+                key={tab.id} 
+                onClick={() => setActiveTab(tab.id as any)}
+                className={`w-full flex items-center justify-between px-4 py-3 rounded-2xl text-sm font-bold transition-all ${
+                  activeTab === tab.id 
+                    ? 'bg-black text-white shadow-lg shadow-black/10' 
+                    : 'text-black/50 hover:bg-black/5 hover:text-black'
+                }`}
+              >
+                <div className="flex items-center gap-3">
+                  <span className="text-lg">{tab.icon}</span>
+                  {tab.label}
+                </div>
+                {tab.count !== null && (
+                  <span className={`px-2 py-0.5 rounded-lg text-[10px] ${activeTab === tab.id ? 'bg-white/20 text-white' : 'bg-black/5 text-black/40'}`}>
+                    {tab.count}
+                  </span>
+                )}
+              </button>
+            ))}
           </div>
         </div>
-      )}
 
-      {/* Tabs */}
-      <div className="border-b border-black/5 bg-white">
-        <div className="max-w-7xl mx-auto px-6 flex gap-1 overflow-x-auto">
-          {([
-            { id: 'design', label: '✏️ Design', count: null },
-            { id: 'pages', label: '📄 Pages', count: pages.length },
-            { id: 'inventory', label: '📦 Inventory', count: inventory.length },
-            { id: 'mailbox', label: '📨 Mailbox', count: null },
-            { id: 'marketing', label: '📈 Marketing', count: null },
-            { id: 'settings', label: '⚙️ Settings', count: null },
-            { id: 'orders', label: '📊 Orders', count: null },
-            { id: 'clients', label: '👥 Clients', count: null },
-          ] as const).map(tab => (
-            <button key={tab.id} onClick={() => setActiveTab(tab.id as any)}
-              className={`py-4 px-4 text-sm font-bold border-b-2 transition-colors whitespace-nowrap ${
-                activeTab === tab.id ? 'border-black text-black' : 'border-transparent text-black/40 hover:text-black/70'
-              }`}>
-              {tab.label}{tab.count !== null ? ` (${tab.count})` : ''}
-            </button>
-          ))}
+        <div className="mt-auto p-6 space-y-3">
+          <div className="bg-black/[0.02] rounded-2xl p-4 border border-black/5 mb-2">
+            <div className="flex items-center gap-2 mb-1">
+              <span className="text-[10px] font-black uppercase tracking-widest text-black/30">Current Project</span>
+            </div>
+            <p className="text-sm font-bold truncate">{site.business_name}</p>
+            <p className="text-[10px] text-black/40 font-medium">Ocean Theme Active</p>
+          </div>
+
+          <button 
+            onClick={handleLaunch} 
+            disabled={launching} 
+            className="w-full py-4 rounded-2xl bg-black text-white font-bold text-sm shadow-xl shadow-black/10 hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-40 flex items-center justify-center gap-2"
+          >
+            {launching ? (
+              <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+            ) : '🚀 Publish Site'}
+          </button>
+          
+          <Link href="/dashboard" className="w-full py-3 rounded-2xl border border-black/5 flex items-center justify-center gap-2 text-sm font-bold text-black/40 hover:text-black hover:bg-black/5 transition-all">
+            Exit to Dashboard
+          </Link>
         </div>
       </div>
+
+      {/* ── MAIN CONTENT AREA ── */}
+      <div className="flex-1 ml-72 min-h-screen flex flex-col">
+        {/* Sub-header */}
+        <div className="h-20 px-8 flex items-center justify-between sticky top-0 z-40 bg-[#F9F8F6]/80 backdrop-blur-md">
+          <div className="flex items-center gap-4">
+            <h1 className="text-lg font-bold">{activeTab.charAt(0).toUpperCase() + activeTab.slice(1)}</h1>
+            {saving && (
+              <div className="flex items-center gap-2 text-[10px] font-bold text-black/30 uppercase tracking-widest animate-pulse">
+                <div className="w-1 h-1 rounded-full bg-black/30" />
+                Saving Changes...
+              </div>
+            )}
+          </div>
+          
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => window.open(`/store/${site?.subdomain || siteId}?preview=true`, '_blank')}
+              className="px-6 py-2.5 rounded-full bg-white border border-black/5 text-xs font-bold shadow-sm hover:shadow-md transition-all flex items-center gap-2"
+            >
+              👁 View Store
+            </button>
+            <button onClick={handleGenerate} disabled={generating} className="px-6 py-2.5 rounded-full bg-white border border-black/5 text-xs font-bold shadow-sm hover:shadow-md transition-all disabled:opacity-50 flex items-center gap-2">
+              {generating ? '...' : '↻'} Regenerate
+            </button>
+          </div>
+        </div>
+
+        <div className="flex-1">
 
       {/* Main content */}
       <div className="max-w-7xl mx-auto">
@@ -824,84 +881,104 @@ export default function BuildPage({ params }: BuildPageProps) {
                 <h2 className="text-2xl font-serif italic mb-1">Mailbox</h2>
                 <p className="text-black/50 text-sm">Unified inbox for site inquiries and customer messages.</p>
               </div>
+              <button onClick={loadConversations} className="p-2 rounded-full hover:bg-black/5 text-black/30 transition-colors" title="Refresh">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M3 21v-5h5"/></svg>
+              </button>
             </div>
             
-            <div className="bg-white rounded-3xl border border-black/5 min-h-[400px] flex items-center justify-center text-center p-10">
-              <div className="max-w-sm">
-                <div className="text-4xl mb-4">📨</div>
-                <h3 className="text-lg font-bold mb-2">No messages yet</h3>
-                <p className="text-sm text-black/50">
-                  When customers contact you through your site forms or social channels, their messages will appear here.
-                </p>
+            {conversations.length === 0 ? (
+              <div className="bg-white rounded-3xl border border-black/5 min-h-[400px] flex items-center justify-center text-center p-10">
+                <div className="max-w-sm">
+                  <div className="text-4xl mb-4">📨</div>
+                  <h3 className="text-lg font-bold mb-2">No messages yet</h3>
+                  <p className="text-sm text-black/50">
+                    When customers contact you through your site forms or social channels, their messages will appear here.
+                  </p>
+                </div>
               </div>
-            </div>
+            ) : (
+              <div className="bg-white rounded-3xl border border-black/5 overflow-hidden">
+                <div className="divide-y divide-black/5">
+                  {conversations.map((conv) => (
+                    <div key={conv.id} className="p-6 hover:bg-black/[0.01] transition-colors cursor-pointer group">
+                      <div className="flex justify-between items-start mb-2">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-full bg-black/5 flex items-center justify-center font-bold text-black/30">
+                            {conv.customer_name?.[0]?.toUpperCase()}
+                          </div>
+                          <div>
+                            <h4 className="font-bold text-sm">{conv.customer_name}</h4>
+                            <p className="text-xs text-black/40">{conv.customer_email}</p>
+                          </div>
+                        </div>
+                        <span className="text-[10px] text-black/30 font-medium uppercase tracking-wider">
+                          {new Date(conv.updated_at).toLocaleDateString()}
+                        </span>
+                      </div>
+                      <div className="ml-13 pl-13">
+                        <p className="text-sm font-medium mb-1">{conv.subject}</p>
+                        <p className="text-sm text-black/50 line-clamp-2">{conv.last_message}</p>
+                      </div>
+                      <div className="mt-4 flex justify-end opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button className="text-xs font-bold text-blue-600 hover:underline">View full thread →</button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         )}
 
         {/* ── MARKETING TAB ── */}
         {activeTab === 'marketing' && (
-          <div className="max-w-5xl mx-auto py-10 px-6 space-y-10">
+          <div className="max-w-4xl mx-auto py-10 px-6 space-y-8">
             <div className="flex justify-between items-end">
               <div>
-                <h2 className="text-2xl font-serif italic mb-1">Marketing & Growth</h2>
-                <p className="text-black/50 text-sm">Manage your Google presence and social media calendar.</p>
+                <h2 className="text-2xl font-serif italic mb-1">Marketing & Social</h2>
+                <p className="text-black/50 text-sm">Manage your social presence and Google Business Profile.</p>
               </div>
+              <button className="px-6 py-2.5 rounded-full bg-black text-white text-xs font-bold shadow-lg hover:scale-105 transition-all">
+                + New Social Post
+              </button>
             </div>
 
-            <div className="grid md:grid-cols-2 gap-6">
-              {/* GMB Card */}
-              <div className="bg-white rounded-3xl p-8 border border-black/5 space-y-4">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-[#4285F4]/10 rounded-xl flex items-center justify-center text-[#4285F4]">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+            <div className="grid grid-cols-2 gap-6">
+              {[
+                { name: 'Google Business', icon: '🏪', status: 'Not Connected', description: 'Show up in local search & maps' },
+                { name: 'Instagram', icon: '📸', status: 'Not Connected', description: 'Visual storytelling for your brand' },
+                { name: 'X / Twitter', icon: '🐦', status: 'Not Connected', description: 'Real-time updates & community' },
+                { name: 'Facebook', icon: '👥', status: 'Not Connected', description: 'Reach local customers & groups' },
+              ].map((platform) => (
+                <div key={platform.name} className="bg-white rounded-3xl border border-black/5 p-6 hover:shadow-xl hover:shadow-black/5 transition-all group">
+                  <div className="flex justify-between items-start mb-4">
+                    <div className="text-3xl">{platform.icon}</div>
+                    <span className="text-[10px] font-bold text-black/30 uppercase tracking-widest">{platform.status}</span>
                   </div>
-                  <h3 className="font-bold">Google Business Profile</h3>
-                </div>
-                <p className="text-sm text-black/55 leading-relaxed">
-                  Track your business reviews, ratings, and search visibility directly in your hub.
-                </p>
-                <div className="pt-2">
-                  <button className="px-5 py-2.5 bg-black text-white rounded-full text-xs font-bold hover:bg-black/80 transition-colors">
-                    Connect Google Business
+                  <h3 className="font-bold mb-1">{platform.name}</h3>
+                  <p className="text-sm text-black/50 mb-6">{platform.description}</p>
+                  <button className="w-full py-3 rounded-2xl bg-black/5 text-black font-bold text-xs group-hover:bg-black group-hover:text-white transition-all">
+                    Connect Account
                   </button>
                 </div>
-              </div>
-
-              {/* Social Planner Card */}
-              <div className="bg-white rounded-3xl p-8 border border-black/5 space-y-4">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-emerald-500/10 rounded-xl flex items-center justify-center text-emerald-600">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><path d="m9 16 2 2 4-4"/></svg>
-                  </div>
-                  <h3 className="font-bold">Social Planner</h3>
-                </div>
-                <p className="text-sm text-black/55 leading-relaxed">
-                  Schedule posts to Instagram, X, and Facebook. Keep your audience engaged consistently.
-                </p>
-                <div className="pt-2">
-                  <button className="px-5 py-2.5 bg-black text-white rounded-full text-xs font-bold hover:bg-black/80 transition-colors">
-                    Create New Post
-                  </button>
-                </div>
-              </div>
+              ))}
             </div>
 
-            {/* Upcoming Posts Placeholder */}
-            <div className="bg-white rounded-3xl border border-black/5 overflow-hidden">
-              <div className="px-8 py-6 border-b border-black/5">
-                <h4 className="font-bold text-sm uppercase tracking-widest text-black/40">Upcoming Content</h4>
-              </div>
-              <div className="p-12 text-center text-black/30 text-sm">
-                No posts scheduled. Start planning your week's content.
+            <div className="bg-white rounded-3xl border border-black/5 p-8">
+              <h3 className="font-bold mb-4">Upcoming Schedule</h3>
+              <div className="flex flex-col items-center justify-center py-12 text-center text-black/30">
+                <div className="w-12 h-12 rounded-full border-2 border-dashed border-black/10 flex items-center justify-center mb-4">📅</div>
+                <p className="text-sm font-medium">No posts scheduled yet.</p>
+                <p className="text-xs">Connect an account to start planning your content.</p>
               </div>
             </div>
           </div>
         )}
 
         {activeTab === 'design' && (
-          <div className="flex" style={{ minHeight: 'calc(100vh - 130px)' }}>
+          <div className="flex" style={{ minHeight: 'calc(100vh - 80px)' }}>
             {/* Left rail — Section library */}
-            <div className="w-64 shrink-0 border-r border-black/5 bg-white min-h-[calc(100vh-120px)] overflow-y-auto sticky top-[120px]">
+            <div className="w-64 shrink-0 border-r border-black/5 bg-white min-h-[calc(100vh-80px)] overflow-y-auto sticky top-20">
               <div className="p-4">
                 <h3 className="text-xs font-bold text-black/40 uppercase tracking-wider mb-3">Add sections</h3>
                 <div className="space-y-1">
@@ -1554,6 +1631,7 @@ function PagesPanel({ pages, site, showNewPage, newPageTitle, newPageSlug, editi
             )}
           </div>
         ))}
+        </div>
       </div>
     </div>
   );
