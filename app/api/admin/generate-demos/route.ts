@@ -76,6 +76,9 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
+  const url = new URL(req.url);
+  const force = url.searchParams.get('force') === 'true';
+
   const results: any[] = [];
 
   for (const site of DEMO_SITES) {
@@ -83,13 +86,28 @@ export async function POST(req: NextRequest) {
       // Check if site already exists
       const { data: existing } = await supabaseAdmin
         .from('sites')
-        .select('id, subdomain')
+        .select('id, subdomain, published')
         .eq('subdomain', site.subdomain)
         .single();
 
-      if (existing) {
+      if (existing && !force) {
         results.push({ name: site.brandName, status: 'exists', subdomain: site.subdomain });
         continue;
+      }
+
+      // If force=true and site exists, delete it first
+      if (existing && force) {
+        console.log(`[DEMO] Force regenerating: ${site.brandName}`);
+        // Delete pages first (foreign key)
+        await supabaseAdmin
+          .from('pages')
+          .delete()
+          .eq('site_id', existing.id);
+        // Delete site
+        await supabaseAdmin
+          .from('sites')
+          .delete()
+          .eq('id', existing.id);
       }
 
       // Create site
