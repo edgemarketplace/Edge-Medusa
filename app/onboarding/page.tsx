@@ -14,6 +14,7 @@ export default function OnboardingPage() {
   const [email, setEmail] = useState('');
   const [selectedType, setSelectedType] = useState<TemplateFamily | null>(null);
   const [selectedTheme, setSelectedTheme] = useState<string>('milano');
+  const [customColors, setCustomColors] = useState({ primary: '#2D2D2D', accent: '#B8860B', background: '#F9F8F6' });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -33,7 +34,7 @@ export default function OnboardingPage() {
     if (!loading) { setGenerationStep(0); return; }
     const interval = setInterval(() => {
       setGenerationStep(prev => (prev < generationSteps.length - 1 ? prev + 1 : prev));
-    }, 2000);
+    }, 1000);
     return () => clearInterval(interval);
   }, [loading, generationSteps.length]);
 
@@ -45,15 +46,21 @@ export default function OnboardingPage() {
     setError('');
 
     try {
+      const body = {
+        business_name: businessName.trim(),
+        business_type: selectedType,
+        contact_email: email.trim(),
+        theme_id: selectedTheme,
+      } as any;
+      
+      if (selectedTheme === 'custom') {
+        body.custom_colors = customColors;
+      }
+
       const res = await fetch('/api/sites', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          business_name: businessName.trim(),
-          business_type: selectedType,
-          contact_email: email.trim(),
-          theme_id: selectedTheme,
-        }),
+        body: JSON.stringify(body),
       });
 
       if (!res.ok) {
@@ -171,11 +178,73 @@ export default function OnboardingPage() {
                     <div className="w-4 h-4 rounded-full border border-black/10" style={{ backgroundColor: theme.tokens.primary }} />
                     <div className="w-4 h-4 rounded-full border border-black/10" style={{ backgroundColor: theme.tokens.accent }} />
                     <div className="w-4 h-4 rounded-full border border-black/10" style={{ backgroundColor: theme.tokens.background }} />
-                    <div className="w-4 h-4 rounded-full border border-black/10" style={{ backgroundColor: theme.tokens.surface }} />
                   </div>
                 </button>
               ))}
             </div>
+            
+            {/* Custom Color Picker */}
+            {selectedTheme === 'custom' && (
+              <div className="mt-6 p-6 bg-white rounded-2xl border border-black/10">
+                <p className="text-sm font-bold mb-4">Choose 3 brand colors</p>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  <div>
+                    <label className="block text-xs text-black/50 mb-1">Primary</label>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="color"
+                        value={customColors.primary}
+                        onChange={(e) => setCustomColors({ ...customColors, primary: e.target.value })}
+                        className="w-10 h-10 rounded-lg border border-black/10 cursor-pointer"
+                      />
+                      <input
+                        type="text"
+                        value={customColors.primary}
+                        onChange={(e) => setCustomColors({ ...customColors, primary: e.target.value })}
+                        className="flex-1 px-3 py-2 border border-black/10 rounded-lg text-sm font-mono"
+                        maxLength={7}
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-xs text-black/50 mb-1">Accent</label>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="color"
+                        value={customColors.accent}
+                        onChange={(e) => setCustomColors({ ...customColors, accent: e.target.value })}
+                        className="w-10 h-10 rounded-lg border border-black/10 cursor-pointer"
+                      />
+                      <input
+                        type="text"
+                        value={customColors.accent}
+                        onChange={(e) => setCustomColors({ ...customColors, accent: e.target.value })}
+                        className="flex-1 px-3 py-2 border border-black/10 rounded-lg text-sm font-mono"
+                        maxLength={7}
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-xs text-black/50 mb-1">Background</label>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="color"
+                        value={customColors.background}
+                        onChange={(e) => setCustomColors({ ...customColors, background: e.target.value })}
+                        className="w-10 h-10 rounded-lg border border-black/10 cursor-pointer"
+                      />
+                      <input
+                        type="text"
+                        value={customColors.background}
+                        onChange={(e) => setCustomColors({ ...customColors, background: e.target.value })}
+                        className="flex-1 px-3 py-2 border border-black/10 rounded-lg text-sm font-mono"
+                        maxLength={7}
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
 
           {error && (

@@ -76,7 +76,7 @@ export default function HomePage() {
 
       {/* Vertical Cards */}
       <section className="max-w-7xl mx-auto px-6 pb-32">
-        <h2 className="text-3xl font-serif italic text-center mb-16">Built for your business type</h2>
+        <h2 className="text-3xl font-serif italic text-center mb-16">Built for how you do business</h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {templateEntries.map((template) => (
             <button
@@ -97,7 +97,7 @@ export default function HomePage() {
                 {template.summary}
               </p>
               <div className="flex items-center gap-2 text-sm font-bold text-[#2D2D2D]">
-                Build with {template.label} →
+                View Site →
               </div>
             </button>
           ))}
@@ -192,8 +192,6 @@ export default function HomePage() {
       <section className="max-w-7xl mx-auto px-6 py-12 border-t border-black/5">
         <p className="text-center text-sm text-black/40 mb-6">Editorial commerce platform · Retail Core: Built for shops and product businesses that need strong catalog presentation and fast conversion paths.</p>
         <div className="flex flex-wrap justify-center gap-4">
-          <a href="https://noiratelier.edgemarketplacehub.com" className="text-sm text-black/60 hover:text-black transition-colors">Noir Atelier</a>
-          <span className="text-black/20">·</span>
           <a href="https://cedarandforge.edgemarketplacehub.com" className="text-sm text-black/60 hover:text-black transition-colors">Cedar & Forge</a>
           <span className="text-black/20">·</span>
           <a href="https://bloomandlore.edgemarketplacehub.com" className="text-sm text-black/60 hover:text-black transition-colors">Bloom & Lore</a>
@@ -213,22 +211,26 @@ export default function HomePage() {
           <p className="text-black/60 mb-6 text-sm">
             No password needed. We'll email you a magic link.
           </p>
-          <form className="flex flex-col sm:flex-row gap-3" onSubmit={(e) => { e.preventDefault(); handleStart(); }}>
+          <div className="flex flex-col sm:flex-row gap-3 mb-4">
             <input
               type="email"
               placeholder="pembertonventures@gmail.com"
               className="flex-1 px-4 py-3 border border-black/10 rounded-full text-sm focus:outline-none focus:border-black/30"
             />
             <button
-              type="submit"
+              type="button"
+              onClick={() => handleStart()}
               className="bg-[#2D2D2D] text-white px-6 py-3 rounded-full text-sm font-bold hover:scale-[1.02] transition-transform whitespace-nowrap"
             >
               Create account & send login link
             </button>
-          </form>
-          <p className="text-xs text-black/40 mt-4">
-            <a href="/onboarding" className="hover:text-black transition-colors">Continue for later →</a>
-          </p>
+          </div>
+          <button
+            onClick={() => router.push('/onboarding')}
+            className="w-full border border-black/10 py-3 rounded-full text-sm font-medium hover:border-black/30 transition-colors"
+          >
+            Continue as guest →
+          </button>
         </div>
       </section>
 

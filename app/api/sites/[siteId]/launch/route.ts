@@ -8,14 +8,23 @@ export async function POST(
 ) {
   try {
     const { siteId } = await params;
-    const body = await request.json();
+    
+    // Safely parse JSON body (may be empty)
+    let body = {};
+    try {
+      const text = await request.text();
+      if (text) body = JSON.parse(text);
+    } catch {
+      // Ignore JSON parse errors, use empty object
+    }
+    
     const { 
       platform_fee_pct, 
       stripe_fee_pct, 
       tax_rate, 
       shipping_rate,
       shipping_handling 
-    } = body;
+    } = body as any;
 
     // Validate percentages
     const updates: any = { status: 'live' };

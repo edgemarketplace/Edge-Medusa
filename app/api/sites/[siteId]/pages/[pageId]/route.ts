@@ -9,6 +9,12 @@ export async function GET(
 ) {
   try {
     const { siteId, pageId } = await params;
+    
+    // Validate pageId
+    if (!pageId || pageId === 'undefined') {
+      return NextResponse.json({ error: 'Invalid page ID' }, { status: 400 });
+    }
+    
     const { data, error } = await supabaseAdmin
       .from('pages')
       .select('*')

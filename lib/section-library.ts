@@ -343,7 +343,7 @@ export const TEMPLATE_MANIFESTS: Record<TemplateFamily, TemplateManifest> = {
   },
   'service-pro': {
     family: 'service-pro',
-    requiredSections: ['header-promo', 'hero-cta', 'service-list', 'booking-cta', 'footer-service'],
+    requiredSections: ['header-promo', 'hero-cta', 'service-list', 'footer-service'],
     recommendedSections: ['hero-trust', 'stats', 'testimonials', 'pricing-tiers', 'newsletter', 'faq'],
     allowedSections: ['header-simple', 'header-promo', 'hero-split', 'hero-visual', 'hero-cta', 'hero-trust', 'service-list', 'pricing-tiers', 'packages', 'quote-cta', 'booking-cta', 'brand-story', 'value-icons', 'editorial-split', 'founder-note', 'testimonials', 'reviews', 'logo-bar', 'stats', 'gallery', 'video', 'before-after', 'faq', 'newsletter', 'promo-banner', 'footer-basic', 'footer-service'],
     maxDuplicates: { 'service-list': 1, 'pricing-tiers': 1, 'hero-cta': 1, 'testimonials': 1 },
