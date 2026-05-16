@@ -283,34 +283,11 @@ export default function OnboardingPage() {
               'Get started today'
             )}
           </button>
+          
+          <p className="text-sm text-black/40 mt-4 text-center">
+            Already have an account? <a href="/login" className="underline hover:text-black">Sign in</a>
+          </p>
         </form>
-
-        {/* Email Signup */}
-        <div className="mt-16 pt-12 border-t border-black/10 text-center">
-          <div className="max-w-md mx-auto">
-            <h3 className="font-bold text-2xl mb-2">Get started today</h3>
-            <p className="text-black/60 mb-6 text-sm">
-              No password needed. We&apos;ll email you a magic link.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-3 mb-4">
-              <input
-                type="email"
-                placeholder="pembertonventures@gmail.com"
-                className="flex-1 px-4 py-3 border border-black/10 rounded-full text-sm focus:outline-none focus:border-black/30"
-              />
-              <button
-                type="button"
-                onClick={() => router.push('/onboarding')}
-                className="bg-[#2D2D2D] text-white px-6 py-3 rounded-full text-sm font-bold hover:scale-[1.02] transition-transform whitespace-nowrap"
-              >
-                Create account & send login link
-              </button>
-            </div>
-            <p className="text-sm text-black/40">
-              Already have an account? <a href="/login" className="underline hover:text-black">Sign in</a>
-            </p>
-          </div>
-        </div>
       </div>
     </div>
   );
