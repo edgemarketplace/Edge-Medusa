@@ -5,22 +5,6 @@ import { TEMPLATE_MANIFESTS, SECTION_LIBRARY, PAGE_TEMPLATES } from './section-l
 import { processImagesInPages } from './unsplash';
 import { pickRandomPreset, type StylePreset } from './style-presets';
 
-let openaiInstance: OpenAI | null = null;
-
-function getOpenAI(): OpenAI {
-  if (!openaiInstance) {
-    if (!process.env.OPENAI_API_KEY && !process.env.GOOGLE_API_KEY) {
-      throw new Error('OPENAI_API_KEY or GOOGLE_API_KEY is required');
-    }
-    // Prefer Gemini if available, otherwise OpenAI
-    if (process.env.GOOGLE_API_KEY) {
-      // Will use Gemini via different path
-      throw new Error('Use Gemini path instead');
-    }
-    openaiInstance = new OpenAI({ apiKey: process.env.OPENAI_API_KEY! });
-  }
-  return openaiInstance;
-}
 
 // --- Template System: Fixed Structural Recipes ---
 
