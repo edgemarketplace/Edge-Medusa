@@ -136,7 +136,7 @@ export const SECTION_LIBRARY: Record<SectionType, SectionDefinition> = {
     label: 'Founder Note',
     description: 'Personal message from the founder',
     icon: '✍️',
-    defaultData: { founderName: '', founderTitle: '', quote: 'Your quote here.', imageUrl: '' },
+    defaultData: { name: '', role: 'Founder', text: 'Your quote here.', photoUrl: '' },
   },
 
   // Social proof
@@ -272,7 +272,7 @@ export const SECTION_LIBRARY: Record<SectionType, SectionDefinition> = {
     label: 'Newsletter',
     description: 'Email signup section',
     icon: '📧',
-    defaultData: { headline: 'Stay in the loop', subheading: 'Get updates and exclusive offers.', ctaText: 'Subscribe' },
+    defaultData: { title: 'Stay in the loop', subtitle: 'Get updates and exclusive offers.', buttonText: 'Subscribe' },
   },
   'promo-banner': {
     type: 'promo-banner',
@@ -393,7 +393,7 @@ export const PAGE_TEMPLATES: Record<TemplateFamily, PageTemplate[]> = {
     // CATALOG LUXE (Houseplant reference)
     { slug: 'shop', title: 'Shop', description: 'Product-first storefront with editorial feel', sections: [
       { type: 'header-simple', data: { logoText: '', links: [{ label: 'Home', url: '/' }, { label: 'Shop', url: '/shop' }], ctaText: 'Cart', ctaUrl: '#' } },
-      { type: 'hero-products', data: { heading: '', subheading: '', ctaText: 'Shop now', productIds: [], imageUrl: '', overlayOpacity: 0.3 } },
+      { type: 'hero-visual', data: { heading: '', subheading: '', ctaText: 'Shop now', imageUrl: '', overlayOpacity: 0.3 } },
       { type: 'featured-collection', data: { title: 'Featured Collection', collectionName: '', products: [] } },
       { type: 'product-grid', data: { title: 'All Products', columns: 3, showFilters: true, items: [] } },
       { type: 'collection-carousel', data: { title: 'Shop by Category', collections: [] } },
@@ -402,14 +402,14 @@ export const PAGE_TEMPLATES: Record<TemplateFamily, PageTemplate[]> = {
       { type: 'testimonials', data: { title: 'What Customers Say', testimonials: [] } },
       { type: 'faq', data: { title: 'Common Questions', questions: [] } },
       { type: 'newsletter', data: { title: 'Join Our List', subtitle: 'Get 10% off your first order', buttonText: 'Subscribe' } },
-      { type: 'footer-commerce', data: { logoText: '', newsletter: false, columns: [{ title: 'Shop', links: [] }, { title: 'Help', links: [] }], copyright: '' } },
+      { type: 'footer-basic', data: { logoText: '', showContact: false, showHours: false, hours: '', copyright: '' } },
     ]},
     { slug: 'about', title: 'About', description: 'Brand story and values', sections: [
       { type: 'header-simple', data: { logoText: '', links: [{ label: 'Home', url: '/' }, { label: 'About', url: '/about' }], ctaText: 'Shop now', ctaUrl: '/shop' } },
       { type: 'brand-story', data: { headline: 'Our Story', body: '', imageUrl: '' } },
       { type: 'value-icons', data: { title: 'What We Stand For', values: [{ icon: '🌿', title: 'Sustainable', description: 'Ethically sourced' }, { icon: '✋', title: 'Handcrafted', description: 'Made with care' }, { icon: '💚', title: 'Quality', description: 'Built to last' }] } },
       { type: 'founder-note', data: { name: '', role: 'Founder', text: '', photoUrl: '' } },
-      { type: 'footer-commerce', data: { logoText: '', newsletter: true, columns: [{ title: 'Shop', links: [] }, { title: 'Help', links: [] }], copyright: '' } },
+      { type: 'footer-basic', data: { logoText: '', showContact: false, showHours: false, hours: '', copyright: '' } },
     ]},
   ],
   'service-pro': [
@@ -445,15 +445,14 @@ export const PAGE_TEMPLATES: Record<TemplateFamily, PageTemplate[]> = {
   'food-catering': [
     // HOSPITALITY QUOTE (Très LA Group reference)
     { slug: 'services', title: 'Services', description: 'High-end hospitality conversion', sections: [
-      { type: 'header-promo', data: { announcement: '🎉 Now booking for the holidays!', logoText: '', links: [{ label: 'Home', url: '/' }, { label: 'Services', url: '/services' }], ctaText: 'Inquire', ctaUrl: '/contact' } },
+      { type: 'header-simple', data: { logoText: '', links: [{ label: 'Home', url: '/' }, { label: 'Services', url: '/services' }], ctaText: 'Inquire', ctaUrl: '/contact' } },
       { type: 'hero-visual', data: { heading: '', subheading: '', ctaText: 'View Packages', imageUrl: '', overlayOpacity: 0.4 } },
-      { type: 'hero-trust', data: { heading: '', subheading: '', ctaText: 'Get Quote', trustBadges: ['5-Star Rated', 'Fully Insured', 'Award-Winning'], imageUrl: '' } },
       { type: 'packages', data: { title: 'Our Packages', packages: [] } },
+      { type: 'hero-trust', data: { heading: '', subheading: '', ctaText: 'Get Quote', trustBadges: ['5-Star Rated', 'Fully Insured', 'Award-Winning'], imageUrl: '' } },
       { type: 'service-list', data: { title: 'What We Offer', services: [] } },
       { type: 'gallery', data: { title: 'From Our Kitchen', images: [] } },
       { type: 'testimonials', data: { title: 'Client Love', testimonials: [] } },
       { type: 'logo-bar', data: { title: 'As Seen In', logos: [] } },
-      { type: 'quote-cta', data: { headline: 'Start Your Inquiry', subheading: 'Tell us about your event.', ctaText: 'Get Quote' } },
       { type: 'booking-cta', data: { headline: 'Book a Tasting', subheading: 'Experience our menu firsthand.', ctaText: 'Schedule Now' } },
       { type: 'faq', data: { title: 'Common Questions', questions: [] } },
       { type: 'footer-service', data: { logoText: '', showContact: true, showHours: true, hours: 'Tue-Sun 10am-8pm', copyright: '' } },
@@ -461,23 +460,25 @@ export const PAGE_TEMPLATES: Record<TemplateFamily, PageTemplate[]> = {
     { slug: 'gallery', title: 'Gallery', description: 'Portfolio of past work', sections: [
       { type: 'header-simple', data: { logoText: '', links: [{ label: 'Home', url: '/' }, { label: 'Gallery', url: '/gallery' }], ctaText: 'Inquire', ctaUrl: '/contact' } },
       { type: 'hero-visual', data: { heading: 'Our Portfolio', subheading: 'Events that wow.', ctaText: 'View Work', imageUrl: '', overlayOpacity: 0.4 } },
+      { type: 'packages', data: { title: 'Our Packages', packages: [] } },
       { type: 'gallery', data: { title: 'Recent Events', images: [] } },
       { type: 'testimonials', data: { title: 'Kind Words', testimonials: [] } },
-      { type: 'quote-cta', data: { headline: 'Start Your Inquiry', subheading: 'We respond within 24 hours.', ctaText: 'Book Consultation' } },
+      { type: 'booking-cta', data: { headline: 'Start Your Inquiry', subheading: 'We respond within 24 hours.', ctaText: 'Book Consultation' } },
       { type: 'footer-service', data: { logoText: '', showContact: true, showHours: true, hours: 'Tue-Sun 10am-8pm', copyright: '' } },
     ]},
     { slug: 'contact', title: 'Contact', description: 'Inquiry form', sections: [
       { type: 'header-simple', data: { logoText: '', links: [{ label: 'Home', url: '/' }, { label: 'Services', url: '/services' }], ctaText: 'Inquire', ctaUrl: '/contact' } },
       { type: 'hero-visual', data: { heading: 'Let\'s Create Something', subheading: 'Tell us your vision.', ctaText: 'Inquire', imageUrl: '', overlayOpacity: 0.4 } },
-      { type: 'quote-cta', data: { headline: 'Start Your Inquiry', subheading: 'Tell us about your event.', ctaText: 'Send Inquiry', showForm: true } },
+      { type: 'packages', data: { title: 'Package Options', packages: [] } },
+      { type: 'booking-cta', data: { headline: 'Start Your Inquiry', subheading: 'Tell us about your event.', ctaText: 'Send Inquiry', showForm: true } },
       { type: 'footer-service', data: { logoText: '', showContact: true, showHours: true, hours: 'Tue-Sun 10am-8pm', copyright: '' } },
     ]},
   ],
   'artisan-market': [
     // MAKER PROVENANCE (Farmhouse Pottery reference)
     { slug: 'shop', title: 'Shop', description: 'Maker storytelling with commerce', sections: [
-      { type: 'header-mega', data: { logoText: '', links: [{ label: 'Home', url: '/' }, { label: 'Shop', url: '/shop' }, { label: 'Story', url: '/about' }], ctaText: 'Cart', ctaUrl: '#' } },
-      { type: 'hero-split', data: { heading: '', subheading: '', ctaText: 'Shop Now', imageUrl: '', imageSide: 'right' } },
+      { type: 'header-simple', data: { logoText: '', links: [{ label: 'Home', url: '/' }, { label: 'Shop', url: '/shop' }, { label: 'Story', url: '/about' }], ctaText: 'Cart', ctaUrl: '#' } },
+      { type: 'hero-visual', data: { heading: '', subheading: '', ctaText: 'Shop Now', imageUrl: '', overlayOpacity: 0.3 } },
       { type: 'featured-collection', data: { title: 'Featured Collection', collectionName: '', products: [] } },
       { type: 'product-grid', data: { title: 'All Products', columns: 3, showFilters: true, items: [] } },
       { type: 'brand-story', data: { headline: 'Our Craft', body: '', imageUrl: '' } },
@@ -487,15 +488,17 @@ export const PAGE_TEMPLATES: Record<TemplateFamily, PageTemplate[]> = {
       { type: 'gallery', data: { title: 'In the Studio', images: [] } },
       { type: 'testimonials', data: { title: 'Customer Stories', testimonials: [] } },
       { type: 'newsletter', data: { title: 'Join Our Circle', subtitle: 'Get 10% off your first order', buttonText: 'Subscribe' } },
-      { type: 'footer-commerce', data: { logoText: '', newsletter: false, columns: [{ title: 'Shop', links: [] }, { title: 'Story', links: [] }], copyright: '' } },
+      { type: 'footer-basic', data: { logoText: '', showContact: false, showHours: false, hours: '', copyright: '' } },
     ]},
     { slug: 'about', title: 'Our Story', description: 'Maker provenance and process', sections: [
       { type: 'header-simple', data: { logoText: '', links: [{ label: 'Home', url: '/' }, { label: 'Shop', url: '/shop' }], ctaText: 'Shop now', ctaUrl: '/shop' } },
+      { type: 'hero-visual', data: { heading: 'Our Craft Journey', subheading: 'Handmade with purpose.', imageUrl: '', overlayOpacity: 0.3 } },
+      { type: 'product-grid', data: { title: 'Our Products', columns: 3, showFilters: false, items: [] } },
       { type: 'brand-story', data: { headline: 'Committed to Craft', body: '', imageUrl: '' } },
       { type: 'editorial-split', data: { headline: 'Our Process', body: '', imageUrl: '', reverse: true } },
       { type: 'founder-note', data: { name: '', role: 'Founder & Master Craftsman', text: '', photoUrl: '' } },
       { type: 'gallery', data: { title: 'Behind the Scenes', images: [] } },
-      { type: 'footer-commerce', data: { logoText: '', newsletter: true, columns: [{ title: 'Shop', links: [] }, { title: 'Story', links: [] }], copyright: '' } },
+      { type: 'footer-basic', data: { logoText: '', showContact: false, showHours: false, hours: '', copyright: '' } },
     ]},
   ],
   'event-floral': [
