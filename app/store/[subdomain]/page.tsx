@@ -45,7 +45,16 @@ export default async function StorePage({ params, searchParams }: StorePageProps
     .eq('site_id', site.id)
     .order('created_at', { ascending: true });
 
-  const sections: GeneratedSection[] = site.template_data?.sections || [];
+  // Extract sections from pages (new format) or fallback to legacy sections
+  let sections: GeneratedSection[] = [];
+  if (site.template_data?.pages) {
+    // New multi-page format: extract all sections from all pages
+    sections = site.template_data.pages.flatMap((p: any) => p.sections || []);
+  } else if (site.template_data?.sections) {
+    // Legacy format
+    sections = site.template_data.sections;
+  }
+
   const template = TEMPLATES[site.business_type as keyof typeof TEMPLATES];
 
   return (

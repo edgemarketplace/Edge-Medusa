@@ -139,6 +139,7 @@ export async function POST(req: NextRequest) {
         .update({
           published: true,
           published_at: new Date().toISOString(),
+          status: 'live',
           template_data: { pages, version: 2 },
         })
         .eq('id', newSite.id);
