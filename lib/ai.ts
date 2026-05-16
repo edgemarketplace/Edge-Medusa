@@ -251,6 +251,15 @@ Generate content that makes visitors IMMEDIATELY want to buy/book. This is NOT a
 ## VERTICAL PSYCHOLOGY
 ${funnel.psychology}
 
+## ⚠️ CRITICAL: VERTICAL-SPECIFIC LANGUAGE
+You MUST use language appropriate for ${businessType}:
+- retail-core: Talk about PRODUCTS, specs, shipping, returns, reviews, cart, checkout. NEVER use "project", "transformation", "space", "installed", "service call".
+- service-pro: Talk about SERVICES, bookings, consultations, results, transformations, trust. Use "project", "space", "service area".
+- food-catering: Talk about MENUS, events, catering, dietary options, tastings. Use "guests", "occasion", "menu".
+- artisan-market: Talk about CRAFT, handmade, materials, process, provenance. Use "piece", "maker", "workshop".
+- event-floral: Talk about BLOOMS, arrangements, weddings, events, seasonal. Use "bouquet", "centerpiece", "ceremony".
+- coach-educator: Talk about GROWTH, programs, coaching, mindset, results. Use "client", "transformation", "breakthrough".
+
 ## CONTENT TONE
 ${funnel.contentTone}
 

@@ -9,29 +9,40 @@ const UNSPLASH_KEY = process.env.UNSPLASH_ACCESS_KEY;
  */
 export async function fetchUnsplashImage(searchTerm: string): Promise<string | null> {
   if (!UNSPLASH_KEY) {
-    console.warn('UNSPLASH_ACCESS_KEY not set');
+    console.error('[Unsplash] ERROR: UNSPLASH_ACCESS_KEY not set');
     return null;
   }
 
   if (!searchTerm || searchTerm.trim() === '') {
+    console.warn('[Unsplash] Empty search term');
     return null;
   }
 
   try {
     const url = `https://api.unsplash.com/search/photos?query=${encodeURIComponent(searchTerm)}&per_page=1&orientation=landscape`;
+    console.log(`[Unsplash] Fetching image for: "${searchTerm}"`);
+    
     const response = await fetch(url, {
       headers: { Authorization: `Client-ID ${UNSPLASH_KEY}` },
     });
 
-    if (!response.ok) return null;
+    if (!response.ok) {
+      console.error(`[Unsplash] API error: ${response.status} for "${searchTerm}"`);
+      return null;
+    }
 
     const data = await response.json();
     const results = data.results || [];
-    if (results.length === 0) return null;
+    if (results.length === 0) {
+      console.warn(`[Unsplash] No results for: "${searchTerm}"`);
+      return null;
+    }
 
-    return results[0].urls.regular;
+    const imageUrl = results[0].urls.regular;
+    console.log(`[Unsplash] SUCCESS: "${searchTerm}" -> ${imageUrl.substring(0, 50)}...`);
+    return imageUrl;
   } catch (error) {
-    console.error('Unsplash error:', error);
+    console.error('[Unsplash] Fetch error:', error);
     return null;
   }
 }
