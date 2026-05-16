@@ -1083,7 +1083,9 @@ export default function BuildPage({ params }: BuildPageProps) {
         )}
       </div>
     </div>
-  );
+  </div>
+</div>
+);
 }
 
 // --- Section Editor ---
