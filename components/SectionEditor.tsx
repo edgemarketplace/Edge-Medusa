@@ -209,6 +209,11 @@ export default function SectionEditor({ draft, onChange, siteId, businessType }:
       {(data.videoUrl !== undefined) && <EditField label="Video URL" name={`videoUrl-${draft.id}`} value={data.videoUrl} onChange={v => onChange('videoUrl', v)} />}
       {(data.thumbnailUrl !== undefined) && <EditField label="Video thumbnail URL" name={`thumbnailUrl-${draft.id}`} value={data.thumbnailUrl} onChange={v => onChange('thumbnailUrl', v)} />}
 
+      {/* Color fields */}
+      {(data.background !== undefined) && <ColorField label="Background color" field="background" value={data.background} onChange={(v) => onChange('background', v)} />}
+      {(data.textColor !== undefined) && <ColorField label="Text color" field="textColor" value={data.textColor} onChange={(v) => onChange('textColor', v)} />}
+      {(data.backgroundColor !== undefined) && <ColorField label="Background color" field="backgroundColor" value={data.backgroundColor} onChange={(v) => onChange('backgroundColor', v)} />}
+
       {/* Image fields */}
       {(data.imageUrl !== undefined) && <ImageField label="Image" field="imageUrl" currentUrl={data.imageUrl} />}
       {(data.hero_image_url !== undefined) && <ImageField label="Background image" field="hero_image_url" currentUrl={data.hero_image_url} />}
@@ -295,9 +300,37 @@ export default function SectionEditor({ draft, onChange, siteId, businessType }:
       )}
     </div>
   );
-}
+  }
 
-function EditField({ label, name, value, onChange, multiline }: { label: string; name: string; value: string; onChange: (v: string) => void; multiline?: boolean }) {
+  function ColorField({ label, field, value }: { label: string; field: string; value: string }) {
+    const fieldId = `color-${field}-${draft.id}`;
+    return (
+      <div>
+        <label htmlFor={fieldId} className="block text-xs font-bold text-black/50 mb-1 uppercase tracking-wider">{label}</label>
+        <div className="flex gap-2 items-center">
+          <input
+            id={fieldId}
+            type="color"
+            value={value || '#000000'}
+            onChange={e => onChange(field, e.target.value)}
+            className="w-10 h-8 rounded border border-black/10 cursor-pointer"
+          />
+          <input
+            type="text"
+            value={value || ''}
+            onChange={e => onChange(field, e.target.value)}
+            placeholder="#000000"
+            className="flex-1 border border-black/10 rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:border-black/30"
+          />
+          {value && (
+            <button onClick={() => onChange(field, '')} className="text-xs text-black/40 hover:text-red-500" aria-label="Clear color">✕</button>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  function EditField({ label, name, value, onChange, multiline }: { label: string; name: string; value: string; onChange: (v: string) => void; multiline?: boolean }) {
   const id = name;
   return (
     <div>
