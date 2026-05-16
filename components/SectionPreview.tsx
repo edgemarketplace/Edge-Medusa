@@ -36,10 +36,20 @@ export default function SectionPreview({ section, template, inventory }: Section
     );
   }
   if (isHero) {
+    const bgStyle: React.CSSProperties = {};
+    if (data.background) bgStyle.backgroundColor = data.background;
+    if (data.imageUrl) {
+      bgStyle.backgroundImage = `linear-gradient(rgba(0,0,0,${data.overlayOpacity || 0.4}), rgba(0,0,0,${data.overlayOpacity || 0.4})), url(${data.imageUrl})`;
+      bgStyle.backgroundSize = 'cover';
+      bgStyle.backgroundPosition = 'center';
+    }
+    const textColorClass = data.textColor ? '' : 'text-black/50';
+    const headingText = data.headline || data.heading || 'Your headline';
+    const subheadingText = data.subheading || 'Your subheading';
     return (
-      <div className="px-8 py-12 text-center" style={data.imageUrl ? { backgroundImage: `linear-gradient(rgba(0,0,0,${data.overlayOpacity || 0.4}), rgba(0,0,0,${data.overlayOpacity || 0.4})), url(${data.imageUrl})`, backgroundSize: 'cover', backgroundPosition: 'center' } : undefined}>
-        <h2 className={`text-2xl font-serif italic mb-3 ${data.imageUrl ? 'text-white' : ''}`}>{data.heading || 'Your headline'}</h2>
-        <p className={`text-sm mb-4 ${data.imageUrl ? 'text-white/80' : 'text-black/50'}`}>{data.subheading || 'Your subheading'}</p>
+      <div className={`px-8 py-12 text-center ${data.textColor ? '' : 'text-black/50'}`} style={{ ...bgStyle, color: data.textColor || undefined }}>
+        <h2 className={`text-2xl font-serif italic mb-3 ${data.textColor ? 'text-white' : ''}`}>{headingText}</h2>
+        <p className={`text-sm mb-4 ${data.textColor ? 'text-white/80' : 'text-black/50'}`}>{subheadingText}</p>
         {data.ctaText && <span className="inline-block px-5 py-2 rounded-full text-white text-sm font-bold" style={{ backgroundColor: template.primaryColor }}>{data.ctaText}</span>}
       </div>
     );
