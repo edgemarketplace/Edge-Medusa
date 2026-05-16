@@ -1,4 +1,5 @@
 import OpenAI from 'openai';
+import { GoogleGenerativeAI } from '@google/generative-ai';
 import { GeneratedSection, TemplateFamily, SectionType } from './types';
 import { TEMPLATES } from './templates';
 import { TEMPLATE_MANIFESTS, SECTION_LIBRARY, PAGE_TEMPLATES } from './section-library';
@@ -630,8 +631,7 @@ export async function generateSiteContent(
     // 1. Try Gemini Path
     if (process.env.GOOGLE_API_KEY) {
       try {
-        const { GoogleGenerativeAI } = await import('@google/generative-ai');
-        const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY);
+        const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY!);
         const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
         
         const result = await model.generateContent(promptText);
@@ -784,8 +784,7 @@ export async function expandBusinessDescription(
 
   try {
     if (process.env.GOOGLE_API_KEY) {
-      const { GoogleGenerativeAI } = await import('@google/generative-ai');
-      const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY);
+      const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY!);
       const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
       
       const result = await model.generateContent(expansionPrompt);
