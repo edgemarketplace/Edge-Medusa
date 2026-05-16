@@ -34,27 +34,7 @@ export async function generateSiteContent(
 ): Promise<{ pages: { slug: string; title: string; sections: GeneratedSection[] }[] }> {
   const promptText = buildPrompt(businessName, businessType, offerings, contactEmail, tagline, stylePreset);
   
-  // Try Gemini first
-  if (process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY) {
-    try {
-      const { GoogleGenerativeAI } = await import('@google/generative-ai');
-      const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY!);
-      const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
-      const result = await model.generateContent(promptText);
-      const text = result.response.text();
-      const jsonMatch = text.match(/\{[\s\S]*\}/);
-      if (jsonMatch) {
-        const parsed = JSON.parse(jsonMatch[0]);
-        if (parsed && parsed.pages && Array.isArray(parsed.pages) && parsed.pages.length > 0) {
-          return parsed;
-        }
-      }
-    } catch (error) {
-      console.error('Gemini generation failed, falling back to OpenAI:', error);
-    }
-  }
-
-  // Try OpenAI
+  // Try OpenAI first (more reliable)
   if (process.env.OPENAI_API_KEY) {
     try {
       const { default: OpenAI } = await import('openai');
@@ -75,6 +55,26 @@ export async function generateSiteContent(
       }
     } catch (error) {
       console.error('OpenAI generation failed:', error);
+    }
+  }
+
+  // Try Gemini as backup
+  if (process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY) {
+    try {
+      const { GoogleGenerativeAI } = await import('@google/generative-ai');
+      const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY!);
+      const model = genAI.getGenerativeModel({ model: 'gemini-pro' });
+      const result = await model.generateContent(promptText);
+      const text = result.response.text();
+      const jsonMatch = text.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        const parsed = JSON.parse(jsonMatch[0]);
+        if (parsed && parsed.pages && Array.isArray(parsed.pages) && parsed.pages.length > 0) {
+          return parsed;
+        }
+      }
+    } catch (error) {
+      console.error('Gemini generation failed, using fallback:', error);
     }
   }
 
