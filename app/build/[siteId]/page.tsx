@@ -93,7 +93,11 @@ export default function BuildPage({ params }: BuildPageProps) {
       if (!res.ok) throw new Error('Site not found');
       const data = await res.json();
       setSite(data);
-      if (data.template_data?.sections) {
+      // Load pages from template_data (new multi-page format)
+      if (data.template_data?.pages) {
+        setPages(data.template_data.pages);
+      } else if (data.template_data?.sections) {
+        // Legacy: migrate old sections format
         const migrated = migrateSections(data.template_data.sections);
         setSections(migrated);
       }
@@ -154,8 +158,8 @@ export default function BuildPage({ params }: BuildPageProps) {
   }
 
   useEffect(() => {
-    if (site && !sections.length && !generating) handleGenerate();
-  }, [site, sections.length]);
+    if (site && !pages.length && !generating) handleGenerate();
+  }, [site, pages.length]);
 
   async function handleGenerate() {
     if (!siteId) return;
@@ -165,8 +169,9 @@ export default function BuildPage({ params }: BuildPageProps) {
       const res = await fetch(`/api/sites/${siteId}/generate`, { method: 'POST' });
       if (!res.ok) throw new Error('Generation failed');
       const data = await res.json();
-      const migrated = migrateSections(data.sections || []);
-      setSections(migrated);
+      if (data.pages) {
+        setPages(data.pages);
+      }
       const siteRes = await fetch(`/api/sites/${siteId}`);
       const siteData = await siteRes.json();
       setSite(siteData);
