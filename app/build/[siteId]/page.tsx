@@ -394,6 +394,34 @@ export default function BuildPage({ params }: BuildPageProps) {
     setInventory(prev => [...prev, ...starters]);
   }
 
+  async function handlePrintifySync() {
+    if (!site) return;
+    const apiKey = (site as any).printify_api_key;
+    const shopId = (site as any).printify_shop_id;
+    if (!apiKey || !shopId) {
+      alert('Please configure Printify API Key and Shop ID in Settings first.');
+      setActiveTab('settings');
+      return;
+    }
+
+    setSaving(true);
+    try {
+      const res = await fetch(`/api/sites/${siteId}/printify/sync`, { method: 'POST' });
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.error || 'Failed to sync Printify');
+      }
+      const data = await res.json();
+      setInventory(data.inventory);
+      alert(`Successfully synced ${data.count} products from Printify!`);
+    } catch (err: any) {
+      console.error(err);
+      alert(`Printify Sync Error: ${err.message}`);
+    } finally {
+      setSaving(false);
+    }
+  }
+
   // --- Pages ---
 
   async function handleCreatePage() {
@@ -598,6 +626,47 @@ export default function BuildPage({ params }: BuildPageProps) {
                 className="bg-black text-white text-sm font-bold px-5 py-2.5 rounded-full disabled:opacity-50"
               >
                 {settingsSaving ? 'Saving…' : 'Save changes'}
+              </button>
+            </div>
+            <div className="bg-white rounded-2xl p-6 border border-black/5 space-y-4">
+              <h3 className="font-bold text-sm uppercase tracking-widest text-black/40">Printify Integration</h3>
+              <div>
+                <label className="block text-sm font-bold mb-2">Printify API Key</label>
+                <input 
+                  type="password"
+                  value={(site as any).printify_api_key || ''} 
+                  onChange={e => setSite(prev => prev ? { ...prev, printify_api_key: e.target.value } as any : null)}
+                  placeholder="pr_..."
+                  className="w-full border border-black/10 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-black/30" 
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-bold mb-2">Shop ID</label>
+                <input 
+                  value={(site as any).printify_shop_id || ''} 
+                  onChange={e => setSite(prev => prev ? { ...prev, printify_shop_id: e.target.value } as any : null)}
+                  placeholder="123456"
+                  className="w-full border border-black/10 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-black/30" 
+                />
+              </div>
+              <button
+                disabled={settingsSaving}
+                onClick={async () => {
+                  setSettingsSaving(true);
+                  await fetch(`/api/sites/${siteId}`, { 
+                    method: 'PUT', 
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                      printify_api_key: (site as any).printify_api_key,
+                      printify_shop_id: (site as any).printify_shop_id
+                    }) 
+                  });
+                  await loadSite();
+                  setSettingsSaving(false);
+                }}
+                className="bg-[#1A1A1A] text-white text-sm font-bold px-5 py-2.5 rounded-full disabled:opacity-50"
+              >
+                {settingsSaving ? 'Saving…' : 'Save Printify Config'}
               </button>
             </div>
             <div className="bg-white rounded-2xl p-6 border border-black/5 space-y-4">
@@ -833,7 +902,18 @@ export default function BuildPage({ params }: BuildPageProps) {
 
         {activeTab === 'inventory' && (
           <div className="p-8">
-            <InventoryPanel inventory={inventory} onAdd={addInventoryItem} onUpdate={updateInventoryItem} onRemove={removeInventoryItem} onGenerateStarters={generateStarterItems} onSave={handleSaveInventory} onImageUpload={handleInventoryImageUpload} saving={saving} />
+            <InventoryPanel 
+              inventory={inventory} 
+              onAdd={addInventoryItem} 
+              onUpdate={updateInventoryItem} 
+              onRemove={removeInventoryItem} 
+              onGenerateStarters={generateStarterItems} 
+              onSave={handleSaveInventory} 
+              onImageUpload={handleInventoryImageUpload} 
+              onPrintifySync={handlePrintifySync}
+              site={site}
+              saving={saving} 
+            />
           </div>
         )}
 
@@ -1202,9 +1282,10 @@ function ArrayEditor({ items, onChange, itemFields, label, addLabel }: {
 
 // --- Inventory Panel ---
 
-function InventoryPanel({ inventory, onAdd, onUpdate, onRemove, onGenerateStarters, onSave, onImageUpload, saving }: {
+function InventoryPanel({ inventory, onAdd, onUpdate, onRemove, onGenerateStarters, onSave, onImageUpload, onPrintifySync, site, saving }: {
   inventory: InventoryItem[]; onAdd: () => void; onUpdate: (i: number, f: keyof InventoryItem, v: string) => void;
-  onRemove: (i: number) => void; onGenerateStarters: () => void; onSave: () => void; onImageUpload: (i: number, f: File) => void; saving: boolean;
+  onRemove: (i: number) => void; onGenerateStarters: () => void; onSave: () => void; onImageUpload: (i: number, f: File) => void; 
+  onPrintifySync: () => void; site: any; saving: boolean;
 }) {
   return (
     <div className="space-y-6 max-w-4xl">
@@ -1214,6 +1295,11 @@ function InventoryPanel({ inventory, onAdd, onUpdate, onRemove, onGenerateStarte
           <p className="text-black/50 text-sm mt-1">Add your products or services. These appear on your store.</p>
         </div>
         <div className="flex gap-3">
+          {site?.printify_api_key && (
+            <button onClick={onPrintifySync} className="px-4 py-2 rounded-full border border-blue-200 bg-blue-50 text-blue-700 text-sm font-bold hover:bg-blue-100 flex items-center gap-2">
+              <span>🔄</span> Sync Printify
+            </button>
+          )}
           <button onClick={onGenerateStarters} className="px-4 py-2 rounded-full border border-black/10 text-sm font-bold hover:bg-black/5">✨ Generate starters</button>
           <button onClick={onAdd} className="px-4 py-2 rounded-full bg-black text-white text-sm font-bold">+ Add item</button>
         </div>

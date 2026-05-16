@@ -45,6 +45,22 @@ export default function DashboardPage() {
   const liveSites = sites.filter(s => s.status === 'live');
   const draftSites = sites.filter(s => s.status !== 'live');
 
+  async function deleteSite(id: string) {
+    if (!confirm('Are you sure you want to delete this store? This cannot be undone.')) return;
+    
+    try {
+      const res = await fetch(`/api/sites/${id}`, { method: 'DELETE' });
+      if (res.ok) {
+        setSites(prev => prev.filter(s => s.id !== id));
+      } else {
+        alert('Failed to delete store');
+      }
+    } catch (err) {
+      console.error(err);
+      alert('Error deleting store');
+    }
+  }
+
   return (
     <div className="min-h-screen bg-[#F9F8F6] text-[#1A1A1A] font-sans">
 
@@ -135,7 +151,7 @@ export default function DashboardPage() {
               <div>
                 <h2 className="text-sm font-bold uppercase tracking-widest text-black/40 mb-4">Live stores</h2>
                 <div className="grid md:grid-cols-2 gap-4">
-                  {liveSites.map(site => <SiteCard key={site.id} site={site} />)}
+                  {liveSites.map(site => <SiteCard key={site.id} site={site} onDelete={deleteSite} />)}
                 </div>
               </div>
             )}
@@ -145,7 +161,7 @@ export default function DashboardPage() {
               <div>
                 <h2 className="text-sm font-bold uppercase tracking-widest text-black/40 mb-4">In progress</h2>
                 <div className="grid md:grid-cols-2 gap-4">
-                  {draftSites.map(site => <SiteCard key={site.id} site={site} />)}
+                  {draftSites.map(site => <SiteCard key={site.id} site={site} onDelete={deleteSite} />)}
                 </div>
               </div>
             )}
@@ -187,14 +203,14 @@ export default function DashboardPage() {
   );
 }
 
-function SiteCard({ site }: { site: SiteData }) {
+function SiteCard({ site, onDelete }: { site: SiteData, onDelete: (id: string) => void }) {
   const status = STATUS_CONFIG[site.status as keyof typeof STATUS_CONFIG] || STATUS_CONFIG.draft;
   const emoji = VERTICAL_EMOJI[site.business_type] || '🏪';
 
   return (
     <div className="bg-white rounded-3xl border border-black/5 shadow-sm overflow-hidden hover:shadow-md transition-shadow group">
       {/* Header band */}
-      <div className="h-20 bg-gradient-to-br from-black/3 to-black/8 flex items-center px-6 gap-4">
+      <div className="h-20 bg-gradient-to-br from-black/3 to-black/8 flex items-center px-6 gap-4 relative">
         <span className="text-3xl">{emoji}</span>
         <div className="flex-1 min-w-0">
           <h3 className="font-bold text-lg leading-tight truncate">{site.business_name}</h3>
@@ -202,6 +218,16 @@ function SiteCard({ site }: { site: SiteData }) {
             <p className="text-sm text-black/45 truncate">{site.tagline}</p>
           )}
         </div>
+        <button 
+          onClick={(e) => {
+            e.preventDefault();
+            onDelete(site.id);
+          }}
+          className="absolute top-2 right-2 p-2 text-black/20 hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100 focus:opacity-100 z-10"
+          title="Delete project"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
+        </button>
       </div>
 
       <div className="px-6 py-4 space-y-4">

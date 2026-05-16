@@ -56,3 +56,24 @@ export async function PUT(
 
   return NextResponse.json(data as SiteData);
 }
+
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: Promise<{ siteId: string }> }
+) {
+  const { siteId } = await params;
+
+  const { error } = await supabaseAdmin
+    .from('sites')
+    .delete()
+    .eq('id', siteId);
+
+  if (error) {
+    return NextResponse.json(
+      { error: error.message },
+      { status: 500 }
+    );
+  }
+
+  return NextResponse.json({ success: true });
+}

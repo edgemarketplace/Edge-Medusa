@@ -647,7 +647,7 @@ export async function generateSiteContent(
     if (process.env.GOOGLE_API_KEY) {
       const { GoogleGenerativeAI } = await import('@google/generative-ai');
       const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY!);
-      const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
+      const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
       
       const result = await model.generateContent(promptText);
       const text = result.response.text();
@@ -658,8 +658,21 @@ export async function generateSiteContent(
         throw new Error('No JSON found in Gemini response');
       }
       
-      const parsed = JSON.parse(jsonMatch[0]);
+      let parsed;
+      try {
+        parsed = JSON.parse(jsonMatch[0]);
+      } catch (e) {
+        console.error('Failed to parse JSON from AI response:', e);
+        // If parsing fails, use a basic fallback
+        parsed = getFallbackSiteStructure(businessName, businessType);
+      }
       
+      // Ensure basic structure exists
+      if (!parsed || !parsed.pages || !Array.isArray(parsed.pages) || parsed.pages.length === 0) {
+        console.warn('AI returned empty or invalid pages array. Using fallback.');
+        parsed = getFallbackSiteStructure(businessName, businessType);
+      }
+
       // Process images
       if (parsed.pages) {
         await processImagesInPages(parsed.pages);
@@ -682,10 +695,20 @@ export async function generateSiteContent(
     // Extract JSON from response
     const jsonMatch = text.match(/\{[\s\S]*\}/);
     if (!jsonMatch) {
-      throw new Error('No JSON found in OpenAI response');
+      return getFallbackSiteStructure(businessName, businessType);
     }
     
-    const parsed = JSON.parse(jsonMatch[0]);
+    let parsed;
+    try {
+      parsed = JSON.parse(jsonMatch[0]);
+    } catch (e) {
+      console.error('Failed to parse JSON from OpenAI response:', e);
+      parsed = getFallbackSiteStructure(businessName, businessType);
+    }
+
+    if (!parsed || !parsed.pages || !Array.isArray(parsed.pages) || parsed.pages.length === 0) {
+      parsed = getFallbackSiteStructure(businessName, businessType);
+    }
     
     // Process images
     if (parsed.pages) {
@@ -695,6 +718,46 @@ export async function generateSiteContent(
     return parsed;
   } catch (error) {
     console.error('Content generation error:', error);
-    throw new Error(`Failed to generate content: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    // Even on total failure, return a working fallback so the user isn't stuck with an empty canvas
+    return getFallbackSiteStructure(businessName, businessType);
   }
+}
+
+function getFallbackSiteStructure(businessName: string, businessType: TemplateFamily) {
+  return {
+    pages: [
+      {
+        slug: 'home',
+        title: 'Home',
+        sections: [
+          {
+            id: Math.random().toString(36).substring(2, 10),
+            type: 'header-simple' as SectionType,
+            data: { logoText: businessName, links: [{ label: 'Home', url: '#' }, { label: 'Shop', url: '#products' }], ctaText: 'Shop now', ctaUrl: '#products' }
+          },
+          {
+            id: Math.random().toString(36).substring(2, 10),
+            type: 'hero-split' as SectionType,
+            data: { 
+              heading: `Welcome to ${businessName}`, 
+              subheading: 'Experience the best in quality and service. We are here to serve you.', 
+              ctaText: 'Explore Now', 
+              ctaUrl: '#products', 
+              imageUrl: 'https://images.unsplash.com/photo-1441986300917-64674bd600d8' 
+            }
+          },
+          {
+            id: Math.random().toString(36).substring(2, 10),
+            type: 'product-grid' as SectionType,
+            data: { title: 'Featured Products', columns: 3, items: [] }
+          },
+          {
+            id: Math.random().toString(36).substring(2, 10),
+            type: 'footer-basic' as SectionType,
+            data: { columns: [{ title: 'About', links: [{ label: 'Our Story', url: '#' }] }], socialLinks: [] }
+          }
+        ]
+      }
+    ]
+  };
 }
