@@ -1,6 +1,74 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
 
+// Helper: Sync inventory items to site sections (service-list, packages, product-grid)
+async function syncInventoryToSections(siteId: string, items: any[]) {
+  try {
+    // Fetch site with pages
+    const { data: site, error } = await supabaseAdmin
+      .from('sites')
+      .select('pages')
+      .eq('id', siteId)
+      .single();
+    
+    if (error || !site?.pages) return;
+
+    const pages = site.pages as Array<{ slug: string; title: string; sections: any[] }>;
+    let updated = false;
+
+    // Map inventory to different section formats
+    const serviceFormat = items.map(item => ({
+      name: item.name,
+      description: item.description || '',
+      price: item.price ? `$${item.price}` : '',
+      imageUrl: item.image_url || '',
+    }));
+
+    const packageFormat = items.map(item => ({
+      name: item.name,
+      price: item.price ? `$${item.price}` : '',
+      description: item.description || '',
+      features: item.variants?.map((v: any) => `${v.name}: ${v.value}`) || [],
+    }));
+
+    const productFormat = items.map(item => ({
+      name: item.name,
+      price: item.price ? `$${item.price}` : '',
+      imageUrl: item.image_url || '',
+    }));
+
+    // Update sections in all pages
+    const updatedPages = pages.map(page => ({
+      ...page,
+      sections: page.sections.map(section => {
+        if (section.type === 'service-list') {
+          updated = true;
+          return { ...section, data: { ...section.data, services: serviceFormat } };
+        }
+        if (section.type === 'packages') {
+          updated = true;
+          return { ...section, data: { ...section.data, packages: packageFormat } };
+        }
+        if (section.type === 'product-grid') {
+          updated = true;
+          return { ...section, data: { ...section.data, items: productFormat } };
+        }
+        return section;
+      }),
+    }));
+
+    if (updated) {
+      await supabaseAdmin
+        .from('sites')
+        .update({ pages: updatedPages })
+        .eq('id', siteId);
+      console.log(`[Inventory] Synced ${items.length} items to sections for site ${siteId}`);
+    }
+  } catch (err) {
+    console.error('[Inventory] Sync to sections failed:', err);
+  }
+}
+
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ siteId: string }> }
@@ -64,6 +132,9 @@ export async function PUT(
       if (error) {
         return NextResponse.json({ error: 'Failed to save inventory' }, { status: 500 });
       }
+
+      // Sync inventory to sections (service-list, packages, product-grid)
+      await syncInventoryToSections(siteId, itemsToInsert);
     }
 
     return NextResponse.json({ ok: true, count: items.length });
