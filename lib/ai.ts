@@ -638,92 +638,74 @@ export async function generateSiteContent(
   contactEmail: string,
   tagline: string,
   stylePreset?: StylePreset,
- ): Promise<{ pages: { slug: string; title: string; sections: GeneratedSection[] }[] }> {
+): Promise<{ pages: { slug: string; title: string; sections: GeneratedSection[] }[] }> {
   const preset = stylePreset || pickRandomPreset(businessType);
   const promptText = buildPrompt(businessName, businessType, offerings, contactEmail, tagline, preset);
 
   try {
-    // Try Gemini first if available
+    // 1. Try Gemini Path
     if (process.env.GOOGLE_API_KEY) {
-      const { GoogleGenerativeAI } = await import('@google/generative-ai');
-      const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY!);
-      const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
-      
-      const result = await model.generateContent(promptText);
-      const text = result.response.text();
-      
-      // Extract JSON from response
-      const jsonMatch = text.match(/\{[\s\S]*\}/);
-      if (!jsonMatch) {
-        throw new Error('No JSON found in Gemini response');
-      }
-      
-      let parsed;
       try {
-        parsed = JSON.parse(jsonMatch[0]);
-      } catch (e) {
-        console.error('Failed to parse JSON from AI response:', e);
-        // If parsing fails, use a basic fallback
-        parsed = getFallbackSiteStructure(businessName, businessType);
+        const { GoogleGenerativeAI } = await import('@google/generative-ai');
+        const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY);
+        const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+        
+        const result = await model.generateContent(promptText);
+        const text = result.response.text();
+        
+        const jsonMatch = text.match(/\{[\s\S]*\}/);
+        if (jsonMatch) {
+          const parsed = JSON.parse(jsonMatch[0]);
+          if (parsed && parsed.pages && Array.isArray(parsed.pages) && parsed.pages.length > 0) {
+            await processImagesInPages(parsed.pages);
+            return parsed;
+          }
+        }
+      } catch (geminiError) {
+        console.error('Gemini generation failed, falling back to OpenAI:', geminiError);
       }
-      
-      // Ensure basic structure exists
-      if (!parsed || !parsed.pages || !Array.isArray(parsed.pages) || parsed.pages.length === 0) {
-        console.warn('AI returned empty or invalid pages array. Using fallback.');
-        parsed = getFallbackSiteStructure(businessName, businessType);
+    }
+    
+    // 2. Try OpenAI Path
+    if (process.env.OPENAI_API_KEY) {
+      try {
+        const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+        const response = await openai.chat.completions.create({
+          model: 'gpt-4o',
+          messages: [{ role: 'user', content: promptText }],
+          temperature: 0.7,
+          max_tokens: 4000, // Reduced from 8000 for better stability
+        });
+
+        const text = response.choices[0].message.content || '';
+        const jsonMatch = text.match(/\{[\s\S]*\}/);
+        if (jsonMatch) {
+          const parsed = JSON.parse(jsonMatch[0]);
+          if (parsed && parsed.pages && Array.isArray(parsed.pages) && parsed.pages.length > 0) {
+            await processImagesInPages(parsed.pages);
+            return parsed;
+          }
+        }
+      } catch (openaiError) {
+        console.error('OpenAI generation failed:', openaiError);
       }
-
-      // Process images
-      if (parsed.pages) {
-        await processImagesInPages(parsed.pages);
-      }
-      
-      return parsed;
     }
     
-    // Fallback to OpenAI
-    const openai = getOpenAI();
-    const response = await openai.chat.completions.create({
-      model: 'gpt-4-turbo-preview',
-      messages: [{ role: 'user', content: promptText }],
-      temperature: 0.7,
-      max_tokens: 8000,
-    });
-
-    const text = response.choices[0].message.content || '';
-    
-    // Extract JSON from response
-    const jsonMatch = text.match(/\{[\s\S]*\}/);
-    if (!jsonMatch) {
-      return getFallbackSiteStructure(businessName, businessType);
-    }
-    
-    let parsed;
-    try {
-      parsed = JSON.parse(jsonMatch[0]);
-    } catch (e) {
-      console.error('Failed to parse JSON from OpenAI response:', e);
-      parsed = getFallbackSiteStructure(businessName, businessType);
-    }
-
-    if (!parsed || !parsed.pages || !Array.isArray(parsed.pages) || parsed.pages.length === 0) {
-      parsed = getFallbackSiteStructure(businessName, businessType);
-    }
-    
-    // Process images
-    if (parsed.pages) {
-      await processImagesInPages(parsed.pages);
-    }
-    
-    return parsed;
+    // 3. Ultimate Fallback
+    console.warn('All AI paths failed. Using hardcoded fallback structure.');
+    return getFallbackSiteStructure(businessName, businessType);
   } catch (error) {
-    console.error('Content generation error:', error);
-    // Even on total failure, return a working fallback so the user isn't stuck with an empty canvas
+    console.error('Content generation fatal error:', error);
     return getFallbackSiteStructure(businessName, businessType);
   }
 }
 
 function getFallbackSiteStructure(businessName: string, businessType: TemplateFamily) {
+  const id1 = Math.random().toString(36).substring(2, 10);
+  const id2 = Math.random().toString(36).substring(2, 10);
+  const id3 = Math.random().toString(36).substring(2, 10);
+  const id4 = Math.random().toString(36).substring(2, 10);
+
   return {
     pages: [
       {
@@ -731,30 +713,72 @@ function getFallbackSiteStructure(businessName: string, businessType: TemplateFa
         title: 'Home',
         sections: [
           {
-            id: Math.random().toString(36).substring(2, 10),
+            id: id1,
             type: 'header-simple' as SectionType,
-            data: { logoText: businessName, links: [{ label: 'Home', url: '#' }, { label: 'Shop', url: '#products' }], ctaText: 'Shop now', ctaUrl: '#products' }
+            data: { logoText: businessName, links: [{ label: 'Home', url: '/' }, { label: 'About', url: '/about' }], ctaText: 'Contact Us', ctaUrl: '/contact' }
           },
           {
-            id: Math.random().toString(36).substring(2, 10),
+            id: id2,
             type: 'hero-split' as SectionType,
             data: { 
               heading: `Welcome to ${businessName}`, 
-              subheading: 'Experience the best in quality and service. We are here to serve you.', 
-              ctaText: 'Explore Now', 
+              subheading: 'Experience excellence in every detail. We are dedicated to providing the best products and services to our community.', 
+              ctaText: 'Explore Collection', 
               ctaUrl: '#products', 
-              imageUrl: 'https://images.unsplash.com/photo-1441986300917-64674bd600d8' 
+              imageUrl: 'luxury business office' 
             }
           },
           {
-            id: Math.random().toString(36).substring(2, 10),
+            id: id3,
             type: 'product-grid' as SectionType,
-            data: { title: 'Featured Products', columns: 3, items: [] }
+            data: { title: 'Featured Selection', columns: 3, items: [] }
+          },
+          {
+            id: id4,
+            type: 'footer-basic' as SectionType,
+            data: { logoText: businessName, columns: [{ title: 'About', links: [{ label: 'Our Story', url: '/about' }] }], socialLinks: [] }
+          }
+        ]
+      },
+      {
+        slug: 'about',
+        title: 'About',
+        sections: [
+          {
+            id: Math.random().toString(36).substring(2, 10),
+            type: 'header-simple' as SectionType,
+            data: { logoText: businessName, links: [{ label: 'Home', url: '/' }, { label: 'About', url: '/about' }], ctaText: 'Contact Us', ctaUrl: '/contact' }
+          },
+          {
+            id: Math.random().toString(36).substring(2, 10),
+            type: 'brand-story' as SectionType,
+            data: { headline: 'Our Story', body: `${businessName} was founded with a simple mission: to deliver quality and value to our customers. Our journey started with a passion for excellence and a commitment to service.`, imageUrl: 'business story team' }
           },
           {
             id: Math.random().toString(36).substring(2, 10),
             type: 'footer-basic' as SectionType,
-            data: { columns: [{ title: 'About', links: [{ label: 'Our Story', url: '#' }] }], socialLinks: [] }
+            data: { logoText: businessName, columns: [{ title: 'About', links: [{ label: 'Our Story', url: '/about' }] }], socialLinks: [] }
+          }
+        ]
+      },
+      {
+        slug: 'contact',
+        title: 'Contact',
+        sections: [
+          {
+            id: Math.random().toString(36).substring(2, 10),
+            type: 'header-simple' as SectionType,
+            data: { logoText: businessName, links: [{ label: 'Home', url: '/' }, { label: 'About', url: '/about' }], ctaText: 'Contact Us', ctaUrl: '/contact' }
+          },
+          {
+            id: Math.random().toString(36).substring(2, 10),
+            type: 'quote-cta' as SectionType,
+            data: { headline: 'Get in Touch', subheading: 'Have questions? We\'re here to help. Send us a message and we\'ll get back to you shortly.', ctaText: 'Send Message', showForm: true }
+          },
+          {
+            id: Math.random().toString(36).substring(2, 10),
+            type: 'footer-basic' as SectionType,
+            data: { logoText: businessName, columns: [{ title: 'About', links: [{ label: 'Our Story', url: '/about' }] }], socialLinks: [] }
           }
         ]
       }
@@ -777,7 +801,7 @@ export async function expandBusinessDescription(
   try {
     if (process.env.GOOGLE_API_KEY) {
       const { GoogleGenerativeAI } = await import('@google/generative-ai');
-      const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY!);
+      const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY);
       const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
       
       const result = await model.generateContent(expansionPrompt);
@@ -785,15 +809,19 @@ export async function expandBusinessDescription(
       return text.replace(/^"|"$/g, ''); // Remove quotes if present
     }
     
-    const openai = getOpenAI();
-    const response = await openai.chat.completions.create({
-      model: 'gpt-4-turbo-preview',
-      messages: [{ role: 'user', content: expansionPrompt }],
-      temperature: 0.7,
-      max_tokens: 200,
-    });
+    if (process.env.OPENAI_API_KEY) {
+      const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+      const response = await openai.chat.completions.create({
+        model: 'gpt-4o',
+        messages: [{ role: 'user', content: expansionPrompt }],
+        temperature: 0.7,
+        max_tokens: 200,
+      });
 
-    return response.choices[0].message.content?.trim().replace(/^"|"$/g, '') || prompt;
+      return response.choices[0].message.content?.trim().replace(/^"|"$/g, '') || prompt;
+    }
+    
+    return prompt;
   } catch (error) {
     console.error('Expansion error:', error);
     return prompt;
