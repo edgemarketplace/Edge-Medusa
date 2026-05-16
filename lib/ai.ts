@@ -313,43 +313,222 @@ Generate ALL sections. Every field. Real content. POWERFUL copy. Now.`;
 }
 
 function buildSampleData(type: SectionType, businessName: string, offerings: string, funnel: FunnelDef): Record<string, any> {
+  // Generate powerful, specific sample data that matches our "forbidden words" / "power words" style
+  const businessLower = businessName.toLowerCase();
+  
   const samples: Record<string, any> = {
-    'header-simple': { logoText: businessName, links: [{ label: 'Home', url: '#' }, { label: 'Shop', url: '#products' }, { label: 'About', url: '#about' }], ctaText: 'Shop now', ctaUrl: '#products' },
-    'header-promo': { announcement: 'Free shipping on orders over $50 — limited time!', logoText: businessName, links: [{ label: 'Home', url: '#' }, { label: 'Menu', url: '#menu' }, { label: 'Contact', url: '#contact' }] },
-    'hero-split': { heading: funnel.sampleCopy.heroHeading[0], subheading: funnel.sampleCopy.heroSubheading[0], ctaText: funnel.sampleCopy.ctaText[0], ctaUrl: '#products', imageUrl: '' },
-    'hero-visual': { heading: funnel.sampleCopy.heroHeading[0], subheading: funnel.sampleCopy.heroSubheading[0], ctaText: funnel.sampleCopy.ctaText[0], imageUrl: '', overlayOpacity: 0.4 },
-    'hero-products': { heading: `Welcome to ${businessName}`, subheading: offerings, ctaText: 'View all', items: [] },
-    'hero-cta': { headline: 'Join our community', subheading: 'Get exclusive offers, new arrivals, and insider access.', ctaText: 'Subscribe', showEmailCapture: true },
-    'hero-trust': { heading: funnel.sampleCopy.heroHeading[0], subheading: funnel.sampleCopy.heroSubheading[0], ctaText: funnel.sampleCopy.ctaText[0], trustBadges: ['Free shipping', '30-day returns', 'Secure checkout'] },
-    'featured-collection': { title: 'Featured Collection', collectionName: 'Best Sellers', itemCount: 4 },
-    'product-grid': { title: offerings.split(',')[0] || 'Our Products', columns: 3, showFilters: true, items: [] },
-    'best-sellers': { title: 'Best Sellers', items: [] },
-    'collection-carousel': { title: 'Shop by Category', collections: [{ name: 'New Arrivals', url: '#' }, { name: 'Best Sellers', url: '#' }, { name: 'Sale', url: '#' }] },
-    'brand-story': { headline: `Our Story`, body: funnel.sampleCopy.storyBody?.[0] || `At ${businessName}, we believe in ${offerings.toLowerCase()}. Every product is crafted with care and intention.`, imageUrl: '' },
-    'value-icons': { title: 'Why choose us', values: [{ icon: '✓', title: 'Quality guaranteed', description: 'We stand behind every product' }, { icon: '🚚', title: 'Fast delivery', description: 'Quick and reliable shipping' }, { icon: '💬', title: 'Expert support', description: 'We\'re here to help' }] },
-    'editorial-split': { headline: `Discover ${businessName}`, body: offerings, imageUrl: '', imageLeft: true },
-    'founder-note': { founderName: 'The Founder', founderTitle: `Owner, ${businessName}`, quote: funnel.sampleCopy.storyBody?.[0] || `I started ${businessName} with a simple mission: ${offerings.toLowerCase()}.`, imageUrl: '' },
-    'testimonials': { title: 'What our customers say', testimonials: [{ name: 'Sarah M.', quote: funnel.sampleCopy.testimonialQuotes[0], rating: 5 }, { name: 'James K.', quote: funnel.sampleCopy.testimonialQuotes[1], rating: 5 }] },
-    'reviews': { title: 'Customer Reviews', reviews: [{ name: 'Emily R.', rating: 5, text: funnel.sampleCopy.testimonialQuotes[0] }, { name: 'Michael T.', rating: 5, text: funnel.sampleCopy.testimonialQuotes[1] }] },
-    'logo-bar': { title: 'Trusted by', logos: [{ name: 'Vogue' }, { name: 'Forbes' }, { name: 'GQ' }] },
-    'stats': { stats: [{ value: '500+', label: 'Happy customers' }, { value: '4.9', label: 'Average rating' }, { value: '10+', label: 'Years of experience' }] },
-    'press': { title: 'As seen in', mentions: [{ outlet: 'Design Week', quote: funnel.sampleCopy.testimonialQuotes[0] }] },
-    'service-list': { title: 'Our Services', services: [{ name: 'Standard Service', description: 'Complete professional service delivery', price: 'From $150' }, { name: 'Premium Service', description: 'White-glove full service experience', price: 'From $350' }] },
-    'pricing-tiers': { title: 'Pricing', tiers: [{ name: 'Basic', price: '$99', features: ['Feature one', 'Feature two', 'Feature three'], highlighted: false }, { name: 'Professional', price: '$199', features: ['Everything in Basic', 'Feature four', 'Feature five', 'Feature six'], highlighted: true }, { name: 'Enterprise', price: '$399', features: ['Everything in Pro', 'Feature seven', 'Feature eight', 'Priority support'], highlighted: false }] },
-    'packages': { title: funnel.sampleCopy.packageNames ? `${funnel.sampleCopy.packageNames[0]} Packages` : 'Packages', packages: [{ name: funnel.sampleCopy.packageNames?.[0] || 'Starter', description: 'Perfect for getting started', price: '$45', features: ['Feature one', 'Feature two'] }, { name: funnel.sampleCopy.packageNames?.[1] || 'Standard', description: 'Our most popular option', price: '$75', features: ['Everything in Starter', 'Feature three', 'Feature four'] }] },
-    'quote-cta': { headline: 'Get a free quote', subheading: 'Tell us about your project and we\'ll get back to you within 24 hours.', ctaText: 'Request quote', showForm: true },
-    'booking-cta': { headline: 'Book your appointment', subheading: 'Choose a time that works for you. We\'ll confirm within 24 hours.', ctaText: 'Book now' },
-    'gallery': { title: 'Our Work', images: [] },
-    'video': { title: '', videoUrl: '', thumbnailUrl: '' },
-    'before-after': { title: 'Before & After', pairs: [{ beforeUrl: '', afterUrl: '', label: 'Recent project' }] },
-    'social-gallery': { title: `Follow ${businessName} on Instagram`, images: [] },
-    'faq': { title: 'Frequently Asked Questions', questions: [{ question: 'How do I place an order?', answer: `Simply browse our ${offerings.toLowerCase()} and add items to your cart. Checkout is quick and secure.` }, { question: 'What is your return policy?', answer: 'We offer a 30-day satisfaction guarantee. If you\'re not happy, we\'ll make it right.' }, { question: 'Do you offer delivery?', answer: 'Yes! We offer free shipping on orders over $50. Standard delivery takes 3-5 business days.' }] },
-    'newsletter': { headline: 'Stay in the loop', subheading: 'Get new arrivals, exclusive offers, and insider updates.', ctaText: 'Subscribe' },
-    'promo-banner': { text: '🎉 Limited time: Free shipping on all orders over $50!', ctaText: 'Shop now', backgroundColor: '#1A1A1A', textColor: '#FFFFFF' },
-    'sticky-cta': { text: 'Ready to get started?', ctaText: 'Shop now', position: 'bottom' },
-    'footer-basic': { logoText: businessName, links: [{ label: 'Privacy', url: '#' }, { label: 'Terms', url: '#' }, { label: 'Contact', url: '#' }], copyright: `© ${new Date().getFullYear()} ${businessName}. All rights reserved.` },
-    'footer-commerce': { logoText: businessName, newsletter: true, columns: [{ title: 'Shop', links: [{ label: 'New Arrivals', url: '#' }, { label: 'Best Sellers', url: '#' }, { label: 'Sale', url: '#' }] }, { title: 'Help', links: [{ label: 'FAQ', url: '#' }, { label: 'Shipping', url: '#' }, { label: 'Returns', url: '#' }] }], copyright: `© ${new Date().getFullYear()} ${businessName}. All rights reserved.` },
-    'footer-service': { logoText: businessName, showContact: true, showHours: true, hours: 'Mon-Fri 8am-6pm, Sat 9am-3pm', copyright: `© ${new Date().getFullYear()} ${businessName}. All rights reserved.` },
+    'header-simple': { 
+      logoText: businessName, 
+      links: [{ label: 'Home', url: '#' }, { label: 'Shop', url: '#products' }, { label: 'About', url: '#about' }], 
+      ctaText: 'Shop now', 
+      ctaUrl: '#products' 
+    },
+    'header-promo': { 
+      announcement: '🔥 Limited: Free shipping on $50+ orders — ends Friday', 
+      logoText: businessName, 
+      links: [{ label: 'Home', url: '#' }, { label: 'Menu', url: '#menu' }, { label: 'Contact', url: '#contact' }] 
+    },
+    'hero-split': { 
+      heading: `${businessName}: Your ${offerings.split(',')[0] || 'Space'} Transformed in 48 Hours`, 
+      subheading: `Stop settling for mediocre. See why 94% of ${businessName} customers never call anyone else.`, 
+      ctaText: 'See the proof', 
+      ctaUrl: '#products', 
+      imageUrl: '' 
+    },
+    'hero-visual': { 
+      heading: `Why ${businessName} Outperforms Everyone Else`, 
+      subheading: `The truth about ${offerings.toLowerCase()} that your current provider won't tell you.`, 
+      ctaText: 'Get the facts', 
+      imageUrl: '', 
+      overlayOpacity: 0.4 
+    },
+    'hero-products': { 
+      heading: `Welcome to ${businessName} — Where ${offerings.split(',')[0] || 'Quality'} Meets Speed`, 
+      subheading: offerings, 
+      ctaText: 'View all', 
+      items: [] 
+    },
+    'hero-cta': { 
+      headline: `Join the ${businessName} Insider Circle`, 
+      subheading: `Get exclusive access to new arrivals, insider-only discounts, and early-bird specials.`, 
+      ctaText: 'Join now', 
+      showEmailCapture: true 
+    },
+    'hero-trust': { 
+      heading: `${businessName}: The 1% of ${businessType} You've Been Looking For`, 
+      subheading: `Over 500 customers transformed. 94% report measurable results within 60 days. The numbers don't lie.`, 
+      ctaText: 'See my transformation', 
+      trustBadges: ['500+ Transformed', '94% Success Rate', '5-Star Rated'],
+      imageUrl: ''
+    },
+    'featured-collection': { 
+      title: `${businessName} Bestsellers`, 
+      collectionName: 'Most Popular', 
+      itemCount: 4 
+    },
+    'product-grid': { 
+      title: `${businessName} ${offerings.split(',')[0] || 'Collection'}`, 
+      columns: 3, 
+      showFilters: true, 
+      items: [] 
+    },
+    'best-sellers': { 
+      title: `Why Everyone's Buying From ${businessName}`, 
+      items: [] 
+    },
+    'collection-carousel': { 
+      title: `Shop ${businessName} by Category`, 
+      collections: [{ name: 'New Arrivals', url: '#' }, { name: 'Bestsellers', url: '#' }, { name: 'Limited Edition', url: '#' }] 
+    },
+    'brand-story': { 
+      headline: `Why ${businessName} Exists`, 
+      body: `I started ${businessName} because I was tired of seeing people settle for subpar ${offerings.toLowerCase()}. There had to be a better way — one that actually delivered on its promises.`, 
+      imageUrl: '' 
+    },
+    'value-icons': { 
+      title: `Why ${businessName} Wins`, 
+      values: [
+        { icon: '⚡', title: '2X Faster', description: 'What takes others 2 weeks, we do in 48 hours' }, 
+        { icon: '🛡️', title: '5-Year Warranty', description: 'We stand behind every single project, no questions asked' }, 
+        { icon: '💎', title: 'Premium Materials', description: 'We use only what we\'d put in our own home' }
+      ] 
+    },
+    'editorial-split': { 
+      headline: `The ${businessName} Difference`, 
+      body: offerings, 
+      imageUrl: '', 
+      imageLeft: true 
+    },
+    'founder-note': { 
+      founderName: 'The Founder', 
+      founderTitle: `Owner, ${businessName}`, 
+      quote: `I built ${businessName} because I knew ${offerings.toLowerCase()} could be done better. Today, we prove it with every single customer.`, 
+      imageUrl: '' 
+    },
+    'testimonials': { 
+      title: `Why ${businessName} Customers Never Leave`, 
+      testimonials: [
+        { name: 'Michael Rodriguez', quote: `I wish I'd found ${businessName} sooner. My only regret is wasting 2 years with their competitor first.`, rating: 5 }, 
+        { name: 'Jennifer Walsh', quote: `My neighbors won't stop asking who did my ${offerings.split(',')[0] || 'project'}. ${businessName} literally transformed my entire space.`, rating: 5 }
+      ] 
+    },
+    'reviews': { 
+      title: `${businessName} Reviews`, 
+      reviews: [
+        { name: 'Emily R.', rating: 5, text: `Hands down the best decision I made this year. ${businessName} delivered exactly what they promised.` }, 
+        { name: 'David T.', rating: 5, text: `I was skeptical, but ${businessName} proved me wrong. The quality is unmatched.` }
+      ] 
+    },
+    'logo-bar': { 
+      title: `As Featured In`, 
+      logos: [{ name: 'Vogue' }, { name: 'Forbes' }, { name: 'GQ' }] 
+    },
+    'stats': { 
+      stats: [
+        { value: '500+', label: 'Customers Transformed' }, 
+        { value: '4.9', label: 'Average Rating' }, 
+        { value: '10+', label: 'Years Perfecting Our Craft' }
+      ] 
+    },
+    'press': { 
+      title: `What They're Saying About ${businessName}`, 
+      mentions: [{ outlet: 'Design Week', quote: `${businessName} is redefining what customers should expect from ${offerings.toLowerCase()}.` }] 
+    },
+    'service-list': { 
+      title: `${businessName} Services`, 
+      services: [
+        { name: 'Essential Package', description: `Everything you need to get started with ${businessName} — no fluff, just results.`, price: 'From $150' }, 
+        { name: 'Premium Experience', description: `White-glove treatment from start to finish. This is what ${businessName} does best.`, price: 'From $350' }
+      ] 
+    },
+    'pricing-tiers': { 
+      title: `Choose Your ${businessName} Experience`, 
+      tiers: [
+        { name: 'Starter', price: '$99', features: ['Fast 48-hour turnaround', 'Premium materials', '2-year warranty'], highlighted: false }, 
+        { name: 'Professional', price: '$199', features: ['Everything in Starter', 'Priority scheduling', '5-year warranty', '24/7 support'], highlighted: true }, 
+        { name: 'Enterprise', price: '$399', features: ['Everything in Professional', 'Dedicated project manager', 'Lifetime warranty', 'VIP treatment'], highlighted: false }
+      ] 
+    },
+    'packages': { 
+      title: `${funnel.sampleCopy.packageNames?.[0] || 'Transformation'} Packages`, 
+      packages: [
+        { name: funnel.sampleCopy.packageNames?.[0] || 'Starter', description: `The fastest way to experience what ${businessName} can do for you.`, price: '$45', features: ['48-hour turnaround', 'Premium materials'] }, 
+        { name: funnel.sampleCopy.packageNames?.[1] || 'Professional', description: `Our most popular choice — the perfect balance of speed and luxury.`, price: '$75', features: ['Everything in Starter', '5-year warranty', 'Priority support'] }
+      ] 
+    },
+    'quote-cta': { 
+      headline: `Get Your Free ${businessName} Quote`, 
+      subheading: `Tell us about your project. We'll get back to you within 24 hours with a customized plan.`, 
+      ctaText: 'Get my quote', 
+      showForm: true 
+    },
+    'booking-cta': { 
+      headline: `Book Your ${businessName} Consultation`, 
+      subheading: `Pick a time that works for you. Meet with our experts and see why 94% of customers say yes.`, 
+      ctaText: 'Book now' 
+    },
+    'gallery': { 
+      title: `${businessName} Transformations`, 
+      images: [] 
+    },
+    'video': { 
+      title: `${businessName} in Action`, 
+      videoUrl: '', 
+      thumbnailUrl: '' 
+    },
+    'before-after': { 
+      title: `${businessName} Before & After`, 
+      pairs: [{ beforeUrl: '', afterUrl: '', label: `Recent ${businessName} project` }] 
+    },
+    'social-gallery': { 
+      title: `Follow ${businessName} on Instagram`, 
+      images: [] 
+    },
+    'faq': { 
+      title: `Your ${businessName} Questions, Answered`, 
+      questions: [
+        { question: `Why is ${businessName} more expensive than competitors?`, answer: `We don't cut corners. Every material, every technique, every hour spent is an investment in your satisfaction. Cheap alternatives cost 3X more in the long run.` }, 
+        { question: `What if I hate the result?`, answer: `That's why we have a 100% satisfaction guarantee. If you're not thrilled, we'll make it right — no questions asked.` }, 
+        { question: `How fast can ${businessName} really deliver?`, answer: `Most projects are completed in 48 hours. We've optimized our process to be 2X faster than industry standard without sacrificing quality.` }
+      ] 
+    },
+    'newsletter': { 
+      headline: `Join the ${businessName} Inner Circle`, 
+      subheading: `Get insider-only discounts, early access to new services, and exclusive tips.`, 
+      ctaText: 'Join free' 
+    },
+    'promo-banner': { 
+      text: `🎉 Limited: ${businessName} is booking 48 hours out — secure your spot now!`, 
+      ctaText: 'Book now', 
+      backgroundColor: '#1A1A1A', 
+      textColor: '#FFFFFF' 
+    },
+    'sticky-cta': { 
+      text: `Ready to transform with ${businessName}?`, 
+      ctaText: 'Start now', 
+      position: 'bottom' 
+    },
+    'footer-basic': { 
+      logoText: businessName, 
+      links: [{ label: 'Privacy', url: '#' }, { label: 'Terms', url: '#' }, { label: 'Contact', url: '#' }], 
+      copyright: `© ${new Date().getFullYear()} ${businessName}. All rights reserved.` 
+    },
+    'footer-commerce': { 
+      logoText: businessName, 
+      newsletter: true, 
+      columns: [
+        { title: 'Shop', links: [{ label: 'New Arrivals', url: '#' }, { label: 'Bestsellers', url: '#' }, { label: 'Sale', url: '#' }] }, 
+        { title: 'Help', links: [{ label: 'FAQ', url: '#' }, { label: 'Shipping', url: '#' }, { label: 'Returns', url: '#' }] }
+      ], 
+      copyright: `© ${new Date().getFullYear()} ${businessName}. All rights reserved.` 
+    },
+    'footer-service': { 
+      logoText: businessName, 
+      showContact: true, 
+      showHours: true, 
+      hours: 'Mon-Fri 8am-6pm, Sat 9am-3pm', 
+      copyright: `© ${new Date().getFullYear()} ${businessName}. All rights reserved.` 
+    },
   };
 
   return samples[type] || SECTION_LIBRARY[type]?.defaultData || {};
