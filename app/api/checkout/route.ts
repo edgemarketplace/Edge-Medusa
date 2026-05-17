@@ -24,14 +24,17 @@ export async function POST(request: NextRequest) {
     }
 
     // Get the site
+    console.log('Checkout: looking up siteId:', siteId);
     const { data: site, error: siteError } = await supabaseAdmin
       .from('sites')
       .select('stripe_account_id, business_name, contact_email, shipping_rate, business_address, business_city, business_state, business_zip')
       .eq('id', siteId)
       .single();
 
+    console.log('Checkout: site query result:', { site: site ? 'found' : 'null', siteError: siteError?.message || null });
+
     if (siteError || !site) {
-      return NextResponse.json({ error: 'Site not found' }, { status: 404 });
+      return NextResponse.json({ error: 'Site not found', debug: { siteId, siteError: siteError?.message } }, { status: 404 });
     }
 
     // Fetch inventory to validate stock and build line items
