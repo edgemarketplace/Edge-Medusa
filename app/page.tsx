@@ -13,15 +13,22 @@ const VERTICALS = [
 
 const STEPS = [
   { n: '01', title: 'Tell us your story', desc: 'Business name, what you sell, your email. 30 seconds.' },
-  { n: '02', title: 'AI builds your site', desc: 'GPT-4o writes copy, picks sections, designs your layout. ~15 seconds.' },
+  { n: '02', title: 'AI builds your site', desc: 'AI drafts the storefront while Medusa handles the commerce foundation.' },
   { n: '03', title: 'Edit & launch', desc: 'Click any text to edit it. Add products. Go live instantly.' },
 ];
 
 const STATS = [
-  { value: '< 15 min', label: 'Average time to launch' },
-  { value: '5', label: 'Business verticals' },
-  { value: '35+', label: 'Page section types' },
-  { value: '100%', label: 'You own your data' },
+  { value: 'Medusa v2', label: 'Commerce backend' },
+  { value: 'Stripe', label: 'Payments ready' },
+  { value: 'Supabase', label: 'Builder data layer' },
+  { value: '< 15 min', label: 'Average launch path' },
+];
+
+const MEDUSA_STACK = [
+  { label: 'Catalog sync', desc: 'Inventory saves can sync into Medusa products through secured Edge endpoints.' },
+  { label: 'Orders foundation', desc: 'Backend routes are ready for Medusa-backed orders, fulfillment, and merchant operations.' },
+  { label: 'Payments + fulfillment', desc: 'Stripe payment module, manual fulfillment, Redis, Postgres, and Admin live under backend/medusa.' },
+  { label: 'Safe migration path', desc: 'The existing builder stays usable even when the Medusa service is offline or not yet configured.' },
 ];
 
 export default function LandingPage() {
@@ -47,7 +54,7 @@ export default function LandingPage() {
           <div className="w-8 h-8 bg-[#1A1A1A] rounded-lg flex items-center justify-center">
             <span className="font-serif italic font-bold text-white text-lg">E</span>
           </div>
-          <span className="font-bold tracking-tight">Edge Marketplace Hub</span>
+          <span className="font-bold tracking-tight">Edge Medusa</span>
         </div>
         <div className="flex items-center gap-4">
           <Link href="/login" className="text-sm text-black/50 hover:text-black transition-colors">Sign in</Link>
@@ -70,18 +77,17 @@ export default function LandingPage() {
         <div className="relative max-w-4xl mx-auto">
           <div className="inline-flex items-center gap-2 bg-white border border-black/8 rounded-full px-4 py-1.5 text-sm text-black/60 mb-8 shadow-sm">
             <span className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />
-            AI-powered · No code · Live in minutes
+            Medusa v2 backend · Supabase builder · Stripe checkout
           </div>
 
           <h1 className="text-5xl md:text-7xl font-serif italic tracking-tight leading-[1.05] mb-6">
-            Your business online
+            Edge Medusa commerce
             <br />
-            <span className="text-black/30">in 15 minutes.</span>
+            <span className="text-black/30">not just another storefront.</span>
           </h1>
 
           <p className="text-xl md:text-2xl text-black/55 max-w-2xl mx-auto mb-10 leading-relaxed">
-            Tell us what you sell. AI writes your copy, designs your storefront,
-            and sets up payments. You edit. You launch.
+            The Edge Marketplace builder now sits on a real MedusaJS commerce foundation: catalog sync, orders, fulfillment, Stripe payments, and a backend you can scale.
           </p>
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-16">
@@ -89,9 +95,9 @@ export default function LandingPage() {
               href="/onboarding"
               className="bg-[#1A1A1A] text-white px-8 py-4 rounded-full text-lg font-bold hover:scale-105 transition-transform shadow-lg shadow-black/20"
             >
-              Build my store →
+              Launch with Medusa →
             </Link>
-            <span className="text-black/40 text-sm">Free to start · No credit card</span>
+            <span className="text-black/40 text-sm">Backend overhaul is live · Builder unchanged where it should be</span>
           </div>
 
           {/* Animated vertical badges */}
@@ -128,7 +134,7 @@ export default function LandingPage() {
               <div className="w-3 h-3 rounded-full bg-amber-400" />
               <div className="w-3 h-3 rounded-full bg-emerald-400" />
               <div className="flex-1 bg-black/5 rounded-full px-4 py-1 text-xs text-black/40 mx-4">
-                {VERTICALS[activeVertical].label.toLowerCase().replace(/ & /g, '-').replace(/ /g, '')}.edgemarketplacehub.com
+                {VERTICALS[activeVertical].label.toLowerCase().replace(/ & /g, '-').replace(/ /g, '')}.edge-medusa.com
               </div>
             </div>
 
@@ -159,7 +165,7 @@ export default function LandingPage() {
           </div>
 
           <p className="text-center text-xs text-black/35 mt-4">
-            ↑ Your store, AI-generated, fully editable. Built in under 15 minutes.
+            ↑ Same fast builder UX, now backed by a Medusa commerce service layer.
           </p>
         </div>
       </section>
@@ -173,6 +179,41 @@ export default function LandingPage() {
               <p className="text-xs text-black/50 uppercase tracking-wider font-medium">{s.label}</p>
             </div>
           ))}
+        </div>
+      </section>
+
+      {/* ── MEDUSA BACKEND PROOF ── */}
+      <section className="px-6 py-12 md:py-20">
+        <div className="max-w-5xl mx-auto rounded-[2rem] bg-[#111111] text-white overflow-hidden shadow-2xl">
+          <div className="grid md:grid-cols-[1.05fr_0.95fr] gap-0">
+            <div className="p-8 md:p-12">
+              <p className="text-xs uppercase tracking-[0.24em] font-bold text-emerald-300 mb-4">Backend overhaul shipped</p>
+              <h2 className="text-3xl md:text-5xl font-serif italic leading-tight mb-5">
+                MedusaJS is now the commerce spine.
+              </h2>
+              <p className="text-white/60 text-lg leading-relaxed mb-8">
+                This fork is no longer only a page builder. It now includes a dedicated Medusa v2 service under <span className="font-mono text-white/80">backend/medusa</span>, secured Edge sync routes, and a Next.js adapter layer for catalog and order migration.
+              </p>
+              <div className="flex flex-wrap gap-3">
+                {['Medusa v2', 'Postgres', 'Redis', 'Stripe module', 'Admin /app', 'Edge sync API'].map(tag => (
+                  <span key={tag} className="rounded-full border border-white/15 bg-white/8 px-4 py-2 text-sm text-white/75">{tag}</span>
+                ))}
+              </div>
+            </div>
+            <div className="bg-white/5 p-6 md:p-8 border-t md:border-t-0 md:border-l border-white/10">
+              <div className="space-y-4">
+                {MEDUSA_STACK.map((item, i) => (
+                  <div key={item.label} className="rounded-2xl bg-white/[0.06] border border-white/10 p-5">
+                    <div className="flex items-center gap-3 mb-2">
+                      <span className="w-7 h-7 rounded-full bg-emerald-300 text-black text-xs font-bold flex items-center justify-center">{i + 1}</span>
+                      <h3 className="font-bold text-white/90">{item.label}</h3>
+                    </div>
+                    <p className="text-sm text-white/55 leading-relaxed">{item.desc}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
         </div>
       </section>
 
@@ -228,18 +269,18 @@ export default function LandingPage() {
       <section className="px-6 py-12 md:py-24 bg-[#1A1A1A] text-white">
         <div className="max-w-4xl mx-auto">
           <div className="text-center mb-14">
-            <h2 className="text-3xl md:text-4xl font-serif italic text-white/90">Everything included.</h2>
-            <p className="text-white/50 mt-3 text-lg">No plugins. No add-ons. No surprises.</p>
+            <h2 className="text-3xl md:text-4xl font-serif italic text-white/90">The visible difference: this fork now has a commerce engine.</h2>
+            <p className="text-white/50 mt-3 text-lg">Medusa powers the backend path while Edge keeps the vertical-specific builder experience.</p>
           </div>
 
           <div className="grid md:grid-cols-3 gap-6">
             {[
-              { icon: '🤖', title: 'AI copywriting', desc: 'GPT-4o writes headlines, product descriptions, and CTAs tuned to your vertical.' },
+              { icon: '🤖', title: 'AI copywriting', desc: 'AI writes headlines, product descriptions, and CTAs tuned to your vertical.' },
               { icon: '🎨', title: 'Smart layout system', desc: '35+ section types arranged by proven conversion patterns for your business type.' },
               { icon: '✏️', title: 'In-place editing', desc: 'Click any text on your page to edit it. No forms. No modals. Just type.' },
-              { icon: '💳', title: 'Stripe payments', desc: 'Accept cards, Apple Pay, Google Pay. Connect your Stripe account in seconds.' },
-              { icon: '📦', title: 'Inventory manager', desc: 'Add products or services with prices, photos, and descriptions from your dashboard.' },
-              { icon: '📊', title: 'Orders & clients', desc: 'See every order, every customer, total revenue — all inside your dashboard.' },
+              { icon: '💳', title: 'Medusa + Stripe', desc: 'Stripe payment module in the Medusa backend, ready for real checkout and order flows.' },
+              { icon: '📦', title: 'Catalog sync', desc: 'Builder inventory saves can push catalog data into Medusa without blocking the editor.' },
+              { icon: '📊', title: 'Orders + fulfillment', desc: 'Dedicated Medusa routes establish the path for orders, fulfillment, and merchant operations.' },
             ].map(f => (
               <div key={f.title} className="bg-white/5 rounded-2xl p-6 border border-white/10 hover:bg-white/8 transition-colors">
                 <div className="text-2xl mb-3">{f.icon}</div>
@@ -255,18 +296,18 @@ export default function LandingPage() {
       <section className="px-6 py-20 md:py-32 text-center">
         <div className="max-w-2xl mx-auto">
           <h2 className="text-4xl md:text-5xl font-serif italic tracking-tight mb-6">
-            Your store is waiting.
+            Edge Medusa is ready.
           </h2>
           <p className="text-black/55 text-xl mb-10">
-            Join thousands of small businesses who launched in under 15 minutes.
+            Use the familiar Edge builder, but with a MedusaJS backend foundation under commerce.
           </p>
           <Link
             href="/onboarding"
             className="inline-block bg-[#1A1A1A] text-white px-10 py-5 rounded-full text-xl font-bold hover:scale-105 transition-transform shadow-xl shadow-black/15"
           >
-            Build my store — it&apos;s free →
+            Start the Medusa-backed build →
           </Link>
-          <p className="text-black/35 text-sm mt-5">No credit card required · Cancel anytime</p>
+          <p className="text-black/35 text-sm mt-5">Medusa backend · Supabase builder · Stripe payments</p>
         </div>
       </section>
 
@@ -277,9 +318,9 @@ export default function LandingPage() {
             <div className="w-6 h-6 bg-[#1A1A1A] rounded flex items-center justify-center">
               <span className="font-serif italic font-bold text-white text-sm">E</span>
             </div>
-            <span className="font-bold text-sm">Edge Marketplace Hub</span>
+            <span className="font-bold text-sm">Edge Medusa</span>
           </div>
-          <p className="text-black/40 text-sm">© {new Date().getFullYear()} Edge Marketplace Hub. Built for real businesses.</p>
+          <p className="text-black/40 text-sm">© {new Date().getFullYear()} Edge Medusa. Medusa-backed commerce for real vertical businesses.</p>
           <div className="flex gap-6 text-sm text-black/40">
             <Link href="/onboarding" className="hover:text-black transition-colors">Get started</Link>
             <Link href="/login" className="hover:text-black transition-colors">Sign in</Link>
