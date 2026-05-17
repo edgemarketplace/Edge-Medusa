@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
-import { requireCapability } from '@/lib/auth-server'
+import { requireCapability, AuthError } from '@/lib/auth-server'
 import { Events } from '@/lib/events'
 
 export async function POST(
