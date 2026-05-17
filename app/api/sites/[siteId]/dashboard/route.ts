@@ -2,14 +2,12 @@ import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
 import { requireSiteAdmin } from '@/lib/auth-server'
 
-export async function GET(request: NextRequest) {
+export async function GET(
+  request: NextRequest,
+  { params }: { params: Promise<{ siteId: string }> }
+) {
   try {
-    const siteId = request.nextUrl.searchParams.get('siteId')
-
-    if (!siteId) {
-      return NextResponse.json({ error: 'siteId required' }, { status: 400 })
-    }
-
+    const { siteId } = await params
     await requireSiteAdmin(request, siteId)
 
     // Get inventory count
