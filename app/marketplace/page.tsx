@@ -1,84 +1,30 @@
 import Link from 'next/link'
-import { supabaseAdmin } from '@/lib/supabase'
+import { formatStoreType, loadMarketplaceData, siteUrl, type MarketplaceProduct, type MarketplaceStore } from '@/lib/marketplace'
 
 export const dynamic = 'force-dynamic'
 
-type SiteRow = {
-  id: string
-  business_name: string | null
-  subdomain: string | null
-  status: string | null
-  business_type: string | null
-  tagline: string | null
-  offerings: string | null
-  created_at: string | null
-}
-
-type ProductRow = {
-  id: string
-  site_id: string
-  name: string | null
-  price: string | null
-  description: string | null
-  image_url: string | null
-  category: string | null
-  enabled: boolean | null
-  stock: number | null
-  created_at: string | null
-}
-
-type MarketplaceData = {
-  sites: SiteRow[]
-  products: ProductRow[]
-  error?: string
-}
-
-async function loadMarketplace(): Promise<MarketplaceData> {
+async function loadMarketplace() {
   try {
-    const [sitesResult, productsResult] = await Promise.all([
-      supabaseAdmin
-        .from('sites')
-        .select('*')
-        .order('created_at', { ascending: false })
-        .limit(24),
-      supabaseAdmin
-        .from('inventory_items')
-        .select('*')
-        .neq('enabled', false)
-        .order('created_at', { ascending: false })
-        .limit(48),
-    ])
-
-    return {
-      sites: (sitesResult.data || []) as SiteRow[],
-      products: (productsResult.data || []) as ProductRow[],
-      error: sitesResult.error?.message || productsResult.error?.message,
-    }
+    return await loadMarketplaceData({ storeLimit: 24, productLimit: 48, channelLimit: 24 })
   } catch (error: any) {
     return {
-      sites: [],
+      stores: [],
       products: [],
-      error: error?.message || 'Marketplace data unavailable',
+      channels: [],
+      source: 'legacy_tables' as const,
+      warning: error?.message || 'Marketplace data unavailable',
     }
   }
 }
 
-function siteUrl(site: SiteRow) {
-  return `/store/${site.subdomain || site.id}`
-}
-
-function formatType(type: string | null) {
-  return (type || 'commerce').replace(/-/g, ' ')
-}
-
 export default async function MarketplacePage() {
   const data = await loadMarketplace()
-  const siteById = new Map(data.sites.map(site => [site.id, site]))
-  const liveSites = data.sites.filter(site => site.status === 'live')
-  const draftSites = data.sites.filter(site => site.status !== 'live')
+  const siteById = new Map(data.stores.map(site => [site.id, site]))
+  const liveSites = data.stores.filter(site => site.status === 'live')
+  const draftSites = data.stores.filter(site => site.status !== 'live')
   const productsWithStores = data.products
     .map(product => ({ product, site: siteById.get(product.site_id) }))
-    .filter((entry): entry is { product: ProductRow; site: SiteRow } => Boolean(entry.site))
+    .filter((entry): entry is { product: MarketplaceProduct; site: MarketplaceStore } => Boolean(entry.site))
 
   return (
     <main className="min-h-screen bg-[#f6f5f2] text-zinc-950">
@@ -117,7 +63,7 @@ export default async function MarketplacePage() {
           </div>
 
           <div className="grid gap-3 border-t border-white/10 py-5 text-sm sm:grid-cols-4">
-            <Metric label="Tenant stores" value={data.sites.length.toString()} />
+            <Metric label="Tenant stores" value={data.stores.length.toString()} />
             <Metric label="Live channels" value={liveSites.length.toString()} />
             <Metric label="Draft channels" value={draftSites.length.toString()} />
             <Metric label="Shared products" value={data.products.length.toString()} />
@@ -126,9 +72,9 @@ export default async function MarketplacePage() {
       </section>
 
       <section className="mx-auto max-w-7xl px-5 py-10 sm:px-8">
-        {data.error && (
+        {data.warning && (
           <div className="mb-6 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
-            Marketplace data warning: {data.error}. The page still renders while Supabase/Medusa schema is being connected.
+            Marketplace data warning: {data.warning}. The page still renders while Supabase/Medusa schema is being connected.
           </div>
         )}
 
@@ -142,7 +88,7 @@ export default async function MarketplacePage() {
               <Link href="/onboarding" className="rounded-full bg-black px-4 py-2 text-xs font-black text-white">Add tenant</Link>
             </div>
             <div className="mt-6 space-y-3">
-              {data.sites.length ? data.sites.map(site => (
+              {data.stores.length ? data.stores.map(site => (
                 <Link key={site.id} href={siteUrl(site)} className="block rounded-3xl border border-black/5 bg-[#f8f7f4] p-4 transition hover:border-black/20 hover:bg-white">
                   <div className="flex items-start justify-between gap-4">
                     <div>
@@ -152,7 +98,7 @@ export default async function MarketplacePage() {
                     <span className="rounded-full border border-black/10 bg-white px-2.5 py-1 text-xs font-bold capitalize text-black/55">{site.status || 'draft'}</span>
                   </div>
                   <div className="mt-3 flex flex-wrap gap-2 text-[11px] font-bold uppercase tracking-[0.16em] text-black/35">
-                    <span>{formatType(site.business_type)}</span>
+                    <span>{formatStoreType(site.business_type)}</span>
                     <span>•</span>
                     <span>{site.subdomain || site.id.slice(0, 8)}</span>
                   </div>
