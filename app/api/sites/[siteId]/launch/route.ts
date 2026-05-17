@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
-import { requireSiteAdmin } from '@/lib/auth-server'
+import { requireSiteAdmin, requireCapability } from '@/lib/auth-server'
+import { Events } from '@/lib/events'
 
 export async function POST(
   request: NextRequest,
@@ -8,7 +9,7 @@ export async function POST(
 ) {
   try {
     const { siteId } = await params
-    await requireSiteAdmin(request, siteId)
+    const { site } = await requireCapability(request, siteId, 'site:publish')
 
     // Safely parse JSON body (may be empty)
     let body = {}
@@ -78,6 +79,9 @@ export async function POST(
         { status: 500 }
       )
     }
+
+    // Emit domain event
+    await Events.sitePublished(data?.id || siteId, data?.business_name)
 
     // Send welcome email
     try {

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { requireSiteAdmin } from '@/lib/auth-server'
 import { loadMarketplaceData } from '@/lib/marketplace'
 import { supabaseAdmin } from '@/lib/supabase'
+import { Events } from '@/lib/events'
 
 export const dynamic = 'force-dynamic'
 
@@ -51,6 +52,9 @@ export async function POST(request: NextRequest) {
       .single()
 
     if (error) throw error
+
+    // Emit domain event
+    await Events.channelVisibilityUpdated(siteId, data.slug, data.visibility === 'public')
 
     return NextResponse.json({ channel: data })
   } catch (error: any) {

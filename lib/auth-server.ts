@@ -82,6 +82,46 @@ export class AuthError extends Error {
   }
 }
 
+// Check if an email belongs to a super admin
+export function isSuperAdmin(email: string): boolean {
+  const superAdmins = (process.env.SUPER_ADMIN_EMAILS || '')
+    .split(',')
+    .map(e => e.trim().toLowerCase())
+    .filter(Boolean)
+  return superAdmins.includes(email.toLowerCase())
+}
+
+// Require a specific capability for a site.
+// Currently checks site ownership + super admin.
+export async function requireCapability(
+  request: NextRequest,
+  siteId: string,
+  capability: string
+): Promise<{ site: any; session: AuthSession }> {
+  const { site, session } = await requireSiteAdmin(request, siteId)
+
+  // Super admins have all capabilities
+  if (isSuperAdmin(session.email)) return { site, session }
+
+  // For now, site owners have all site capabilities
+  // In future, check membership table + capability mapping
+  const ownerCapabilities = [
+    'site:publish',
+    'site:edit',
+    'site:delete',
+    'inventory:manage',
+    'orders:view',
+    'pages:edit',
+    'channels:manage',
+  ]
+
+  if (!ownerCapabilities.includes(capability)) {
+    throw new AuthError(`Forbidden: missing capability ${capability}`, 403)
+  }
+
+  return { site, session }
+}
+
 /**
  * Helper to wrap route handlers with consistent error handling.
  */

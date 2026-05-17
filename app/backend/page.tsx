@@ -1,5 +1,7 @@
 import Link from 'next/link'
 import { supabaseAdmin } from '@/lib/supabase'
+import { validateAuthSession, isSuperAdmin } from '@/lib/auth-server'
+import { cookies } from 'next/headers'
 
 export const dynamic = 'force-dynamic'
 
@@ -120,7 +122,8 @@ export default async function BackendPage() {
                 ['Overview', '#overview'],
                 ['Products', '#products'],
                 ['Orders', '#orders'],
-                ['Sales channels', '#channels'],
+                ['Activity', '/backend/activity'],
+                ['Channel governance', '/backend/channels'],
                 ['Client marketplace', '/marketplace'],
                 ['Backend service', '#service'],
               ].map(([label, href], index) => (

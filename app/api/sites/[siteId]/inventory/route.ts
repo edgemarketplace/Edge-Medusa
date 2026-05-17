@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
-import { requireSiteAdmin } from '@/lib/auth-server'
+import { requireSiteAdmin, requireCapability } from '@/lib/auth-server'
 import { syncInventoryToMedusa } from '@/lib/medusa/client'
+import { Events } from '@/lib/events'
 
 // Helper: Sync inventory items to site sections (all commerce types)
 async function syncInventoryToSections(siteId: string, items: any[]) {
@@ -91,7 +92,7 @@ export async function PUT(
 ) {
   try {
     const { siteId } = await params
-    await requireSiteAdmin(request, siteId)
+    await requireCapability(request, siteId, 'inventory:manage')
 
     const { items } = await request.json()
 
@@ -128,6 +129,13 @@ export async function PUT(
       )
     }
 
+    // Emit domain events for each created product
+    if (data) {
+      for (const item of data) {
+        await Events.productCreated(siteId, item.id, item.name)
+      }
+    }
+
     // Sync to sections
     await syncInventoryToSections(siteId, items)
 
@@ -158,7 +166,7 @@ export async function GET(
 ) {
   try {
     const { siteId } = await params
-    await requireSiteAdmin(request, siteId)
+    await requireCapability(request, siteId, 'inventory:manage')
 
     const { data, error } = await supabaseAdmin
       .from('inventory_items')

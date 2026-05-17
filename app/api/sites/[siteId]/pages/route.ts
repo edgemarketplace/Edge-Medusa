@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
 import { requireSiteAdmin } from '@/lib/auth-server'
 import type { PageData } from '@/lib/types'
+import { Events } from '@/lib/events'
 
 // GET all pages for a site — public (used by storefront)
 export async function GET(
@@ -62,6 +63,9 @@ export async function POST(
       console.error('Supabase pages POST error:', JSON.stringify(error))
       return NextResponse.json({ error: `Failed to create page: ${error.message}` }, { status: 500 })
     }
+
+    // Emit domain event
+    await Events.pageUpdated(siteId, data.id, (body.sections || []).length)
 
     return NextResponse.json(data as PageData, { status: 201 })
   } catch (error: any) {
