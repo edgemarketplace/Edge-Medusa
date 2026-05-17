@@ -140,6 +140,27 @@ export default function BuildPage({ params }: BuildPageProps) {
       console.warn('Failed to load pages, keeping template pages:', err);
     }
   }
+
+  async function ensureBuilderSession() {
+    if (!siteId) return false;
+    const res = await fetch('/api/auth/skip', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ siteId }),
+    });
+    return res.ok;
+  }
+
+  async function builderFetch(input: RequestInfo | URL, init?: RequestInit) {
+    const res = await fetch(input, init);
+    if (res.status !== 401) return res;
+
+    const recovered = await ensureBuilderSession();
+    if (!recovered) return res;
+
+    return fetch(input, init);
+  }
+
   async function loadCommerceData() {
     if (!siteId) return;
     setLoadingData(true);
@@ -210,7 +231,7 @@ export default function BuildPage({ params }: BuildPageProps) {
     setGenerating(true);
     setError('');
     try {
-      const res = await fetch(`/api/sites/${siteId}/generate`, { method: 'POST' });
+      const res = await builderFetch(`/api/sites/${siteId}/generate`, { method: 'POST' });
       if (!res.ok) throw new Error('Generation failed');
       const data = await res.json();
       if (data.pages) {
@@ -237,7 +258,7 @@ export default function BuildPage({ params }: BuildPageProps) {
         : [{ slug: 'home', title: 'Home', sections: [] }];
       const updatedPages = existingPages.map((page: any, index: number) => index === 0 ? { ...page, sections: updated } : page);
 
-      const res = await fetch(`/api/sites/${siteId}`, {
+      const res = await builderFetch(`/api/sites/${siteId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -260,7 +281,7 @@ export default function BuildPage({ params }: BuildPageProps) {
     if (!siteId) return;
     setSaving(true);
     try {
-      const res = await fetch(`/api/sites/${siteId}/inventory`, {
+      const res = await builderFetch(`/api/sites/${siteId}/inventory`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ items: inventory }),
@@ -530,7 +551,7 @@ export default function BuildPage({ params }: BuildPageProps) {
         sections = [{ id: genId(), type: 'hero-visual' as SectionType, data: { heading: title, subheading: 'Add your content here' } }];
       }
 
-      const res = await fetch(`/api/sites/${siteId}/pages`, {
+      const res = await builderFetch(`/api/sites/${siteId}/pages`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ slug, title, sections }),
@@ -547,7 +568,7 @@ export default function BuildPage({ params }: BuildPageProps) {
   async function handleDeletePage(pageId: string) {
     if (!confirm('Delete this page?')) return;
     try {
-      const res = await fetch(`/api/sites/${siteId}/pages/${pageId}`, { method: 'DELETE' });
+      const res = await builderFetch(`/api/sites/${siteId}/pages/${pageId}`, { method: 'DELETE' });
       if (!res.ok) throw new Error('Failed to delete page');
       await loadPages();
     } catch (err: any) { setError(err.message); }
@@ -559,7 +580,7 @@ export default function BuildPage({ params }: BuildPageProps) {
   async function savePageEdit(pageId: string) {
     if (!editPageDraft) return;
     try {
-      const res = await fetch(`/api/sites/${siteId}/pages/${pageId}`, {
+      const res = await builderFetch(`/api/sites/${siteId}/pages/${pageId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(editPageDraft),
