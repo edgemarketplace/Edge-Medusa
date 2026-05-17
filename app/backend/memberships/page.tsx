@@ -87,13 +87,13 @@ function CapabilityBadges({ capabilities }: { capabilities: string[] }) {
   )
 }
 
-function ScopeBadges({ organization_id, organization_name }: { organization_id: string | null, organization_name: string | null }) {
+function ScopeBadges({ organization_id, organization_name }: { organization_id: string | null, organization_name?: string | null | undefined }) {
   if (!organization_id) return <span className="text-xs text-black/30">—</span>
   return (
     <div className="flex flex-wrap gap-1">
       <span className="inline-flex items-center gap-1 rounded-full bg-blue-50 text-blue-700 border border-blue-200 px-2 py-0.5 text-xs font-bold">
         <span>🏢</span>
-        <span>{organization_name || organization_id.slice(0, 8)}</span>
+        <span>{organization_name ?? organization_id.slice(0, 8)}</span>
       </span>
     </div>
   )
@@ -199,9 +199,9 @@ export default async function MembershipsPage() {
                         <td className="px-6 py-4">
                           <CapabilityBadges capabilities={member.capabilities} />
                         </td>
-                        <td className="px-6 py-4">
-                          <ScopeBadges organization_id={member.organization_id} organization_name={member.organization_name} />
-                        </td>
+                <td className="px-6 py-4">
+                  <ScopeBadges organization_id={member.organization_id} organization_name={member.organization_name ?? null} />
+                </td>
                         <td className="px-6 py-4">
                           {member.granted_by ? (
                             <div className="text-xs text-black/40">
