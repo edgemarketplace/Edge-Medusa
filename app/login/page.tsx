@@ -1,124 +1,170 @@
-'use client';
+import Link from 'next/link'
+import { supabaseAdmin } from '@/lib/supabase'
+import { redirect } from 'next/navigation'
 
-import { useState } from 'react';
-import Link from 'next/link';
+export const dynamic = 'force-dynamic'
 
-export default function LoginPage() {
-  const [email, setEmail] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [sent, setSent] = useState(false);
-  const [error, setError] = useState('');
+export default function LoginPage({
+  searchParams,
+}: {
+  searchParams: { role?: string }
+}) {
+  const role = searchParams.role || 'merchant'
 
-  const urlError = typeof window !== 'undefined'
-    ? new URLSearchParams(window.location.search).get('error')
-    : null;
-
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    if (!email.trim()) return;
-
-    setLoading(true);
-    setError('');
-
-    try {
-      const res = await fetch('/api/auth/send-link', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: email.trim() }),
-      });
-
-      if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.error || 'Failed to send login link');
-      }
-
-      setSent(true);
-    } catch (err: any) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  if (sent) {
-    return (
-      <div className="min-h-screen bg-[#F9F8F6] flex items-center justify-center">
-        <div className="max-w-md w-full mx-4 text-center">
-          <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
-            <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-            </svg>
-          </div>
-          <h1 className="text-2xl font-bold mb-3">Check your email</h1>
-          <p className="text-black/60 mb-6">
-            We sent a login link to <strong>{email}</strong>. Click the link to access your account.
-          </p>
-          <p className="text-sm text-black/40">
-            The link expires in 30 minutes. Check your spam folder if you don&apos;t see it.
-          </p>
-          <button onClick={() => { setSent(false); setEmail(''); }} className="mt-6 text-sm text-black/60 underline hover:text-black">
-            Try a different email
-          </button>
-        </div>
-      </div>
-    );
-  }
+  // If user is already authenticated, redirect appropriately
+  // This is handled by middleware/proxy in production
 
   return (
-    <div className="min-h-screen bg-[#F9F8F6] flex items-center justify-center">
-      <div className="max-w-md w-full mx-4">
-        <div className="text-center mb-8">
-          <Link href="/" className="inline-flex items-center gap-2 mb-8">
-            <div className="w-8 h-8 bg-black rounded-sm flex items-center justify-center font-serif italic font-bold text-white text-xl">E</div>
-            <span className="font-bold tracking-tight text-xl">Edge Marketplace Hub</span>
+    <main className="min-h-screen bg-[#f6f5f2] text-zinc-950">
+      <div className="min-h-screen flex flex-col">
+        {/* Minimal nav */}
+        <nav className="px-6 py-4 flex items-center justify-between">
+          <Link href="/" className="flex items-center gap-2">
+            <div className="w-8 h-8 bg-[#1a1a1a] rounded-lg flex items-center justify-center">
+              <span className="font-serif italic font-bold text-white text-lg">E</span>
+            </div>
+            <span className="font-bold tracking-tight">Edge Marketplace</span>
           </Link>
-          <h1 className="text-2xl font-bold mb-2">Access your account</h1>
-          <p className="text-black/60">Enter your email to receive a login link</p>
-        </div>
+          <Link href="/" className="text-sm text-black/50 hover:text-black transition-colors">
+            ← Back to home
+          </Link>
+        </nav>
 
-        {urlError && (
-          <div className="bg-red-50 border border-red-200 rounded-2xl px-5 py-4 text-red-700 text-sm mb-4">
-            {urlError === 'expired' && 'This login link has expired. Please request a new one.'}
-            {urlError === 'used' && 'This login link has already been used. Please request a new one.'}
-            {urlError === 'invalid' && 'Invalid login link. Please request a new one.'}
-            {urlError === 'server' && 'Something went wrong. Please try again.'}
+        {/* Role Selection */}
+        <section className="flex-1 flex items-center justify-center px-6 py-12">
+          <div className="w-full max-w-lg">
+            <div className="text-center mb-10">
+              <div className="inline-flex items-center gap-2 rounded-full border border-black/10 bg-white px-3 py-1 text-xs font-bold text-black/55 mb-6">
+                <span className="h-2 w-2 rounded-full bg-emerald-500" /> Welcome back
+              </div>
+              <h1 className="text-4xl md:text-5xl font-serif italic tracking-tight mb-4">
+                Choose your workspace
+              </h1>
+              <p className="text-black/55 text-lg">
+                This platform has multiple operating roles. Select how you want to continue.
+              </p>
+            </div>
+
+            <div className="space-y-4">
+              {/* Merchant Option */}
+              <Link
+                href="/login?role=merchant"
+                className={`block w-full rounded-3xl border p-6 transition-all hover:shadow-md ${
+                  role === 'merchant'
+                    ? 'border-[#1a1a1a] bg-white shadow-md'
+                    : 'border-black/5 bg-white hover:border-black/20'
+                }`}
+              >
+                <div className="flex items-start gap-4">
+                  <div className="text-3xl">🏪</div>
+                  <div className="flex-1 text-left">
+                    <h2 className="font-bold text-lg mb-1">Continue as Merchant</h2>
+                    <p className="text-sm text-black/55 mb-3">Manage your stores, inventory, and channels.</p>
+                    <div className="flex flex-wrap gap-2">
+                      {['Your Stores', 'Inventory', 'Orders', 'Channels'].map(item => (
+                        <span key={item} className="text-xs bg-zinc-100 text-zinc-600 px-2 py-1 rounded-full">{item}</span>
+                      ))}
+                    </div>
+                  </div>
+                  {role === 'merchant' && (
+                    <div className="flex-shrink-0 w-6 h-6 rounded-full bg-[#1a1a1a] text-white flex items-center justify-center text-xs">✓</div>
+                  )}
+                </div>
+              </Link>
+
+              {/* Operator Option */}
+              <Link
+                href="/login?role=operator"
+                className={`block w-full rounded-3xl border p-6 transition-all hover:shadow-md ${
+                  role === 'operator'
+                    ? 'border-[#1a1a1a] bg-white shadow-md'
+                    : 'border-black/5 bg-white hover:border-black/20'
+                }`}
+              >
+                <div className="flex items-start gap-4">
+                  <div className="text-3xl">⚙️</div>
+                  <div className="flex-1 text-left">
+                    <h2 className="font-bold text-lg mb-1">Continue as Operator</h2>
+                    <p className="text-sm text-black/55 mb-3">Run your marketplace network and govern channels.</p>
+                    <div className="flex flex-wrap gap-2">
+                      {['Activity Feed', 'Channel Governance', 'Memberships', 'Publications'].map(item => (
+                        <span key={item} className="text-xs bg-zinc-100 text-zinc-600 px-2 py-1 rounded-full">{item}</span>
+                      ))}
+                    </div>
+                  </div>
+                  {role === 'operator' && (
+                    <div className="flex-shrink-0 w-6 h-6 rounded-full bg-[#1a1a1a] text-white flex items-center justify-center text-xs">✓</div>
+                  )}
+                </div>
+              </Link>
+
+              {/* Customer/Shopping Option */}
+              <Link
+                href="/login?role=customer"
+                className={`block w-full rounded-3xl border p-6 transition-all hover:shadow-md ${
+                  role === 'customer'
+                    ? 'border-[#1a1a1a] bg-white shadow-md'
+                    : 'border-black/5 bg-white hover:border-black/20'
+                }`}
+              >
+                <div className="flex items-start gap-4">
+                  <div className="text-3xl">🛒</div>
+                  <div className="flex-1 text-left">
+                    <h2 className="font-bold text-lg mb-1">Continue Shopping</h2>
+                    <p className="text-sm text-black/55 mb-3">Access your customer account and order history.</p>
+                    <div className="flex flex-wrap gap-2">
+                      {['My Orders', 'Saved Items', 'Profile', 'Preferences'].map(item => (
+                        <span key={item} className="text-xs bg-zinc-100 text-zinc-600 px-2 py-1 rounded-full">{item}</span>
+                      ))}
+                    </div>
+                  </div>
+                  {role === 'customer' && (
+                    <div className="flex-shrink-0 w-6 h-6 rounded-full bg-[#1a1a1a] text-white flex items-center justify-center text-xs">✓</div>
+                  )}
+                </div>
+              </Link>
+            </div>
+
+            {/* Auth Action */}
+            <div className="mt-8 space-y-4">
+              <Link
+                href={`/api/auth/magic-link?role=${role}`}
+                className="block w-full bg-[#1a1a1a] text-white text-center py-4 rounded-full text-lg font-bold hover:bg-black/80 transition-colors"
+              >
+                Sign in as {role === 'merchant' ? 'Merchant' : role === 'operator' ? 'Operator' : 'Customer'} →
+              </Link>
+
+              <p className="text-center text-sm text-black/40">
+                New merchant? <Link href="/onboarding" className="font-bold underline underline-offset-4">Launch your store</Link>
+              </p>
+            </div>
+
+            {/* Psychologically communicate the platform's nature */}
+            <div className="mt-10 pt-8 border-t border-black/5">
+              <p className="text-xs text-black/35 text-center uppercase tracking-[0.2em] font-bold mb-4">Platform architecture</p>
+              <div className="grid grid-cols-3 gap-3 text-center">
+                {[
+                  { label: 'Operators', desc: 'Network operations' },
+                  { label: 'Merchants', desc: 'Business operations' },
+                  { label: 'Customers', desc: 'Commerce experience' },
+                ].map(({ label, desc }) => (
+                  <div key={label} className="rounded-2xl bg-white border border-black/5 p-3">
+                    <p className="text-xs font-bold text-black/70">{label}</p>
+                    <p className="text-xs text-black/35 mt-1">{desc}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
-        )}
+        </section>
 
-        {error && (
-          <div className="bg-red-50 border border-red-200 rounded-2xl px-5 py-4 text-red-700 text-sm mb-4">
-            {error}
-          </div>
-        )}
-
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label htmlFor="email" className="block text-sm font-bold mb-2">Email address</label>
-            <input
-              id="email"
-              name="email"
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="you@yourbusiness.com"
-              className="w-full border border-black/10 rounded-2xl px-5 py-4 text-lg focus:outline-none focus:border-black/30 bg-white"
-              required
-              autoComplete="email"
-            />
-          </div>
-          <button
-            type="submit"
-            disabled={loading || !email.trim()}
-            className="w-full bg-black text-white py-4 rounded-full text-lg font-bold disabled:opacity-40 hover:scale-[1.02] transition-transform"
-          >
-            {loading ? 'Sending...' : 'Send login link →'}
-          </button>
-        </form>
-
-        <p className="text-center text-sm text-black/40 mt-6">
-          We&apos;ll email you a magic link to access your stores. No password needed.
-        </p>
+        {/* Footer */}
+        <footer className="px-6 py-6 border-t border-black/5">
+          <p className="text-center text-xs text-black/30">
+            Edge Marketplace — Commerce orchestration platform for federated marketplaces
+          </p>
+        </footer>
       </div>
-    </div>
-  );
+    </main>
+  )
 }
