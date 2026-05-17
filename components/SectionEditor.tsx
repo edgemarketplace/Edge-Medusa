@@ -302,7 +302,7 @@ export default function SectionEditor({ draft, onChange, siteId, businessType }:
   );
   }
 
-  function ColorField({ label, field, value }: { label: string; field: string; value: string }) {
+  function ColorField({ label, field, value, onChange }: { label: string; field: string; value: string; onChange: (field: string, value: string) => void }) {
     const fieldId = `color-${field}-${draft.id}`;
     return (
       <div>
