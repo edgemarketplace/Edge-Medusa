@@ -608,6 +608,34 @@ export default function BuildPage({ params }: BuildPageProps) {
               <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
             ) : '🚀 Publish Site'}
           </button>
+
+          {/* Validation errors */}
+          {showValidation && publishValidation && !publishValidation.valid && (
+            <div className="bg-red-50 border border-red-200 rounded-xl p-4">
+              <h4 className="text-sm font-bold text-red-800 mb-2">Cannot publish yet:</h4>
+              <ul className="space-y-1">
+                {publishValidation.errors.map((err, i) => (
+                  <li key={i} className="text-xs text-red-700 flex items-start gap-1">
+                    <span>⚠️</span>
+                    <span>{err}</span>
+                  </li>
+                ))}
+              </ul>
+              {publishValidation.warnings.length > 0 && (
+                <div className="mt-3 pt-3 border-t border-red-200">
+                  <p className="text-xs font-bold text-red-800 mb-1">Warnings:</p>
+                  <ul className="space-y-1">
+                    {publishValidation.warnings.map((warn, i) => (
+                      <li key={i} className="text-xs text-red-600 flex items-start gap-1">
+                        <span>💡</span>
+                        <span>{warn}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
+          )}
           
           <Link href="/dashboard" className="w-full py-3 rounded-2xl border border-black/5 flex items-center justify-center gap-2 text-sm font-bold text-black/40 hover:text-black hover:bg-black/5 transition-all">
             Exit to Dashboard
