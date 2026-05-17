@@ -80,7 +80,7 @@ export async function generateSiteContent(
 
   // Fallback
   console.log('All AI paths failed. Using hardcoded fallback structure.');
-  return getFallbackSiteStructure(businessName, businessType, contactEmail, tagline);
+  return generateFallbackSiteContent(businessName, businessType, offerings, contactEmail, tagline);
 }
 
 function buildPrompt(
@@ -221,101 +221,205 @@ CRITICAL RULES:
 9. The output must be ONLY valid JSON. No markdown, no explanations.`;
 }
 
-function getFallbackSiteStructure(
+function generateFallbackSiteContent(
   businessName: string,
   businessType: string,
+  offerings: string,
   contactEmail: string,
-  tagline: string
-): { pages: { slug: string; title: string; sections: GeneratedSection[] }[] } {
+  tagline: string,
+  stylePreset?: string
+) {
   const isService = businessType.includes('service') || businessType.includes('coach');
+  const isRetail = businessType.includes('retail');
+  const isFood = businessType.includes('food') || businessType.includes('catering');
   const footerType = isService ? 'footer-service' : 'footer-commerce';
+
+  // Vertical-aware section defaults
+  const headerLinks = isRetail
+    ? [
+        { label: 'Home', url: '/' },
+        { label: 'Shop', url: '#shop' },
+        { label: 'About', url: '#about' },
+      ]
+    : isFood
+    ? [
+        { label: 'Home', url: '/' },
+        { label: 'Menu', url: '#menu' },
+        { label: 'Catering', url: '#catering' },
+        { label: 'About', url: '#about' },
+      ]
+    : [
+        { label: 'Home', url: '/' },
+        { label: 'About', url: '#about' },
+        { label: 'Contact', url: '#contact' },
+      ];
+
+  const ctaText = isRetail ? 'Shop Now' : isService ? 'Book Now' : 'Get Started';
+
+  const baseSections: any[] = [
+    {
+      id: 'header-1',
+      type: 'header-simple' as SectionType,
+      data: {
+        logoText: businessName,
+        links: headerLinks,
+        ctaText,
+        ctaUrl: '#',
+      },
+    },
+    {
+      id: 'hero-1',
+      type: 'hero-split' as SectionType,
+      data: {
+        heading: tagline || `${businessName}`,
+        subheading: offerings || `Your trusted ${businessType} partner`,
+        ctaText: ctaText,
+        ctaUrl: '#',
+        imageUrl: '',
+        overlayOpacity: 0.35,
+        trustBadges: isRetail
+          ? ['Free shipping', 'Secure checkout', '5-star rated']
+          : ['Quality guaranteed', 'Fast response', 'Expert team'],
+      },
+    },
+    {
+      id: 'value-1',
+      type: 'value-icons' as SectionType,
+      data: {
+        title: 'Why choose us',
+        values: isRetail
+          ? [
+              { icon: '📦', title: 'Fast Shipping', description: 'Free delivery on orders over $50' },
+              { icon: '✨', title: 'Curated Quality', description: 'Handpicked products, guaranteed' },
+              { icon: '🔄', title: 'Easy Returns', description: '30-day hassle-free returns' },
+            ]
+          : [
+              { icon: '✦', title: 'Expertise', description: 'Years of industry experience' },
+              { icon: '✦', title: 'Quality', description: 'Premium materials and service' },
+              { icon: '✦', title: 'Support', description: 'Dedicated customer care' },
+            ],
+      },
+    },
+  ];
+
+  // Add product sections for retail/food
+  if (isRetail || isFood) {
+    baseSections.push({
+      id: 'products-1',
+      type: 'product-grid' as SectionType,
+      data: {
+        title: isFood ? 'Popular Dishes' : 'Shop Featured',
+        items: [],
+        columns: isFood ? 3 : 3,
+        itemCount: isFood ? 6 : 6,
+      },
+    });
+    baseSections.push({
+      id: 'collection-1',
+      type: 'featured-collection' as SectionType,
+      data: {
+        title: isFood ? 'Browse Menu' : 'New Arrivals',
+        items: [],
+        columns: isFood ? 3 : 3,
+        itemCount: isFood ? 6 : 6,
+      },
+    });
+  }
+
+  // Add service sections for service businesses
+  if (isService) {
+    baseSections.push({
+      id: 'services-1',
+      type: 'service-list' as SectionType,
+      data: {
+        title: 'Our Services',
+        items: [],
+        columns: 3,
+      },
+    });
+    baseSections.push({
+      id: 'pricing-1',
+      type: 'pricing-tiers' as SectionType,
+      data: {
+        title: 'Packages',
+        items: [],
+        columns: 3,
+      },
+    });
+  }
+
+  // Everyone gets story + testimonials + CTA
+  baseSections.push(
+    {
+      id: 'story-1',
+      type: 'brand-story' as SectionType,
+      data: {
+        headline: isRetail ? 'Our Story' : 'About Us',
+        body: `${businessName} was founded with a simple mission: to deliver exceptional experiences. Every project reflects our commitment to quality, creativity, and customer satisfaction.`,
+        imageUrl: '',
+      },
+    },
+    {
+      id: 'testimonials-1',
+      type: 'testimonials' as SectionType,
+      data: {
+        title: 'What customers say',
+        testimonials: [
+          { name: 'Alex R.', quote: 'Absolutely outstanding. Would highly recommend!', rating: 5 },
+          { name: 'Jordan T.', quote: 'The attention to detail exceeded all my expectations.', rating: 5 },
+        ],
+      },
+    },
+    {
+      id: 'trust-1',
+      type: 'trust-badges' as SectionType,
+      data: {
+        badges: [
+          { label: 'SSL Secure', icon: '🔒' },
+          { label: 'Fast Delivery', icon: '🚚' },
+          { label: '24/7 Support', icon: '💬' },
+          { label: 'Money Back', icon: '✓' },
+        ],
+      },
+    },
+    {
+      id: 'newsletter-1',
+      type: 'newsletter' as SectionType,
+      data: {
+        title: 'Stay in the loop',
+        description: 'Subscribe for exclusive offers and updates.',
+        ctaText: 'Subscribe',
+      },
+    },
+    {
+      id: 'cta-1',
+      type: 'quote-cta' as SectionType,
+      data: {
+        headline: isRetail ? 'Ready to shop?' : 'Ready to get started?',
+        subheading: `Contact ${businessName} today and let's discuss your needs.`,
+        ctaText: isRetail ? 'Shop Now' : 'Contact us',
+        showForm: !isRetail,
+      },
+    },
+    {
+      id: 'footer-1',
+      type: footerType as SectionType,
+      data: {
+        logoText: businessName,
+        showContact: true,
+        showHours: false,
+        hours: '',
+        copyright: `© ${new Date().getFullYear()} ${businessName}. All rights reserved.`,
+      },
+    }
+  );
+
   return {
     pages: [
       {
         slug: 'home',
         title: 'Home',
-        sections: [
-          {
-            id: 'header-1',
-            type: 'header-simple' as SectionType,
-            data: {
-              logoText: businessName,
-              links: [
-                { label: 'Home', url: '/' },
-                { label: 'About', url: '#about' },
-                { label: 'Contact', url: '#contact' },
-              ],
-              ctaText: isService ? 'Book Now' : 'Shop Now',
-              ctaUrl: '#',
-            },
-          },
-          {
-            id: 'hero-1',
-            type: 'hero-split' as SectionType,
-            data: {
-              heading: `Welcome to ${businessName}`,
-              subheading: tagline || `Your trusted ${businessType} partner`,
-              ctaText: 'Get Started',
-              ctaUrl: '#',
-              imageUrl: '',
-              overlayOpacity: 0.35,
-              trustBadges: ['Quality guaranteed', 'Fast response', 'Expert team'],
-            },
-          },
-          {
-            id: 'value-1',
-            type: 'value-icons' as SectionType,
-            data: {
-              title: 'Why choose us',
-              values: [
-                { icon: '✦', title: 'Expertise', description: 'Years of industry experience' },
-                { icon: '✦', title: 'Quality', description: 'Premium materials and service' },
-                { icon: '✦', title: 'Support', description: 'Dedicated customer care' },
-              ],
-            },
-          },
-          {
-            id: 'story-1',
-            type: 'brand-story' as SectionType,
-            data: {
-              headline: 'Our Story',
-              body: `${businessName} was founded with a simple mission: to deliver exceptional ${businessType} experiences. Every project reflects our commitment to quality, creativity, and customer satisfaction.`,
-              imageUrl: '',
-            },
-          },
-          {
-            id: 'testimonials-1',
-            type: 'testimonials' as SectionType,
-            data: {
-              title: 'What customers say',
-              testimonials: [
-                { name: 'Alex R.', quote: 'Absolutely outstanding service. Would highly recommend!', rating: 5 },
-                { name: 'Jordan T.', quote: 'The attention to detail exceeded all my expectations.', rating: 5 },
-              ],
-            },
-          },
-          {
-            id: 'cta-1',
-            type: 'quote-cta' as SectionType,
-            data: {
-              headline: 'Ready to get started?',
-              subheading: `Contact ${businessName} today and let's discuss your project.`,
-              ctaText: 'Contact us',
-              showForm: true,
-            },
-          },
-          {
-            id: 'footer-1',
-            type: footerType as SectionType,
-            data: {
-              logoText: businessName,
-              showContact: true,
-              showHours: false,
-              hours: '',
-              copyright: `© ${new Date().getFullYear()} ${businessName}. All rights reserved.`,
-            },
-          },
-        ],
+        sections: baseSections,
       },
     ],
   };

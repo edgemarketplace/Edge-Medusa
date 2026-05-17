@@ -712,9 +712,15 @@ export default function BuildPage({ params }: BuildPageProps) {
             <div className="flex items-center gap-2 max-w-7xl mx-auto">
               <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
               <span className="text-xs font-bold text-green-700">Your store is live</span>
-              <span className="text-xs text-green-600">
-                at <a href={`https://${site?.subdomain}.edgemarketplacehub.com`} target="_blank" rel="noopener" className="underline">{site?.subdomain}.edgemarketplacehub.com</a>
-              </span>
+              {site?.subdomain ? (
+                <span className="text-xs text-green-600">
+                  at <a href={`https://${site.subdomain}.edgemarketplacehub.com`} target="_blank" rel="noopener" className="underline">{site.subdomain}.edgemarketplacehub.com</a>
+                </span>
+              ) : (
+                <span className="text-xs text-green-600">
+                  at <a href={`https://www.edgemarketplacehub.com/store/${site.id}`} target="_blank" rel="noopener" className="underline">edgemarketplacehub.com/store/{site.id}</a>
+                </span>
+              )}
             </div>
           </div>
         )}

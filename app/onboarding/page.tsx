@@ -56,6 +56,16 @@ export default function OnboardingPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
+  // Pre-select vertical from URL if provided (client-side only)
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const params = new URLSearchParams(window.location.search);
+    const vertical = params.get('vertical');
+    if (vertical && vertical in TEMPLATES) {
+      setSelectedType(vertical as TemplateFamily);
+    }
+  }, []);
+
   // Ensure step1Valid always reflects current state
   const step1Valid = useMemo(
     () => !!(businessName.trim() && offerings.trim() && email.trim() && selectedType),

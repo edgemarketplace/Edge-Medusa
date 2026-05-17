@@ -94,21 +94,22 @@ export default function LandingPage() {
             <span className="text-black/40 text-sm">Free to start · No credit card</span>
           </div>
 
-          {/* Animated vertical badge */}
+          {/* Animated vertical badges */}
           <div className="flex items-center justify-center gap-3 flex-wrap">
             {VERTICALS.map((v, i) => (
-              <button
+              <Link
                 key={v.label}
-                onClick={() => setActiveVertical(i)}
+                href={`/onboarding?vertical=${encodeURIComponent(['retail-core','service-pro','food-catering','artisan-market','event-floral'][i] || 'retail-core')}`}
                 className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all duration-300 ${
                   activeVertical === i
                     ? 'bg-[#1A1A1A] text-white shadow-md scale-105'
                     : 'bg-white border border-black/10 text-black/60 hover:border-black/20'
                 }`}
+                onClick={() => setActiveVertical(i)}
               >
                 <span>{v.emoji}</span>
                 <span>{v.label}</span>
-              </button>
+              </Link>
             ))}
           </div>
         </div>
@@ -205,11 +206,10 @@ export default function LandingPage() {
 
           <div className="grid md:grid-cols-2 gap-4">
             {VERTICALS.map((v, i) => (
-              <div
+              <Link
                 key={v.label}
-                className="group bg-white rounded-3xl p-6 border border-black/5 hover:border-black/15 transition-all cursor-pointer hover:shadow-md"
-                style={{ backgroundColor: i === activeVertical ? v.color : undefined }}
-                onClick={() => setActiveVertical(i)}
+                href={`/onboarding?vertical=${encodeURIComponent(['retail-core','service-pro','food-catering','artisan-market','event-floral'][i] || 'retail-core')}`}
+                className="group bg-white rounded-3xl p-6 border border-black/5 hover:border-black/15 transition-all cursor-pointer hover:shadow-md block"
               >
                 <div className="flex items-start gap-4">
                   <div className="text-3xl">{v.emoji}</div>
@@ -218,7 +218,7 @@ export default function LandingPage() {
                     <p className="text-sm text-black/55">{v.desc}</p>
                   </div>
                 </div>
-              </div>
+              </Link>
             ))}
           </div>
         </div>

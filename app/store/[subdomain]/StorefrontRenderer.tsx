@@ -468,8 +468,8 @@ function SectionRenderer({ section, template, inventory, onAddToCart, site }: {
 
   // Commerce sections
   if (['product-grid', 'featured-collection', 'best-sellers', 'hero-products', 'collection-carousel'].includes(type)) {
-    // Prefer data.items from sync, fall back to inventory
-    const items = (data.items || inventory).filter((it: any) => it && it.name).slice(0, data.itemCount || 12);
+    // Prefer data.items from sync (only if has actual items), fall back to inventory
+    const items = (data.items?.length ? data.items : inventory).filter((it: any) => it && it.name).slice(0, data.itemCount || 12);
     const columns = data.columns || 3;
     if (items.length === 0) return null;
     return (
@@ -505,8 +505,8 @@ function SectionRenderer({ section, template, inventory, onAddToCart, site }: {
 
   // Service sections
   if (['service-list', 'packages', 'pricing-tiers'].includes(type)) {
-    // Prefer data.items from sync
-    const raw = data.items || data.tiers || data.packages || inventory;
+    // Prefer synced data, but fallback to inventory
+    const raw = data.items?.length ? data.items : data.tiers?.length ? data.tiers : data.packages?.length ? data.packages : inventory;
     if (!raw || raw.length === 0) return null;
     const items = raw.filter((it: any) => it && it.name);
     if (items.length === 0) return null;
