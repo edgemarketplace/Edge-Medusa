@@ -1,10 +1,21 @@
 import Link from 'next/link'
 import { supabaseAdmin } from '@/lib/supabase'
 import { redirect } from 'next/navigation'
+import { isSuperAdmin } from '@/lib/auth-server'
 
 export const dynamic = 'force-dynamic'
 
-export default async function DashboardPage() {
+export default async function DashboardPage({
+  searchParams,
+}: {
+  searchParams: { email?: string }
+}) {
+  // Check if user is super admin - redirect to backend
+  const email = searchParams.email || ''
+  if (email && isSuperAdmin(email)) {
+    redirect('/backend')
+  }
+
   // In a real implementation, this would read the user's session
   // and redirect based on role (merchant -> /dashboard, operator -> /backend)
   // For now, show a workspace selector
