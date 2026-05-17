@@ -257,8 +257,44 @@ export default function BuildPage({ params }: BuildPageProps) {
 
   async function handleLaunch() {
     if (!siteId || !site) return;
+    // Auto-inject header/footer if missing (for backward compat + AI edge cases)
+    let sectionsToValidate = sections;
+    const hasHeader = sections.some(s => s.type.startsWith('header-'));
+    const hasFooter = sections.some(s => s.type.startsWith('footer-'));
+    if (!hasHeader || !hasFooter) {
+      const patched = [...sectionsToValidate];
+      if (!hasHeader) {
+        patched.unshift({
+          id: genId(),
+          type: 'header-simple',
+          data: {
+            logoText: site.business_name || '',
+            links: [{ label: 'Home', url: '/' }],
+            ctaText: 'Shop now',
+            ctaUrl: '#',
+          },
+        });
+      }
+      if (!hasFooter) {
+        patched.push({
+          id: genId(),
+          type: 'footer-basic',
+          data: {
+            logoText: site.business_name || '',
+            showContact: true,
+            showHours: false,
+            hours: '',
+            copyright: `© ${new Date().getFullYear()} ${site.business_name || ''}. All rights reserved.`,
+          },
+        });
+      }
+      // save & update state without blocking
+      setSections(patched);
+      sectionsToValidate = patched;
+      handleSaveSections(patched);
+    }
     const manifest = TEMPLATE_MANIFESTS[site.business_type as TemplateFamily];
-    const validation = validatePublish(sections, manifest);
+    const validation = validatePublish(sectionsToValidate, manifest);
     setPublishValidation(validation);
     setShowValidation(true);
     if (!validation.valid) return;
@@ -606,7 +642,7 @@ export default function BuildPage({ params }: BuildPageProps) {
           >
             {launching ? (
               <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-            ) : '🚀 Publish Site'}
+            ) : site?.status === 'live' ? '↻ Update Site' : '🚀 Publish Site'}
           </button>
 
           {/* Validation errors */}
@@ -659,7 +695,7 @@ export default function BuildPage({ params }: BuildPageProps) {
           
           <div className="flex items-center gap-3">
             <button
-              onClick={() => window.open(`/store/${site?.subdomain || siteId}?preview=true`, '_blank')}
+              onClick={() => window.open(`/store/${site?.subdomain || siteId}${site?.status === 'live' ? '' : '?preview=true'}`, '_blank')}
               className="px-6 py-2.5 rounded-full bg-white border border-black/5 text-xs font-bold shadow-sm hover:shadow-md transition-all flex items-center gap-2"
             >
               👁 View Store
@@ -669,6 +705,19 @@ export default function BuildPage({ params }: BuildPageProps) {
             </button>
           </div>
         </div>
+
+        {/* Live status bar */}
+        {site?.status === 'live' && (
+          <div className="px-8 py-2" style={{ backgroundColor: '#ecfdf5' }}>
+            <div className="flex items-center gap-2 max-w-7xl mx-auto">
+              <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+              <span className="text-xs font-bold text-green-700">Your store is live</span>
+              <span className="text-xs text-green-600">
+                at <a href={`https://${site?.subdomain}.edgemarketplacehub.com`} target="_blank" rel="noopener" className="underline">{site?.subdomain}.edgemarketplacehub.com</a>
+              </span>
+            </div>
+          </div>
+        )}
 
         <div className="flex-1">
 
@@ -1478,20 +1527,26 @@ function InventoryPanel({ inventory, onAdd, onUpdate, onRemove, onGenerateStarte
 }) {
   return (
     <div className="space-y-6 max-w-4xl">
-      <div className="flex items-center justify-between">
+      <div className="flex items-start justify-between gap-4">
         <div>
           <h2 className="text-2xl font-bold">Inventory</h2>
           <p className="text-black/50 text-sm mt-1">Add your products or services. These appear on your store.</p>
         </div>
-        <div className="flex gap-3">
-          {site?.printify_api_key && (
-            <button onClick={onPrintifySync} className="px-4 py-2 rounded-full border border-blue-200 bg-blue-50 text-blue-700 text-sm font-bold hover:bg-blue-100 flex items-center gap-2">
-              <span>🔄</span> Sync Printify
-            </button>
-          )}
-          <button onClick={onGenerateStarters} className="px-4 py-2 rounded-full border border-black/10 text-sm font-bold hover:bg-black/5">✨ Generate starters</button>
-          <button onClick={onAdd} className="px-4 py-2 rounded-full bg-black text-white text-sm font-bold">+ Add item</button>
-        </div>
+        <Link
+          href={`/build/${site?.id}/inventory`}
+          className="shrink-0 text-sm text-blue-600 hover:text-blue-700 font-medium flex items-center gap-1"
+        >
+          Open full inventory editor ↗
+        </Link>
+      </div>
+      <div className="flex gap-3">
+        {site?.printify_api_key && (
+          <button onClick={onPrintifySync} className="px-4 py-2 rounded-full border border-blue-200 bg-blue-50 text-blue-700 text-sm font-bold hover:bg-blue-100 flex items-center gap-2">
+            <span>🔄</span> Sync Printify
+          </button>
+        )}
+        <button onClick={onGenerateStarters} className="px-4 py-2 rounded-full border border-black/10 text-sm font-bold hover:bg-black/5">✨ Generate starters</button>
+        <button onClick={onAdd} className="px-4 py-2 rounded-full bg-black text-white text-sm font-bold">+ Add item</button>
       </div>
       {inventory.length === 0 && (
         <div className="bg-white border border-dashed border-black/10 rounded-2xl p-12 text-center">

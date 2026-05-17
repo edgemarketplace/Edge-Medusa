@@ -297,9 +297,12 @@ export default function StorefrontRenderer({
         <SectionRenderer key={section.id || i} section={section} template={template} inventory={inventory} onAddToCart={addToCart} site={site} />
       ))}
 
-      <footer className="border-t border-black/5 py-8 px-8 text-center text-sm text-black/40">
-        <p>© {new Date().getFullYear()} {site.business_name}. Powered by Edge Marketplace Hub.</p>
-      </footer>
+      {/* Only show hardcoded footer if no footer section exists */}
+      {!mergedSections.some(s => s.type.startsWith('footer-')) && (
+        <footer className="border-t border-black/5 py-8 px-8 text-center text-sm text-black/40">
+          <p>© {new Date().getFullYear()} {site.business_name}. Powered by Edge Marketplace Hub.</p>
+        </footer>
+      )}
     </div>
   );
 }
@@ -464,16 +467,17 @@ function SectionRenderer({ section, template, inventory, onAddToCart, site }: {
   }
 
   // Commerce sections
-  if (['product-grid', 'featured-collection', 'best-sellers', 'hero-products'].includes(type)) {
-    const items = (data.items || inventory).slice(0, data.itemCount || 12);
+  if (['product-grid', 'featured-collection', 'best-sellers', 'hero-products', 'collection-carousel'].includes(type)) {
+    // Prefer data.items from sync, fall back to inventory
+    const items = (data.items || inventory).filter((it: any) => it && it.name).slice(0, data.itemCount || 12);
     const columns = data.columns || 3;
     if (items.length === 0) return null;
     return (
       <div className="px-8 py-16 max-w-6xl mx-auto">
         <h2 className="text-3xl font-serif italic text-center mb-12">{data.title || 'Products'}</h2>
-        <div className="grid gap-8" style={{ gridTemplateColumns: `repeat(${columns}, 1fr)` }}>
+        <div className="grid gap-8" style={{ gridTemplateColumns: `repeat(${Math.min(columns, items.length)}, 1fr)` }}>
           {items.map((item: any, j: number) => (
-            <div key={j} className="bg-white rounded-2xl overflow-hidden shadow-sm">
+            <div key={item.id || j} className="bg-white rounded-2xl overflow-hidden shadow-sm">
               {item.image_url ? (
                 <img src={item.image_url} alt={item.name} className="w-full h-48 object-cover" />
               ) : (
@@ -482,6 +486,9 @@ function SectionRenderer({ section, template, inventory, onAddToCart, site }: {
               <div className="p-6">
                 <h3 className="font-bold text-lg">{item.name}</h3>
                 <p className="text-black/50 text-sm mt-1">{item.description}</p>
+                {item.stock != null && item.stock <= 5 && item.stock > 0 && (
+                  <p className="text-red-500 text-xs mt-1 font-medium">Only {item.stock} left</p>
+                )}
                 <div className="flex items-center justify-between mt-4">
                   <p className="font-bold text-xl" style={{ color: primary }}>{item.price}</p>
                   <button onClick={() => onAddToCart(item.id || item.name)} className="px-4 py-2 rounded-full text-white text-sm font-bold" style={{ backgroundColor: primary }}>
@@ -498,8 +505,12 @@ function SectionRenderer({ section, template, inventory, onAddToCart, site }: {
 
   // Service sections
   if (['service-list', 'packages', 'pricing-tiers'].includes(type)) {
-    const items = (data.items || data.tiers || data.packages || inventory);
-    if (!items || items.length === 0) return null;
+    // Prefer data.items from sync
+    const raw = data.items || data.tiers || data.packages || inventory;
+    if (!raw || raw.length === 0) return null;
+    const items = raw.filter((it: any) => it && it.name);
+    if (items.length === 0) return null;
+
     const isPricing = type === 'pricing-tiers';
     return (
       <div className="px-8 py-16 max-w-5xl mx-auto">
@@ -507,13 +518,17 @@ function SectionRenderer({ section, template, inventory, onAddToCart, site }: {
         {isPricing ? (
           <div className="grid gap-6" style={{ gridTemplateColumns: `repeat(${Math.min(items.length, 3)}, 1fr)` }}>
             {items.map((tier: any, j: number) => (
-              <div key={j} className={`rounded-2xl p-8 text-center ${tier.highlighted ? 'bg-black text-white ring-2 ring-black' : 'bg-white'}`}>
+              <div key={tier.id || j} className={`rounded-2xl p-8 text-center ${tier.highlighted ? 'bg-black text-white ring-2 ring-black' : 'bg-white'}`}>
                 <h3 className="font-bold text-lg mb-2">{tier.name}</h3>
                 <p className="text-3xl font-bold mb-4">{tier.price}</p>
+                {tier.description && <p className="text-sm text-black/50 mb-4">{tier.description}</p>}
                 <ul className="space-y-2 mb-6">
                   {(tier.features || []).map((f: string, k: number) => (
-                    <li key={k} className={`text-sm ${tier.highlighted ? 'text-white/70' : 'text-black/50'}`}>{f}</li>
+                    <li key={k} className={`text-sm ${tier.highlighted ? 'text-white/70' : 'text-black/50'}`}>✓ {f}</li>
                   ))}
+                  {!tier.features?.length && tier.description && (
+                    <li className="text-sm text-black/50">{tier.description}</li>
+                  )}
                 </ul>
                 <button className="px-6 py-2 rounded-full text-sm font-bold" style={{ backgroundColor: tier.highlighted ? 'white' : primary, color: tier.highlighted ? 'black' : 'white' }}>
                   Get started
@@ -521,13 +536,40 @@ function SectionRenderer({ section, template, inventory, onAddToCart, site }: {
               </div>
             ))}
           </div>
+        ) : type === 'packages' ? (
+          <div className="grid gap-6" style={{ gridTemplateColumns: `repeat(${Math.min(items.length, 3)}, 1fr)` }}>
+            {items.map((item: any, j: number) => (
+              <div key={item.id || j} className="bg-white rounded-2xl p-8 text-center shadow-sm">
+                <h3 className="font-bold text-lg mb-2">{item.name}</h3>
+                <p className="text-2xl font-bold mb-4" style={{ color: primary }}>{item.price}</p>
+                <p className="text-sm text-black/50 mb-6">{item.description}</p>
+                {(item.features || []).length > 0 && (
+                  <ul className="space-y-2 mb-6 text-left">
+                    {(item.features || []).map((f: string, k: number) => (
+                      <li key={k} className="text-sm text-black/50">✓ {f}</li>
+                    ))}
+                  </ul>
+                )}
+                <button className="px-6 py-2 rounded-full text-sm font-bold text-white" style={{ backgroundColor: primary }}>
+                  Book now
+                </button>
+              </div>
+            ))}
+          </div>
         ) : (
           <div className="space-y-4">
             {items.map((item: any, j: number) => (
-              <div key={j} className="bg-white rounded-2xl p-6 flex items-center justify-between">
-                <div>
-                  <h3 className="font-bold text-lg">{item.name}</h3>
-                  <p className="text-black/50 text-sm mt-1">{item.description}</p>
+              <div key={item.id || j} className="bg-white rounded-2xl p-6 flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  {item.image_url ? (
+                    <img src={item.image_url} alt={item.name} className="w-16 h-16 object-cover rounded-xl" />
+                  ) : (
+                    <div className="w-16 h-16 bg-[#F9F8F6] rounded-xl flex items-center justify-center text-2xl">✨</div>
+                  )}
+                  <div>
+                    <h3 className="font-bold text-lg">{item.name}</h3>
+                    <p className="text-black/50 text-sm">{item.description}</p>
+                  </div>
                 </div>
                 <div className="text-right">
                   <p className="font-bold text-xl" style={{ color: primary }}>{item.price}</p>

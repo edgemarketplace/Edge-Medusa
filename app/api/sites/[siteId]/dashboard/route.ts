@@ -11,14 +11,14 @@ export async function GET(request: NextRequest) {
 
     // Get inventory count
     const { count: productCount } = await supabaseAdmin
-      .from('inventory')
+      .from('inventory_items')
       .select('*', { count: 'exact', head: true })
       .eq('site_id', siteId)
       .eq('enabled', true);
 
     // Get low stock count (stock < 5)
     const { count: lowStockCount } = await supabaseAdmin
-      .from('inventory')
+      .from('inventory_items')
       .select('*', { count: 'exact', head: true })
       .eq('site_id', siteId)
       .lt('stock', 5);

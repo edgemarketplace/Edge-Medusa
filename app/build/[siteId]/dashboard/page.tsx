@@ -21,10 +21,11 @@ export default function DashboardPage() {
     lowStockItems: 0,
   });
   const [loading, setLoading] = useState(true);
+  const [recentOrders, setRecentOrders] = useState<any[]>([]);
 
   useEffect(() => {
     if (!siteId) return;
-    
+
     // Fetch dashboard stats
     fetch(`/api/sites/${siteId}/dashboard`)
       .then(res => res.json())
@@ -33,67 +34,124 @@ export default function DashboardPage() {
         setLoading(false);
       })
       .catch(() => setLoading(false));
+
+    // Fetch recent orders
+    fetch(`/api/sites/${siteId}/orders`)
+      .then(res => res.json())
+      .then(data => {
+        if (data.orders) setRecentOrders(data.orders.slice(0, 5));
+      })
+      .catch(() => {});
   }, [siteId]);
 
-  if (loading) return <div className="p-8">Loading dashboard...</div>;
+  if (loading) return (
+    <div className="min-h-screen bg-[#F9F8F6] flex items-center justify-center">
+      <div className="flex items-center gap-3 text-black/40">
+        <div className="w-4 h-4 border-2 border-black/20 border-t-black/60 rounded-full animate-spin" />
+        Loading...
+      </div>
+    </div>
+  );
+
+  if (!siteId) return (
+    <div className="min-h-screen bg-[#F9F8F6] flex items-center justify-center">
+      <div className="text-center">
+        <p className="text-black/40 mb-4">No store selected</p>
+        <Link href="/dashboard" className="px-6 py-3 rounded-full bg-black text-white font-bold text-sm">
+          Go to Dashboard
+        </Link>
+      </div>
+    </div>
+  );
 
   return (
-    <div className="min-h-screen bg-gray-50 py-12 px-4">
+    <div className="min-h-screen bg-[#F9F8F6] py-12 px-4">
       <div className="max-w-6xl mx-auto">
-        <h1 className="text-3xl font-serif mb-8">Dashboard</h1>
+        <div className="flex items-center justify-between mb-8">
+          <h1 className="text-3xl font-serif italic">Store Overview</h1>
+          <Link
+            href={`/build/${siteId}`}
+            className="px-5 py-2.5 rounded-full bg-black text-white text-sm font-bold hover:scale-[1.02] transition-transform"
+          >
+            Open Builder →
+          </Link>
+        </div>
 
         {/* Stats Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-          <div className="bg-white p-6 rounded-xl shadow-sm">
-            <p className="text-gray-500 text-sm">Total Orders</p>
-            <p className="text-3xl font-bold mt-2">{stats.totalOrders}</p>
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+          <div className="bg-white p-6 rounded-2xl border border-black/5">
+            <p className="text-xs font-bold uppercase tracking-widest text-black/30 mb-2">Total Orders</p>
+            <p className="text-3xl font-bold">{stats.totalOrders}</p>
           </div>
-          <div className="bg-white p-6 rounded-xl shadow-sm">
-            <p className="text-gray-500 text-sm">Revenue</p>
-            <p className="text-3xl font-bold mt-2">${stats.totalRevenue.toFixed(2)}</p>
+          <div className="bg-white p-6 rounded-2xl border border-black/5">
+            <p className="text-xs font-bold uppercase tracking-widest text-black/30 mb-2">Revenue</p>
+            <p className="text-3xl font-bold">${stats.totalRevenue.toFixed(2)}</p>
           </div>
-          <div className="bg-white p-6 rounded-xl shadow-sm">
-            <p className="text-gray-500 text-sm">Active Products</p>
-            <p className="text-3xl font-bold mt-2">{stats.activeProducts}</p>
+          <div className="bg-white p-6 rounded-2xl border border-black/5">
+            <p className="text-xs font-bold uppercase tracking-widest text-black/30 mb-2">Active Products</p>
+            <p className="text-3xl font-bold">{stats.activeProducts}</p>
           </div>
-          <div className="bg-white p-6 rounded-xl shadow-sm">
-            <p className="text-gray-500 text-sm">Low Stock Alerts</p>
-            <p className="text-3xl font-bold mt-2 text-red-600">{stats.lowStockItems}</p>
+          <div className="bg-white p-6 rounded-2xl border border-black/5">
+            <p className="text-xs font-bold uppercase tracking-widest text-black/30 mb-2">Low Stock Alerts</p>
+            <p className="text-3xl font-bold text-red-600">{stats.lowStockItems}</p>
           </div>
         </div>
 
         {/* Quick Actions */}
-        <div className="bg-white p-6 rounded-xl shadow-sm mb-8">
-          <h2 className="text-xl font-semibold mb-4">Quick Actions</h2>
+        <div className="bg-white p-6 rounded-2xl border border-black/5 mb-8">
+          <h2 className="font-bold mb-4">Quick Actions</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <Link
               href={`/build/${siteId}/inventory`}
-              className="p-4 border rounded-lg hover:bg-gray-50 text-center"
+              className="p-4 border border-black/10 rounded-2xl hover:border-black/20 hover:shadow-sm transition-all text-center group"
             >
-              <p className="font-medium">Manage Inventory</p>
-              <p className="text-sm text-gray-500 mt-1">Add products, update stock</p>
+              <p className="font-bold text-sm">Manage Inventory</p>
+              <p className="text-xs text-black/40 mt-1 group-hover:text-black/60">Add products, update stock</p>
             </Link>
             <Link
               href={`/build/${siteId}/settings`}
-              className="p-4 border rounded-lg hover:bg-gray-50 text-center"
+              className="p-4 border border-black/10 rounded-2xl hover:border-black/20 hover:shadow-sm transition-all text-center group"
             >
-              <p className="font-medium">Store Settings</p>
-              <p className="text-sm text-gray-500 mt-1">Fees, taxes, shipping</p>
+              <p className="font-bold text-sm">Store Settings</p>
+              <p className="text-xs text-black/40 mt-1 group-hover:text-black/60">Fees, taxes, shipping</p>
             </Link>
             <Link
               href={`/build/${siteId}`}
-              className="p-4 border rounded-lg hover:bg-gray-50 text-center"
+              className="p-4 border border-black/10 rounded-2xl hover:border-black/20 hover:shadow-sm transition-all text-center group"
             >
-              <p className="font-medium">Edit Store</p>
-              <p className="text-sm text-gray-500 mt-1">Update design, content</p>
+              <p className="font-bold text-sm">Edit Store</p>
+              <p className="text-xs text-black/40 mt-1 group-hover:text-black/60">Update design, content</p>
             </Link>
           </div>
         </div>
 
-        {/* Recent Orders Placeholder */}
-        <div className="bg-white p-6 rounded-xl shadow-sm">
-          <h2 className="text-xl font-semibold mb-4">Recent Orders</h2>
-          <p className="text-gray-500 text-center py-8">No orders yet. Share your store to start getting sales!</p>
+        {/* Recent Orders */}
+        <div className="bg-white p-6 rounded-2xl border border-black/5">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="font-bold">Recent Orders</h2>
+            <Link href={`/build/${siteId}/orders`} className="text-xs text-blue-600 hover:text-blue-700 font-medium">
+              View all →
+            </Link>
+          </div>
+          {recentOrders.length === 0 ? (
+            <div className="text-center py-12">
+              <p className="text-black/40">No orders yet. Share your store to start getting sales!</p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {recentOrders.map((order: any) => (
+                <div key={order.id} className="flex items-center justify-between py-3 border-b border-black/5 last:border-0">
+                  <div>
+                    <p className="font-bold text-sm">{order.customer_email || 'Anonymous'}</p>
+                    <p className="text-xs text-black/40">
+                      {new Date(order.created_at).toLocaleDateString()} · {order.status}
+                    </p>
+                  </div>
+                  <p className="font-bold text-sm">${(order.total_cents / 100).toFixed(2)}</p>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
     </div>

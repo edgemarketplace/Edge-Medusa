@@ -194,8 +194,9 @@ OUTPUT FORMAT — JSON only, no markdown fences, no extra text:
 }
 
 CRITICAL RULES:
-1. Generate 6-8 sections for the home page. NEVER fewer than 5.
+1. Generate 7-9 sections for the home page. NEVER fewer than 6.
 2. Use ONLY these section types (pick relevant ones for the vertical):
+   - header-simple, header-promo, header-mega
    - hero-split, hero-visual, hero-products, hero-cta, hero-trust
    - featured-collection, product-grid, best-sellers, collection-carousel
    - service-list, packages, pricing-tiers
@@ -203,9 +204,12 @@ CRITICAL RULES:
    - testimonials, reviews, logo-bar, stats, press
    - quote-cta, booking-cta, newsletter, faq, promo-banner
    - gallery, video
-3. Every section MUST have "id" (unique), "type", and "data".
-4. Write REAL, SPECIFIC copy — never generic filler. Use the business name and offerings.
-5. For imageUrl, use REAL Unsplash URLs. Pick IDs relevant to the business type:
+   - footer-basic, footer-commerce, footer-service
+3. FIRST section MUST ALWAYS be a header (header-simple, header-promo, or header-mega).
+4. LAST section MUST ALWAYS be a footer (footer-basic, footer-commerce, or footer-service).
+5. Every section MUST have "id" (unique), "type", and "data".
+6. Write REAL, SPECIFIC copy — never generic filler. Use the business name and offerings.
+7. For imageUrl, use REAL Unsplash URLs. Pick IDs relevant to the business type:
    - Food/catering: photo-1504674900247-0877df9cc836, photo-1559339352-11d035aa65de
    - Retail/products: photo-1607089264410, photo-1441986300917-64674bd600d8
    - Services/consulting: photo-1557804506, photo-1556761175-5973dc0f32e7
@@ -213,8 +217,8 @@ CRITICAL RULES:
    - Artisan/handmade: photo-1452860606245-08befc0ff44b, photo-1516975080664-ed2fc6a32937
    - Coaching/education: photo-1522202176988-66273c2fd55f, photo-1503676260728-1c00da094a0b
    If unsure, leave imageUrl as "".
-6. NEVER use relative paths. NEVER use placeholder text like "Lorem ipsum".
-7. The output must be ONLY valid JSON. No markdown, no explanations.`;
+8. NEVER use relative paths. NEVER use placeholder text like "Lorem ipsum".
+9. The output must be ONLY valid JSON. No markdown, no explanations.`;
 }
 
 function getFallbackSiteStructure(
@@ -223,12 +227,28 @@ function getFallbackSiteStructure(
   contactEmail: string,
   tagline: string
 ): { pages: { slug: string; title: string; sections: GeneratedSection[] }[] } {
+  const isService = businessType.includes('service') || businessType.includes('coach');
+  const footerType = isService ? 'footer-service' : 'footer-commerce';
   return {
     pages: [
       {
         slug: 'home',
         title: 'Home',
         sections: [
+          {
+            id: 'header-1',
+            type: 'header-simple' as SectionType,
+            data: {
+              logoText: businessName,
+              links: [
+                { label: 'Home', url: '/' },
+                { label: 'About', url: '#about' },
+                { label: 'Contact', url: '#contact' },
+              ],
+              ctaText: isService ? 'Book Now' : 'Shop Now',
+              ctaUrl: '#',
+            },
+          },
           {
             id: 'hero-1',
             type: 'hero-split' as SectionType,
@@ -240,7 +260,7 @@ function getFallbackSiteStructure(
               imageUrl: '',
               overlayOpacity: 0.35,
               trustBadges: ['Quality guaranteed', 'Fast response', 'Expert team'],
-            }
+            },
           },
           {
             id: 'value-1',
@@ -251,8 +271,8 @@ function getFallbackSiteStructure(
                 { icon: '✦', title: 'Expertise', description: 'Years of industry experience' },
                 { icon: '✦', title: 'Quality', description: 'Premium materials and service' },
                 { icon: '✦', title: 'Support', description: 'Dedicated customer care' },
-              ]
-            }
+              ],
+            },
           },
           {
             id: 'story-1',
@@ -261,7 +281,7 @@ function getFallbackSiteStructure(
               headline: 'Our Story',
               body: `${businessName} was founded with a simple mission: to deliver exceptional ${businessType} experiences. Every project reflects our commitment to quality, creativity, and customer satisfaction.`,
               imageUrl: '',
-            }
+            },
           },
           {
             id: 'testimonials-1',
@@ -271,8 +291,8 @@ function getFallbackSiteStructure(
               testimonials: [
                 { name: 'Alex R.', quote: 'Absolutely outstanding service. Would highly recommend!', rating: 5 },
                 { name: 'Jordan T.', quote: 'The attention to detail exceeded all my expectations.', rating: 5 },
-              ]
-            }
+              ],
+            },
           },
           {
             id: 'cta-1',
@@ -282,10 +302,21 @@ function getFallbackSiteStructure(
               subheading: `Contact ${businessName} today and let's discuss your project.`,
               ctaText: 'Contact us',
               showForm: true,
-            }
-          }
-        ]
-      }
-    ]
+            },
+          },
+          {
+            id: 'footer-1',
+            type: footerType as SectionType,
+            data: {
+              logoText: businessName,
+              showContact: true,
+              showHours: false,
+              hours: '',
+              copyright: `© ${new Date().getFullYear()} ${businessName}. All rights reserved.`,
+            },
+          },
+        ],
+      },
+    ],
   };
 }

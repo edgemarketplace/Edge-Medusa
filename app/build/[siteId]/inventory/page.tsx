@@ -209,7 +209,7 @@ export default function InventoryPage({ params }: { params: Promise<{ siteId: st
           </div>
           <div className="bg-white rounded-2xl p-5 border border-black/5">
             <p className="text-sm text-black/40 mb-1">With Stock</p>
-            <p className="text-2xl font-bold">{items.filter(i => i.stock).length}</p>
+            <p className="text-2xl font-bold">{items.filter(i => i.stock != null).length}</p>
           </div>
         </div>
 
@@ -294,23 +294,33 @@ export default function InventoryPage({ params }: { params: Promise<{ siteId: st
                     </div>
                   )}
 
-                  <div className="flex gap-2">
-                    <button
-                      onClick={() => {
-                        setEditingItem(item);
-                        setShowAddModal(true);
-                      }}
-                      className="flex-1 border border-black/10 py-2 rounded-full text-sm font-medium hover:border-black/30 transition-colors"
-                    >
-                      Edit
-                    </button>
-                    <button
-                      onClick={() => handleDeleteItem(item.id!)}
-                      className="px-4 py-2 text-sm text-red-600 hover:text-red-700 transition-colors"
-                    >
-                      Delete
-                    </button>
-                  </div>
+          <div className="flex gap-2">
+            <button
+              onClick={() => {
+                setEditingItem(item);
+                setShowAddModal(true);
+              }}
+              className="flex-1 border border-black/10 py-2 rounded-full text-sm font-medium hover:border-black/30 transition-colors"
+            >
+              Edit
+            </button>
+            <button
+              onClick={() => {
+                const dup = { ...item, id: undefined, name: `${item.name} (Copy)` };
+                handleSaveItem(dup);
+              }}
+              className="px-3 py-2 text-sm text-black/50 hover:text-black transition-colors"
+              title="Duplicate"
+            >
+              ⧉
+            </button>
+            <button
+              onClick={() => handleDeleteItem(item.id!)}
+              className="px-4 py-2 text-sm text-red-600 hover:text-red-700 transition-colors"
+            >
+              Delete
+            </button>
+          </div>
                 </div>
               </div>
             ))}
