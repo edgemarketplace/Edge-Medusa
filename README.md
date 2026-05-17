@@ -9,6 +9,8 @@ This repo keeps the existing Edge Marketplace Hub Next.js builder/storefront sur
 - `app/` — Next.js 16 App Router builder, onboarding, storefront, and API routes.
 - `lib/medusa/client.ts` — Next-to-Medusa adapter used by the builder APIs.
 - `app/api/medusa/[...path]/route.ts` — proxy to the Medusa backend for controlled frontend/API access.
+- `app/backend/page.tsx` — Medusa-style operator console for products, orders, sales channels, and backend service status.
+- `app/api/backend/status/route.ts` — health/status JSON for Supabase commerce tables and the configured Medusa service.
 - `backend/medusa/` — Medusa v2 backend for catalog, inventory, orders, payments, fulfillment, files, and Admin.
 - `docs/MEDUSA_BACKEND_OVERHAUL.md` — migration plan, environment variables, and verification commands.
 
@@ -88,6 +90,8 @@ That creates `public.auth_sessions`, the token table used by magic link login an
 ```bash
 npm run build
 npm run lint
+curl http://localhost:3000/backend
+curl http://localhost:3000/api/backend/status
 curl http://localhost:9000/edge/health
 ```
 

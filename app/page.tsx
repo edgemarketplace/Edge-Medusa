@@ -57,6 +57,7 @@ export default function LandingPage() {
           <span className="font-bold tracking-tight">Edge Medusa</span>
         </div>
         <div className="flex items-center gap-4">
+          <Link href="/backend" className="text-sm font-bold text-black/60 hover:text-black transition-colors">Backend</Link>
           <Link href="/login" className="text-sm text-black/50 hover:text-black transition-colors">Sign in</Link>
           <Link
             href="/onboarding"
@@ -97,7 +98,12 @@ export default function LandingPage() {
             >
               Launch with Medusa →
             </Link>
-            <span className="text-black/40 text-sm">Backend overhaul is live · Builder unchanged where it should be</span>
+            <Link
+              href="/backend"
+              className="border border-black/10 bg-white px-8 py-4 rounded-full text-lg font-bold hover:border-black/30 transition-colors"
+            >
+              Open backend console →
+            </Link>
           </div>
 
           {/* Animated vertical badges */}
