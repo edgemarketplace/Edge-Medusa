@@ -1,23 +1,29 @@
-import { NextResponse } from 'next/server';
-import { supabaseAdmin } from '@/lib/supabase';
+import { NextResponse } from 'next/server'
+import { supabaseAdmin } from '@/lib/supabase'
+import { requireSiteAdmin } from '@/lib/auth-server'
+import { NextRequest } from 'next/server'
 
 export async function GET(
-  req: Request,
+  req: NextRequest,
   { params }: { params: Promise<{ siteId: string }> }
 ) {
-  const { siteId } = await params;
-
   try {
+    const { siteId } = await params
+    await requireSiteAdmin(req, siteId)
+
     const { data: conversations, error } = await supabaseAdmin
       .from('conversations')
       .select('*')
       .eq('site_id', siteId)
-      .order('updated_at', { ascending: false });
+      .order('updated_at', { ascending: false })
 
-    if (error) throw error;
+    if (error) throw error
 
-    return NextResponse.json(conversations);
-  } catch (err: any) {
-    return NextResponse.json({ error: err.message }, { status: 500 });
+    return NextResponse.json(conversations)
+  } catch (error: any) {
+    if (error.status) {
+      return NextResponse.json({ error: error.message }, { status: error.status })
+    }
+    return NextResponse.json({ error: error.message }, { status: 500 })
   }
 }

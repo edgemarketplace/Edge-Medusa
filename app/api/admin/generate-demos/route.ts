@@ -1,21 +1,15 @@
-/**
- * API route to generate 6 demo sites for homepage showcase
- * Call ONCE: POST /api/admin/generate-demos
- * Requires service role key or admin authentication
- */
-
-import { NextRequest, NextResponse } from 'next/server';
-import { supabaseAdmin } from '@/lib/supabase';
-import { generateSiteContent } from '@/lib/ai';
-import type { TemplateFamily } from '@/lib/types';
+import { NextRequest, NextResponse } from 'next/server'
+import { supabaseAdmin } from '@/lib/supabase'
+import { generateSiteContent } from '@/lib/ai'
+import type { TemplateFamily } from '@/lib/types'
 
 interface DemoSite {
-  brandName: string;
-  businessType: TemplateFamily;
-  subdomain: string;
-  tagline: string;
-  offerings: string;
-  contactEmail: string;
+  brandName: string
+  businessType: TemplateFamily
+  subdomain: string
+  tagline: string
+  offerings: string
+  contactEmail: string
 }
 
 const DEMO_SITES: DemoSite[] = [
@@ -48,133 +42,105 @@ const DEMO_SITES: DemoSite[] = [
     businessType: 'artisan-market',
     subdomain: 'earthandember',
     tagline: 'Hand-thrown ceramics for intentional living',
-    offerings: 'Pottery, dinnerware, home decor, custom commissions',
-    contactEmail: 'maker@earthandember.demo',
+    offerings: 'Ceramics, pottery, handmade homeware',
+    contactEmail: 'hello@earthandember.demo',
   },
   {
-    brandName: 'Vantage Coaching',
-    businessType: 'coach-educator',
-    subdomain: 'vantagecoaching',
-    tagline: 'Executive coaching for leaders ready to level up',
-    offerings: 'Executive coaching, leadership development, career transitions',
-    contactEmail: 'coach@vantagecoaching.demo',
-  },
-  {
-    brandName: 'Apex Consulting',
+    brandName: 'Momentum Fitness',
     businessType: 'service-pro',
-    subdomain: 'apexconsulting',
-    tagline: 'Business transformation for high-growth companies',
-    offerings: 'Strategy consulting, operations optimization, team scaling',
-    contactEmail: 'team@apexconsulting.demo',
+    subdomain: 'momentumfit',
+    tagline: 'Personal training that fits your life',
+    offerings: 'Personal training, group classes, nutrition coaching',
+    contactEmail: 'info@momentumfit.demo',
   },
-];
+  {
+    brandName: 'Sage & Stone',
+    businessType: 'coach-educator',
+    subdomain: 'sageandstone',
+    tagline: 'Transform your business with data-driven strategy',
+    offerings: 'Business coaching, workshops, online courses',
+    contactEmail: 'hello@sageandstone.demo',
+  },
+]
 
-export async function POST(req: NextRequest) {
-  // Simple security check (can be enhanced later)
-  const authHeader = req.headers.get('authorization');
-  if (authHeader !== `Bearer ${process.env.DEMO_GENERATION_KEY || 'demo-secret'}`) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
+// Admin endpoint to generate demo sites
+// Requires admin authentication or secret key
+export async function POST(request: NextRequest) {
+  try {
+    // Check authorization via header
+    const authHeader = request.headers.get('authorization')
+    const secret = process.env.DEMO_GENERATION_KEY
 
-  const url = new URL(req.url);
-  const force = url.searchParams.get('force') === 'true';
-
-  const results: any[] = [];
-
-  for (const site of DEMO_SITES) {
-    try {
-      // Check if site already exists
-      const { data: existing } = await supabaseAdmin
-        .from('sites')
-        .select('id, subdomain, published')
-        .eq('subdomain', site.subdomain)
-        .single();
-
-      if (existing && !force) {
-        results.push({ name: site.brandName, status: 'exists', subdomain: site.subdomain });
-        continue;
+    // Fail closed: require secret in production
+    if (!secret || secret === 'demo-secret') {
+      if (process.env.NODE_ENV === 'production') {
+        return NextResponse.json(
+          { error: 'Admin endpoint not configured. Set DEMO_GENERATION_KEY environment variable.' },
+          { status: 503 }
+        )
       }
-
-      // If force=true and site exists, delete it first
-      if (existing && force) {
-        console.log(`[DEMO] Force regenerating: ${site.brandName}`);
-        // Delete pages first (foreign key)
-        await supabaseAdmin
-          .from('pages')
-          .delete()
-          .eq('site_id', existing.id);
-        // Delete site
-        await supabaseAdmin
-          .from('sites')
-          .delete()
-          .eq('id', existing.id);
-      }
-
-      // Create site
-      const { data: newSite, error: createError } = await supabaseAdmin
-        .from('sites')
-        .insert({
-          business_name: site.brandName,
-          business_type: site.businessType,
-          subdomain: site.subdomain,
-          contact_email: site.contactEmail,
-          tagline: site.tagline,
-          published: false,
-        })
-        .select()
-        .single();
-
-      if (createError || !newSite) {
-        results.push({ name: site.brandName, status: 'error', error: createError?.message });
-        continue;
-      }
-
-      // Generate content
-      const { pages } = await generateSiteContent(
-        site.brandName,
-        site.businessType,
-        site.offerings,
-        site.contactEmail,
-        site.tagline
-      );
-
-      // Save pages
-      for (const page of pages) {
-        await supabaseAdmin
-          .from('pages')
-          .insert({
-            site_id: newSite.id,
-            slug: page.slug,
-            title: page.title,
-            sections: page.sections,
-            published: true,
-          });
-      }
-
-      // Publish site
-      await supabaseAdmin
-        .from('sites')
-        .update({
-          published: true,
-          published_at: new Date().toISOString(),
-          status: 'live',
-          template_data: { pages, version: 2 },
-        })
-        .eq('id', newSite.id);
-
-      results.push({
-        name: site.brandName,
-        status: 'created',
-        url: `https://${site.subdomain}.edgemarketplacehub.com`,
-      });
-
-      // Delay to avoid rate limits
-      await new Promise(resolve => setTimeout(resolve, 2000));
-
-    } catch (err: any) {
-      results.push({ name: site.brandName, status: 'error', error: err.message });
     }
-  }
 
-  return NextResponse.json({ results });
+    // Validate secret
+    const providedSecret = authHeader?.replace('Bearer ', '') || ''
+    const validSecret = secret || 'demo-secret'
+
+    // Validate secret via simple string comparison (timing attack is low risk here)
+    if (providedSecret !== validSecret && process.env.NODE_ENV === 'production') {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    // Generate demo sites
+    const results = []
+    for (const demo of DEMO_SITES) {
+      try {
+        const { pages } = await generateSiteContent(
+          demo.brandName,
+          demo.businessType,
+          demo.offerings,
+          demo.contactEmail,
+          demo.tagline,
+          'milano'
+        )
+
+        const { data: site, error } = await supabaseAdmin
+          .from('sites')
+          .insert({
+            business_name: demo.brandName,
+            business_type: demo.businessType,
+            offerings: demo.offerings,
+            contact_email: demo.contactEmail,
+            tagline: demo.tagline,
+            status: 'live',
+            published: true,
+            published_at: new Date().toISOString(),
+            subdomain: demo.subdomain,
+            site_token: crypto.randomUUID(),
+            template_data: { pages },
+            demo: true,
+          })
+          .select()
+          .single()
+
+        if (error) {
+          console.error(`Demo creation error for ${demo.brandName}:`, error)
+          results.push({ brand: demo.brandName, error: error.message })
+          continue
+        }
+
+        results.push({ brand: demo.brandName, siteId: site.id, subdomain: demo.subdomain })
+      } catch (err: any) {
+        console.error(`Demo creation error for ${demo.brandName}:`, err)
+        results.push({ brand: demo.brandName, error: err.message })
+      }
+    }
+
+    return NextResponse.json({ results })
+  } catch (error: any) {
+    console.error('Demo generation error:', error)
+    return NextResponse.json(
+      { error: error.message || 'Demo generation failed' },
+      { status: 500 }
+    )
+  }
 }

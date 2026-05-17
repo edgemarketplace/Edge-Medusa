@@ -1,15 +1,16 @@
-import { NextResponse } from 'next/server';
-import { supabaseAdmin } from '@/lib/supabase';
+import { NextResponse } from 'next/server'
+import { supabaseAdmin } from '@/lib/supabase'
 
+// Public endpoint — customers contact store owners through their storefront
 export async function POST(
   req: Request,
   { params }: { params: Promise<{ siteId: string }> }
 ) {
-  const { siteId } = await params;
-  const { name, email, subject, message } = await req.json();
+  const { siteId } = await params
+  const { name, email, subject, message } = await req.json()
 
   if (!email || !message) {
-    return NextResponse.json({ error: 'Email and message are required' }, { status: 400 });
+    return NextResponse.json({ error: 'Email and message are required' }, { status: 400 })
   }
 
   try {
@@ -19,9 +20,9 @@ export async function POST(
       .select('id')
       .eq('site_id', siteId)
       .eq('customer_email', email)
-      .maybeSingle();
+      .maybeSingle()
 
-    if (convError && convError.code !== 'PGRST116') throw convError;
+    if (convError && convError.code !== 'PGRST116') throw convError
 
     if (!conversation) {
       const { data: newConv, error: createError } = await supabaseAdmin
@@ -35,10 +36,10 @@ export async function POST(
           status: 'open'
         })
         .select()
-        .single();
-      
-      if (createError) throw createError;
-      conversation = newConv;
+        .single()
+
+      if (createError) throw createError
+      conversation = newConv
     } else {
       // Update existing conversation
       await supabaseAdmin
@@ -48,10 +49,10 @@ export async function POST(
           updated_at: new Date().toISOString(),
           status: 'open'
         })
-        .eq('id', conversation.id);
+        .eq('id', conversation.id)
     }
 
-    if (!conversation) throw new Error('Failed to create or find conversation');
+    if (!conversation) throw new Error('Failed to create or find conversation')
 
     // 2. Insert message
     const { error: msgError } = await supabaseAdmin
@@ -60,13 +61,13 @@ export async function POST(
         conversation_id: conversation.id,
         sender: 'customer',
         content: message
-      });
+      })
 
-    if (msgError) throw msgError;
+    if (msgError) throw msgError
 
-    return NextResponse.json({ success: true });
+    return NextResponse.json({ success: true })
   } catch (err: any) {
-    console.error('Contact error:', err);
-    return NextResponse.json({ error: err.message }, { status: 500 });
+    console.error('Contact error:', err)
+    return NextResponse.json({ error: err.message }, { status: 500 })
   }
 }

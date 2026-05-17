@@ -1,52 +1,55 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { supabaseAdmin } from '@/lib/supabase';
-import type { PageData } from '@/lib/types';
+import { NextRequest, NextResponse } from 'next/server'
+import { supabaseAdmin } from '@/lib/supabase'
+import { requireSiteAdmin } from '@/lib/auth-server'
+import type { PageData } from '@/lib/types'
 
-// GET a single page
+// GET a single page — public (used by storefront)
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ siteId: string; pageId: string }> }
 ) {
   try {
-    const { siteId, pageId } = await params;
-    
+    const { siteId, pageId } = await params
+
     // Validate pageId
     if (!pageId || pageId === 'undefined') {
-      return NextResponse.json({ error: 'Invalid page ID' }, { status: 400 });
+      return NextResponse.json({ error: 'Invalid page ID' }, { status: 400 })
     }
-    
+
     const { data, error } = await supabaseAdmin
       .from('pages')
       .select('*')
       .eq('site_id', siteId)
       .eq('id', pageId)
-      .single();
+      .single()
 
     if (error) {
-      console.error('Supabase page GET error:', JSON.stringify(error));
-      return NextResponse.json({ error: `Page not found: ${error.message}` }, { status: 404 });
+      console.error('Supabase page GET error:', JSON.stringify(error))
+      return NextResponse.json({ error: `Page not found: ${error.message}` }, { status: 404 })
     }
 
-    return NextResponse.json(data as PageData);
-  } catch (error) {
-    console.error('Get page error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return NextResponse.json(data as PageData)
+  } catch (error: any) {
+    console.error('Get page error:', error)
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
 
-// UPDATE a page
+// UPDATE a page — auth required
 export async function PUT(
   request: NextRequest,
   { params }: { params: Promise<{ siteId: string; pageId: string }> }
 ) {
   try {
-    const { siteId, pageId } = await params;
-    const body = await request.json();
+    const { siteId, pageId } = await params
+    await requireSiteAdmin(request, siteId)
 
-    const allowedFields: Partial<PageData> = {};
-    if (body.title !== undefined) allowedFields.title = body.title;
-    if (body.slug !== undefined) allowedFields.slug = body.slug;
-    if (body.sections !== undefined) allowedFields.sections = body.sections;
+    const body = await request.json()
+
+    const allowedFields: Partial<PageData> = {}
+    if (body.title !== undefined) allowedFields.title = body.title
+    if (body.slug !== undefined) allowedFields.slug = body.slug
+    if (body.sections !== undefined) allowedFields.sections = body.sections
 
     const { data, error } = await supabaseAdmin
       .from('pages')
@@ -54,41 +57,49 @@ export async function PUT(
       .eq('site_id', siteId)
       .eq('id', pageId)
       .select()
-      .single();
+      .single()
 
     if (error) {
-      console.error('Supabase page PUT error:', JSON.stringify(error));
-      return NextResponse.json({ error: `Failed to update page: ${error.message}` }, { status: 500 });
+      console.error('Supabase page PUT error:', JSON.stringify(error))
+      return NextResponse.json({ error: `Failed to update page: ${error.message}` }, { status: 500 })
     }
 
-    return NextResponse.json(data as PageData);
-  } catch (error) {
-    console.error('Update page error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return NextResponse.json(data as PageData)
+  } catch (error: any) {
+    if (error.status) {
+      return NextResponse.json({ error: error.message }, { status: error.status })
+    }
+    console.error('Update page error:', error)
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
 
-// DELETE a page
+// DELETE a page — auth required
 export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ siteId: string; pageId: string }> }
 ) {
   try {
-    const { siteId, pageId } = await params;
+    const { siteId, pageId } = await params
+    await requireSiteAdmin(request, siteId)
+
     const { error } = await supabaseAdmin
       .from('pages')
       .delete()
       .eq('site_id', siteId)
-      .eq('id', pageId);
+      .eq('id', pageId)
 
     if (error) {
-      console.error('Supabase page DELETE error:', JSON.stringify(error));
-      return NextResponse.json({ error: `Failed to delete page: ${error.message}` }, { status: 500 });
+      console.error('Supabase page DELETE error:', JSON.stringify(error))
+      return NextResponse.json({ error: `Failed to delete page: ${error.message}` }, { status: 500 })
     }
 
-    return NextResponse.json({ ok: true });
-  } catch (error) {
-    console.error('Delete page error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return NextResponse.json({ success: true })
+  } catch (error: any) {
+    if (error.status) {
+      return NextResponse.json({ error: error.message }, { status: error.status })
+    }
+    console.error('Delete page error:', error)
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }

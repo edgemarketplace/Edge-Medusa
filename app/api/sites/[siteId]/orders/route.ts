@@ -1,22 +1,24 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { supabaseAdmin } from '@/lib/supabase';
+import { NextRequest, NextResponse } from 'next/server'
+import { supabaseAdmin } from '@/lib/supabase'
+import { requireSiteAdmin } from '@/lib/auth-server'
 
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ siteId: string }> }
 ) {
-  const { siteId } = await params;
-
   try {
+    const { siteId } = await params
+    await requireSiteAdmin(request, siteId)
+
     const { data: orders, error } = await supabaseAdmin
       .from('orders')
       .select('*, order_items(*)')
       .eq('site_id', siteId)
-      .order('created_at', { ascending: false });
+      .order('created_at', { ascending: false })
 
     if (error) {
-      console.error('Orders API error:', error);
-      return NextResponse.json({ error: error.message }, { status: 500 });
+      console.error('Orders API error:', error)
+      return NextResponse.json({ error: error.message }, { status: 500 })
     }
 
     // Normalize to a clean UI format
@@ -35,12 +37,15 @@ export async function GET(
       })),
       stripeSessionId: o.stripe_session_id,
       shippingAddress: o.shipping_address,
-    }));
+    }))
 
-    return NextResponse.json({ orders: normalized });
+    return NextResponse.json({ orders: normalized })
   } catch (error: any) {
-    console.error('Orders API error:', error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    if (error.status) {
+      return NextResponse.json({ error: error.message }, { status: error.status })
+    }
+    console.error('Orders API error:', error)
+    return NextResponse.json({ error: error.message }, { status: 500 })
   }
 }
 
@@ -49,30 +54,34 @@ export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ siteId: string }> }
 ) {
-  const { siteId } = await params;
   try {
-    const body = await request.json();
-    const { orderId, status } = body;
+    const { siteId } = await params
+    await requireSiteAdmin(request, siteId)
+
+    const body = await request.json()
+    const { orderId, status } = body
 
     if (!orderId || !status) {
-      return NextResponse.json({ error: 'orderId and status required' }, { status: 400 });
+      return NextResponse.json({ error: 'orderId and status required' }, { status: 400 })
     }
 
-    const { data, error } = await supabaseAdmin
+    const { error } = await supabaseAdmin
       .from('orders')
       .update({ status })
       .eq('id', orderId)
       .eq('site_id', siteId)
-      .select()
-      .single();
 
     if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 });
+      console.error('Order update error:', error)
+      return NextResponse.json({ error: error.message }, { status: 500 })
     }
 
-    return NextResponse.json({ order: data });
+    return NextResponse.json({ success: true })
   } catch (error: any) {
-    console.error('Order update error:', error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    if (error.status) {
+      return NextResponse.json({ error: error.message }, { status: error.status })
+    }
+    console.error('Orders API error:', error)
+    return NextResponse.json({ error: error.message }, { status: 500 })
   }
 }
