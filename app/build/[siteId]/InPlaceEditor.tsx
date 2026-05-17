@@ -1,25 +1,32 @@
 'use client';
 
-import React, { useState, useRef, useCallback } from 'react';
-import type { GeneratedSection, InventoryItem, TemplateDefinition, SectionType } from '@/lib/types';
+import React, { useState, useRef, useCallback, useEffect } from 'react';
+import type { GeneratedSection, InventoryItem, TemplateDefinition, SectionType, TemplateFamily } from '@/lib/types';
 import { SECTION_LIBRARY, SECTION_CATEGORIES } from '@/lib/section-library';
+import SectionEditor from '@/components/SectionEditor';
 
 interface InPlaceEditorProps {
   sections: GeneratedSection[];
   inventory: InventoryItem[];
   template: TemplateDefinition;
   siteId: string;
+  businessType: TemplateFamily;
   onSave: (sections: GeneratedSection[]) => Promise<void>;
 }
 
 function genId() { return Math.random().toString(36).slice(2, 10); }
 
-export default function InPlaceEditor({ sections, inventory, template, siteId, onSave }: InPlaceEditorProps) {
+export default function InPlaceEditor({ sections, inventory, template, siteId, businessType, onSave }: InPlaceEditorProps) {
   const [local, setLocal] = useState(sections);
   const [hoverId, setHoverId] = useState<string | null>(null);
   const [showAddAt, setShowAddAt] = useState<number | null>(null);
+  const [editingSection, setEditingSection] = useState<GeneratedSection | null>(null);
   const [saving, setSaving] = useState(false);
   const primary = template.primaryColor || '#1A1A1A';
+
+  useEffect(() => {
+    setLocal(sections);
+  }, [sections]);
 
   async function persist(updated: GeneratedSection[]) {
     setLocal(updated);
@@ -27,9 +34,24 @@ export default function InPlaceEditor({ sections, inventory, template, siteId, o
     await onSave(updated).finally(() => setSaving(false));
   }
 
-  function updateField(id: string, field: string, value: string) {
+  function updateField(id: string, field: string, value: any) {
     const updated = local.map(s => s.id === id ? { ...s, data: { ...s.data, [field]: value } } : s);
     persist(updated);
+  }
+
+  function updateEditingField(field: string, value: any) {
+    setEditingSection(prev => prev ? { ...prev, data: { ...prev.data, [field]: value } } : prev);
+  }
+
+  async function saveEditingSection() {
+    if (!editingSection) return;
+    const updated = local.map(s => s.id === editingSection.id ? editingSection : s);
+    await persist(updated);
+    setEditingSection(null);
+  }
+
+  function startEditingSection(section: GeneratedSection) {
+    setEditingSection({ ...section, data: { ...section.data } });
   }
 
   function removeSection(id: string) {
@@ -73,6 +95,12 @@ export default function InPlaceEditor({ sections, inventory, template, siteId, o
           {/* Section controls */}
           {hoverId === section.id && (
             <div className="absolute top-2 right-2 z-30 flex items-center gap-1 bg-white/95 backdrop-blur border border-black/10 rounded-xl shadow-lg px-2 py-1">
+              <button
+                onClick={() => startEditingSection(section)}
+                title="Edit section content, images, FAQs, reviews"
+                className="px-2 py-1 hover:bg-black/5 rounded-lg text-xs font-bold transition-colors"
+              >Edit</button>
+              <div className="w-px h-4 bg-black/10 mx-0.5" />
               <button
                 onClick={() => moveSection(section.id, -1)}
                 disabled={i === 0}
@@ -124,6 +152,31 @@ export default function InPlaceEditor({ sections, inventory, template, siteId, o
           )}
         </div>
       ))}
+
+      {/* Full section editor drawer for arrays/images/FAQs/reviews */}
+      {editingSection && (
+        <div className="fixed inset-0 z-50 flex justify-end bg-black/25 backdrop-blur-sm" onClick={() => setEditingSection(null)}>
+          <div className="w-full max-w-xl h-full bg-white shadow-2xl overflow-y-auto" onClick={e => e.stopPropagation()}>
+            <div className="sticky top-0 z-10 bg-white border-b border-black/5 px-5 py-4 flex items-center justify-between">
+              <div>
+                <p className="text-[10px] uppercase tracking-widest font-bold text-black/35">Editing section</p>
+                <h3 className="font-bold">{SECTION_LIBRARY[editingSection.type]?.label || editingSection.type}</h3>
+              </div>
+              <button onClick={() => setEditingSection(null)} className="text-black/40 hover:text-black text-xl">✕</button>
+            </div>
+            <SectionEditor
+              draft={editingSection}
+              onChange={updateEditingField}
+              siteId={siteId}
+              businessType={businessType}
+            />
+            <div className="sticky bottom-0 bg-white border-t border-black/5 p-4 flex gap-3 justify-end">
+              <button onClick={() => setEditingSection(null)} className="px-5 py-2.5 rounded-full border border-black/10 text-sm font-bold hover:bg-black/5">Cancel</button>
+              <button onClick={saveEditingSection} disabled={saving} className="px-5 py-2.5 rounded-full bg-black text-white text-sm font-bold disabled:opacity-50">{saving ? 'Saving…' : 'Save section'}</button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Add section at end */}
       <div className="py-6 flex justify-center">
@@ -279,7 +332,7 @@ function EditableSection({ section, template, inventory, onUpdate, primary }: {
 
   // ── Service list ──
   if (['service-list', 'packages', 'pricing-tiers'].includes(type)) {
-    const items = data.items || data.tiers || data.packages || inventory;
+    const items = data.services || data.items || data.tiers || data.packages || inventory;
     return (
       <div className="px-8 py-16 max-w-5xl mx-auto">
         <Editable tag="h2" value={data.title || 'Services'} onChange={v => onUpdate('title', v)}

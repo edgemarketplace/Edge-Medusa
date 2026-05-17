@@ -14,9 +14,9 @@ export async function POST(request: NextRequest) {
     }
 
     const expanded = await expandBusinessDescription(
-      prompt, 
-      businessName || 'this business', 
-      businessType || 'general'
+      businessName || 'this business',
+      businessType || 'general',
+      prompt,
     );
 
     return NextResponse.json({ expanded });

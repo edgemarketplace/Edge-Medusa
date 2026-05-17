@@ -215,8 +215,12 @@ export default function SectionEditor({ draft, onChange, siteId, businessType }:
       {(data.backgroundColor !== undefined) && <ColorField label="Background color" field="backgroundColor" value={data.backgroundColor} onChange={(v) => onChange('backgroundColor', v)} />}
 
       {/* Image fields */}
-      {(data.imageUrl !== undefined) && <ImageField label="Image" field="imageUrl" currentUrl={data.imageUrl} />}
+      {(data.imageUrl !== undefined || ['hero-split', 'hero-visual', 'hero-cta', 'hero-trust', 'brand-story', 'editorial-split'].includes(draft.type)) && <ImageField label={draft.type.startsWith('hero-') ? 'Background image' : 'Image'} field="imageUrl" currentUrl={data.imageUrl} />}
+      {(data.backgroundImage !== undefined) && <ImageField label="Background image" field="backgroundImage" currentUrl={data.backgroundImage} />}
+      {(data.background_image !== undefined) && <ImageField label="Background image" field="background_image" currentUrl={data.background_image} />}
       {(data.hero_image_url !== undefined) && <ImageField label="Background image" field="hero_image_url" currentUrl={data.hero_image_url} />}
+      {(data.photoUrl !== undefined || draft.type === 'founder-note') && <ImageField label="Photo" field="photoUrl" currentUrl={data.photoUrl} />}
+      {(data.thumbnailUrl !== undefined) && <ImageField label="Video thumbnail" field="thumbnailUrl" currentUrl={data.thumbnailUrl} />}
 
       {/* Array fields */}
       {(data.testimonials !== undefined) && <ArrayEditor items={data.testimonials} onChange={items => onChange('testimonials', items)} itemFields={['name', 'quote', 'rating']} label="Testimonials" />}

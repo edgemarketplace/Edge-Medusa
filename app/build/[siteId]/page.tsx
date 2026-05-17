@@ -54,7 +54,7 @@ export default function BuildPage({ params }: BuildPageProps) {
   const [saving, setSaving] = useState(false);
   const [launching, setLaunching] = useState(false);
   const [error, setError] = useState('');
-  const [activeTab, setActiveTab] = useState<'design' | 'pages' | 'inventory' | 'settings' | 'orders' | 'clients' | 'mailbox' | 'marketing'>('design');
+  const [activeTab, setActiveTab] = useState<'onboarding' | 'design' | 'pages' | 'inventory' | 'settings' | 'orders' | 'clients' | 'mailbox' | 'marketing'>('onboarding');
   const [settingsName, setSettingsName] = useState('');
   const [settingsTagline, setSettingsTagline] = useState('');
   const [settingsEmail, setSettingsEmail] = useState('');
@@ -129,15 +129,15 @@ export default function BuildPage({ params }: BuildPageProps) {
     try {
       const res = await fetch(`/api/sites/${siteId}/pages`);
       if (!res.ok) {
-        console.warn('Pages API not available, table may not exist yet');
-        setPages([]);
+        console.warn('Pages API not available, keeping template pages');
         return;
       }
       const data = await res.json();
-      setPages(data);
+      if (Array.isArray(data) && data.length > 0) {
+        setPages(data);
+      }
     } catch (err) {
-      console.warn('Failed to load pages:', err);
-      setPages([]);
+      console.warn('Failed to load pages, keeping template pages:', err);
     }
   }
   async function loadCommerceData() {
@@ -214,8 +214,9 @@ export default function BuildPage({ params }: BuildPageProps) {
       if (!res.ok) throw new Error('Generation failed');
       const data = await res.json();
       if (data.pages) {
-        setPages(data.pages);
-        // Extract sections from pages for preview
+        const displayPages = data.allPages || data.pages;
+        setPages(displayPages);
+        // Extract sections from generated home page for the main editor
         const allSections = data.pages.flatMap((p: any) => p.sections || []);
         setSections(allSections);
       }
@@ -230,13 +231,27 @@ export default function BuildPage({ params }: BuildPageProps) {
     if (!siteId) return;
     setSaving(true);
     try {
+      const existingTemplateData = site?.template_data && typeof site.template_data === 'object' ? site.template_data : {};
+      const existingPages = Array.isArray((existingTemplateData as any).pages) && (existingTemplateData as any).pages.length > 0
+        ? (existingTemplateData as any).pages
+        : [{ slug: 'home', title: 'Home', sections: [] }];
+      const updatedPages = existingPages.map((page: any, index: number) => index === 0 ? { ...page, sections: updated } : page);
+
       const res = await fetch(`/api/sites/${siteId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ template_data: { sections: updated } }),
+        body: JSON.stringify({
+          template_data: {
+            ...existingTemplateData,
+            pages: updatedPages,
+            sections: updated,
+          },
+        }),
       });
       if (!res.ok) throw new Error('Failed to save');
       setSections(updated);
+      setPages(prev => prev.map((page, index) => index === 0 ? { ...page, sections: updated } : page));
+      setSite(prev => prev ? { ...prev, template_data: { ...(prev.template_data || {}), pages: updatedPages, sections: updated } } : prev);
     } catch (err: any) { setError(err.message); }
     finally { setSaving(false); }
   }
@@ -594,7 +609,8 @@ export default function BuildPage({ params }: BuildPageProps) {
           
           <div className="space-y-1">
             {([
-              { id: 'design', label: 'Design', icon: '✏️', count: null },
+              { id: 'onboarding', label: 'Start here', icon: '✅', count: null },
+              { id: 'design', label: 'Edit Page', icon: '✏️', count: null },
               { id: 'pages', label: 'Pages', icon: '📄', count: pages.length },
               { id: 'inventory', label: 'Inventory', icon: '📦', count: inventory.length },
               { id: 'mailbox', label: 'Mailbox', icon: '📨', count: conversations.length || null },
@@ -729,6 +745,43 @@ export default function BuildPage({ params }: BuildPageProps) {
 
       {/* Main content */}
       <div className="max-w-7xl mx-auto">
+
+        {/* ── ONBOARDING TAB ── */}
+        {activeTab === 'onboarding' && (
+          <div className="p-8 space-y-8">
+            <div className="bg-[#1A1A1A] text-white rounded-3xl p-8">
+              <p className="text-xs uppercase tracking-[0.25em] text-white/40 font-bold mb-3">Welcome to Edge</p>
+              <h2 className="text-3xl md:text-4xl font-serif italic mb-3">Start here: get {site.business_name} ready to take real customers.</h2>
+              <p className="text-white/60 max-w-2xl">This is the launch checklist. Work top to bottom: add your offers, connect payments if you sell online, edit the page copy, confirm pages, then publish.</p>
+            </div>
+
+            <div className="grid md:grid-cols-2 gap-5">
+              {[
+                { icon: '📦', title: site.business_type === 'service-pro' ? 'Add your services' : 'Add products / services', desc: 'Create the offers customers can buy or request. For plumbers: leak repair, drain clearing, water heater service, fixture install.', action: 'Open inventory', tab: 'inventory' as const, done: inventory.length > 0 },
+                { icon: '💳', title: 'Connect Stripe', desc: 'Required for checkout and paid orders. If you only take quote requests, you can publish before connecting.', action: site.stripe_account_id ? 'Stripe connected' : 'Connect in settings', tab: 'settings' as const, done: !!site.stripe_account_id },
+                { icon: '🖨️', title: 'Optional: connect Printify', desc: 'Only needed for print-on-demand products. Add your API key and Shop ID, then sync inventory.', action: 'Printify settings', tab: 'settings' as const, done: !!(site as any).printify_api_key && !!(site as any).printify_shop_id },
+                { icon: '✏️', title: 'Edit the page', desc: 'Use Edit Page to click text directly. Hover a section and press Edit for images, FAQs, reviews, services, and advanced fields.', action: 'Edit page', tab: 'design' as const, done: sections.length > 0 },
+                { icon: '📄', title: 'Confirm pages', desc: 'Home, Products / Services, About, and Contact are prebuilt. Add any specialty pages you need.', action: 'Open pages', tab: 'pages' as const, done: pages.length >= 4 },
+                { icon: '📨', title: 'Email / mailbox', desc: 'Customer form submissions and inquiries appear in Mailbox. Keep your contact email current in Settings.', action: 'Open mailbox', tab: 'mailbox' as const, done: false },
+                { icon: '📈', title: 'Marketing & Social', desc: 'Google Business, Instagram, Facebook, and X are guidance links for now until direct account integrations are enabled.', action: 'Open marketing', tab: 'marketing' as const, done: false },
+              ].map(item => (
+                <div key={item.title} className="bg-white border border-black/5 rounded-3xl p-6 shadow-sm">
+                  <div className="flex items-start gap-4">
+                    <div className="w-11 h-11 rounded-2xl bg-black/[0.03] flex items-center justify-center text-xl">{item.icon}</div>
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-1">
+                        <h3 className="font-bold">{item.title}</h3>
+                        {item.done && <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 rounded-full px-2 py-0.5">Done</span>}
+                      </div>
+                      <p className="text-sm text-black/55 leading-relaxed mb-4">{item.desc}</p>
+                      <button onClick={() => setActiveTab(item.tab)} className="text-xs font-bold px-4 py-2 rounded-full bg-black text-white hover:bg-black/80">{item.action} →</button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* ── SETTINGS TAB ── */}
         {activeTab === 'settings' && (
@@ -1027,10 +1080,10 @@ export default function BuildPage({ params }: BuildPageProps) {
 
             <div className="grid grid-cols-2 gap-6">
               {[
-                { name: 'Google Business', icon: '🏪', status: 'Not Connected', description: 'Show up in local search & maps' },
-                { name: 'Instagram', icon: '📸', status: 'Not Connected', description: 'Visual storytelling for your brand' },
-                { name: 'X / Twitter', icon: '🐦', status: 'Not Connected', description: 'Real-time updates & community' },
-                { name: 'Facebook', icon: '👥', status: 'Not Connected', description: 'Reach local customers & groups' },
+                { name: 'Google Business', icon: '🏪', status: 'Guided setup', description: 'Create or update your Google Business Profile so local customers can find you in Search & Maps.', url: 'https://www.google.com/business/' },
+                { name: 'Instagram', icon: '📸', status: 'Guided setup', description: 'Add your Instagram handle and use this page as your posting checklist.', url: 'https://business.instagram.com/' },
+                { name: 'X / Twitter', icon: '🐦', status: 'Guided setup', description: 'Set up real-time updates and announcements for your community.', url: 'https://business.x.com/' },
+                { name: 'Facebook', icon: '👥', status: 'Guided setup', description: 'Create or update your local Facebook page and share launch posts.', url: 'https://www.facebook.com/business/pages' },
               ].map((platform) => (
                 <div key={platform.name} className="bg-white rounded-3xl border border-black/5 p-6 hover:shadow-xl hover:shadow-black/5 transition-all group">
                   <div className="flex justify-between items-start mb-4">
@@ -1039,9 +1092,9 @@ export default function BuildPage({ params }: BuildPageProps) {
                   </div>
                   <h3 className="font-bold mb-1">{platform.name}</h3>
                   <p className="text-sm text-black/50 mb-6">{platform.description}</p>
-                  <button className="w-full py-3 rounded-2xl bg-black/5 text-black font-bold text-xs group-hover:bg-black group-hover:text-white transition-all">
-                    Connect Account
-                  </button>
+                  <a href={platform.url} target="_blank" rel="noreferrer" className="block text-center w-full py-3 rounded-2xl bg-black/5 text-black font-bold text-xs group-hover:bg-black group-hover:text-white transition-all">
+                    Open setup guide →
+                  </a>
                 </div>
               ))}
             </div>
@@ -1058,48 +1111,9 @@ export default function BuildPage({ params }: BuildPageProps) {
         )}
 
         {activeTab === 'design' && (
-          <div className="flex" style={{ minHeight: 'calc(100vh - 80px)' }}>
-            {/* Left rail — Section library */}
-            <div className="w-64 shrink-0 border-r border-black/5 bg-white min-h-[calc(100vh-80px)] overflow-y-auto sticky top-20">
-              <div className="p-4">
-                <h3 className="text-xs font-bold text-black/40 uppercase tracking-wider mb-3">Add sections</h3>
-                <div className="space-y-1">
-                  {SECTION_CATEGORIES.map(cat => (
-                    <div key={cat.category}>
-                      <button
-                        onClick={() => setExpandedCategory(expandedCategory === cat.category ? null : cat.category)}
-                        className="w-full flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-black/5 text-sm font-medium text-left"
-                        aria-expanded={expandedCategory === cat.category}
-                      >
-                        <span>{cat.icon}</span>
-                        <span className="flex-1">{cat.label}</span>
-                        <span className="text-black/30 text-xs">{expandedCategory === cat.category ? '−' : '+'}</span>
-                      </button>
-                      {expandedCategory === cat.category && (
-                        <div className="ml-4 mt-1 space-y-0.5">
-                          {cat.types.map(type => {
-                            const def = SECTION_LIBRARY[type];
-                            return (
-                              <button
-                                key={type}
-                                onClick={() => { addSection(type, sections.length - 1); setExpandedCategory(null); }}
-                                className="w-full flex items-center gap-2 px-3 py-1.5 rounded-lg hover:bg-black/5 text-xs text-left text-black/70"
-                              >
-                                <span>{def.icon}</span>
-                                <span>{def.label}</span>
-                              </button>
-                            );
-                          })}
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            {/* Canvas — live in-place editor */}
-            <div className="flex-1 bg-white rounded-2xl border border-black/5 overflow-hidden shadow-sm">
+          <div className="px-8 pb-8" style={{ minHeight: 'calc(100vh - 80px)' }}>
+            {/* Canvas — live in-place editor. Add sections only inline between blocks. */}
+            <div className="bg-white rounded-2xl border border-black/5 overflow-hidden shadow-sm">
               <div className="bg-[#FAFAF9] border-b border-black/5 px-4 py-2 flex items-center gap-2">
                 <div className="flex gap-1.5">
                   <div className="w-3 h-3 rounded-full bg-red-400/60" />
@@ -1135,6 +1149,7 @@ export default function BuildPage({ params }: BuildPageProps) {
                   inventory={inventory}
                   template={template}
                   siteId={siteId}
+                  businessType={site.business_type as TemplateFamily}
                   onSave={handleSaveSections}
                 />
               )}

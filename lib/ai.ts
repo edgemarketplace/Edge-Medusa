@@ -5,23 +5,35 @@ export async function expandBusinessDescription(
   businessType: string,
   prompt: string
 ): Promise<string> {
+  const cleanPrompt = String(prompt || '').trim()
+  const cleanName = String(businessName || '').trim() || 'this business'
+  const cleanType = String(businessType || '').trim() || 'general'
+  const lower = `${cleanPrompt} ${cleanName}`.toLowerCase()
+  const isPlumber = lower.includes('plumb') || lower.includes('pipe') || lower.includes('drain') || lower.includes('leak') || lower.includes('water heater')
+  const instruction = `Expand this into concise, website-ready business copy.\n\nBusiness name: ${cleanName}\nTemplate/vertical: ${cleanType}\nUser wrote: ${cleanPrompt}\n\nRules:\n- Preserve the user's actual trade and intent.\n- Do not explain what ${cleanType} means.\n- Do not mention software, automotive, SaaS, consulting, or generic professional-services unless the user did.\n- If this is plumbing, write as a local plumbing company: leak repairs, drain clearing, water heaters, fixtures, reasonable pricing, clean work, and prompt response.\n- Output 2-3 plain sentences only, no bullets.`
+
   try {
     // Try OpenAI first
     if (process.env.OPENAI_API_KEY) {
-      const { default: OpenAI } = await import('openai');
-      const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+      const { default: OpenAI } = await import('openai')
+      const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
       const response = await openai.chat.completions.create({
         model: 'gpt-4o',
-        messages: [{ role: 'user', content: prompt }],
-        temperature: 0.7,
-        max_tokens: 200,
-      });
-      return response.choices[0].message.content?.trim().replace(/^"|"$/g, '') || prompt;
+        messages: [{ role: 'user', content: instruction }],
+        temperature: 0.45,
+        max_tokens: 180,
+      })
+      return response.choices[0].message.content?.trim().replace(/^"|"$/g, '') || cleanPrompt
     }
   } catch (error) {
-    console.error('expandBusinessDescription OpenAI failed:', error);
+    console.error('expandBusinessDescription OpenAI failed:', error)
   }
-  return prompt;
+
+  if (cleanType === 'service-pro' && isPlumber) {
+    return `${cleanName} provides reliable local plumbing at reasonable cost, including leak repairs, drain clearing, water heater service, pipe repair, and fixture installation. Customers can expect clear pricing before work begins, careful cleanup, and fast help for urgent plumbing issues.`
+  }
+
+  return cleanPrompt
 }
 
 /**
