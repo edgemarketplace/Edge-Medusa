@@ -303,7 +303,7 @@ export default function SectionEditor({ draft, onChange, siteId, businessType }:
   }
 
   function ColorField({ label, field, value, onChange }: { label: string; field: string; value: string; onChange: (field: string, value: string) => void }) {
-    const fieldId = `color-${field}-${draft.id}`;
+    const fieldId = `color-${field}`;
     return (
       <div>
         <label htmlFor={fieldId} className="block text-xs font-bold text-black/50 mb-1 uppercase tracking-wider">{label}</label>
