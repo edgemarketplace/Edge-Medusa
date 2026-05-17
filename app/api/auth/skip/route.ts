@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
+import { isMissingSupabaseTableError, missingAuthSessionsMessage } from '@/lib/supabase-schema-errors'
 
 /**
  * Skip-auth endpoint for onboarding flow.
@@ -39,11 +40,21 @@ export async function POST(request: NextRequest) {
     const expiresAt = new Date(Date.now() + SESSION_MAX_AGE_SECONDS * 1000)
 
     // Store the session token
-    await supabaseAdmin.from('auth_sessions').insert({
+    const { error: sessionError } = await supabaseAdmin.from('auth_sessions').insert({
       email,
       token,
       expires_at: expiresAt.toISOString(),
     })
+
+    if (sessionError) {
+      if (isMissingSupabaseTableError(sessionError, 'auth_sessions')) {
+        return NextResponse.json(
+          { error: missingAuthSessionsMessage(), setup_required: true },
+          { status: 500 }
+        )
+      }
+      throw sessionError
+    }
 
     const response = NextResponse.json({ ok: true, email }, { status: 200 })
     response.cookies.set('auth_token', token, {

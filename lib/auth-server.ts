@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from './supabase'
+import { isMissingSupabaseTableError, missingAuthSessionsMessage } from './supabase-schema-errors'
 
 export interface AuthSession {
   id: string;
@@ -23,7 +24,12 @@ export async function validateAuthSession(request: NextRequest): Promise<AuthSes
     .eq('token', token)
     .single();
 
-  if (error || !session) return null;
+  if (error || !session) {
+    if (isMissingSupabaseTableError(error, 'auth_sessions')) {
+      console.error(missingAuthSessionsMessage())
+    }
+    return null
+  }
 
   // Check expiry
   if (new Date(session.expires_at) < new Date()) return null;

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
 import { validateAuthSession } from '@/lib/auth-server'
+import { isMissingSupabaseTableError, missingAuthSessionsMessage } from '@/lib/supabase-schema-errors'
 
 const SESSION_MAX_AGE_SECONDS = 7 * 24 * 60 * 60
 
@@ -14,7 +15,12 @@ async function createBuilderSession(email: string) {
     expires_at: expiresAt.toISOString(),
   })
 
-  if (error) throw error
+  if (error) {
+    if (isMissingSupabaseTableError(error, 'auth_sessions')) {
+      throw new Error(missingAuthSessionsMessage())
+    }
+    throw error
+  }
 
   return { token, email: email.toLowerCase().trim() }
 }

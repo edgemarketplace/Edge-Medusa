@@ -65,6 +65,24 @@ JWT_SECRET=
 COOKIE_SECRET=
 ```
 
+## Supabase schema setup
+
+Before using onboarding, magic links, or the builder dashboard, run the Supabase schema migrations in the project connected to `NEXT_PUBLIC_SUPABASE_URL`.
+
+For the auth session error:
+
+```txt
+Could not find the table 'public.auth_sessions' in the schema cache
+```
+
+run this file in Supabase Dashboard → SQL Editor:
+
+```txt
+supabase/migrations/20260518_create_auth_sessions.sql
+```
+
+That creates `public.auth_sessions`, the token table used by magic link login and the skip-auth onboarding session.
+
 ## Verification
 
 ```bash
