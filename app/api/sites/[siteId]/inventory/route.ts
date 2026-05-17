@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
 import { requireSiteAdmin } from '@/lib/auth-server'
+import { syncInventoryToMedusa } from '@/lib/medusa/client'
 
 // Helper: Sync inventory items to site sections (all commerce types)
 async function syncInventoryToSections(siteId: string, items: any[]) {
@@ -129,6 +130,14 @@ export async function PUT(
 
     // Sync to sections
     await syncInventoryToSections(siteId, items)
+
+    // Sync catalog to Medusa when the backend is configured. This is intentionally
+    // non-blocking so the builder stays usable if Medusa is offline during setup.
+    try {
+      await syncInventoryToMedusa(siteId, data || items)
+    } catch (error: any) {
+      console.error('Medusa inventory sync failed:', error?.message || error)
+    }
 
     return NextResponse.json(data || [])
   } catch (error: any) {

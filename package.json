@@ -1,12 +1,17 @@
 {
-  "name": "edgemarketplacehublaunch",
+  "name": "edge-medusa",
   "version": "0.1.0",
   "private": true,
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "medusa:dev": "npm --prefix backend/medusa run dev",
+    "medusa:build": "npm --prefix backend/medusa run build",
+    "medusa:start": "npm --prefix backend/medusa run start",
+    "medusa:migrate": "npm --prefix backend/medusa run migrate",
+    "dev:all": "concurrently \"npm run dev\" \"npm run medusa:dev\""
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.1",
@@ -30,6 +35,7 @@
     "eslint-config-next": "16.2.6",
     "tailwindcss": "^4",
     "tsx": "^4.22.0",
-    "typescript": "^5"
+    "typescript": "^5",
+    "concurrently": "^9.2.1"
   }
 }
