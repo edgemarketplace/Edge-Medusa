@@ -25,16 +25,25 @@ export async function POST(request: NextRequest) {
 
     // Get the site
     console.log('Checkout: looking up siteId:', siteId);
-    const { data: site, error: siteError } = await supabaseAdmin
-      .from('sites')
-      .select('stripe_account_id, business_name, contact_email, shipping_rate, business_address, business_city, business_state, business_zip')
-      .eq('id', siteId)
-      .single();
+    let site: any = null;
+    try {
+      const result = await supabaseAdmin
+        .from('sites')
+        .select('stripe_account_id, business_name, contact_email, shipping_rate, business_address, business_city, business_state, business_zip')
+        .eq('id', siteId)
+        .single();
+      console.log('Checkout: supabase result:', JSON.stringify({ data: result.data ? 'found' : null, error: result.error?.message || null }));
+      site = result.data;
+      if (result.error) {
+        return NextResponse.json({ error: 'Site query failed', debug: result.error.message }, { status: 500 });
+      }
+    } catch (dbErr: any) {
+      console.error('Checkout: DB connection error:', dbErr.message);
+      return NextResponse.json({ error: 'Database connection failed', debug: dbErr.message }, { status: 500 });
+    }
 
-    console.log('Checkout: site query result:', { site: site ? 'found' : 'null', siteError: siteError?.message || null });
-
-    if (siteError || !site) {
-      return NextResponse.json({ error: 'Site not found', debug: { siteId, siteError: siteError?.message } }, { status: 404 });
+    if (!site) {
+      return NextResponse.json({ error: 'Site not found', debug: { siteId } }, { status: 404 });
     }
 
     // Fetch inventory to validate stock and build line items
