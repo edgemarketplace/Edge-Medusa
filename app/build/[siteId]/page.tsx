@@ -1525,79 +1525,133 @@ function InventoryPanel({ inventory, onAdd, onUpdate, onRemove, onGenerateStarte
   onRemove: (i: number) => void; onGenerateStarters: () => void; onSave: () => void; onImageUpload: (i: number, f: File) => void; 
   onPrintifySync: () => void; site: any; saving: boolean;
 }) {
+  const categoriesUsed = [...new Set(inventory.map(i => i.category).filter(Boolean))];
+  const withStock = inventory.filter(i => i.stock != null).length;
+  const activeCount = inventory.filter(i => i.enabled !== false).length;
+
   return (
-    <div className="space-y-6 max-w-4xl">
+    <div className="space-y-6 max-w-5xl">
+      {/* Header */}
       <div className="flex items-start justify-between gap-4">
         <div>
           <h2 className="text-2xl font-bold">Inventory</h2>
-          <p className="text-black/50 text-sm mt-1">Add your products or services. These appear on your store.</p>
+          <p className="text-black/50 text-sm mt-1">Manage your products and services.</p>
         </div>
-        <Link
-          href={`/build/${site?.id}/inventory`}
-          className="shrink-0 text-sm text-blue-600 hover:text-blue-700 font-medium flex items-center gap-1"
-        >
-          Open full inventory editor ↗
-        </Link>
+        <div className="flex gap-2">
+          {site?.printify_api_key && (
+            <button onClick={onPrintifySync} className="px-4 py-2 rounded-full border border-blue-200 bg-blue-50 text-blue-700 text-sm font-bold hover:bg-blue-100 flex items-center gap-2">
+              <span>🔄</span> Sync Printify
+            </button>
+          )}
+          <Link
+            href={`/build/${site?.id}/inventory`}
+            className="px-5 py-2.5 rounded-full bg-[#2D2D2D] text-white text-sm font-bold hover:scale-[1.02] transition-transform flex items-center gap-1"
+          >
+            Open inventory editor ↗
+          </Link>
+        </div>
       </div>
+
+      {/* Quick Stats */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="bg-white rounded-2xl p-5 border border-black/5">
+          <p className="text-sm text-black/40 mb-1">Total Products</p>
+          <p className="text-2xl font-bold">{inventory.length}</p>
+        </div>
+        <div className="bg-white rounded-2xl p-5 border border-black/5">
+          <p className="text-sm text-black/40 mb-1">Active</p>
+          <p className="text-2xl font-bold">{activeCount}</p>
+        </div>
+        <div className="bg-white rounded-2xl p-5 border border-black/5">
+          <p className="text-sm text-black/40 mb-1">Categories</p>
+          <p className="text-2xl font-bold">{categoriesUsed.length}</p>
+        </div>
+        <div className="bg-white rounded-2xl p-5 border border-black/5">
+          <p className="text-sm text-black/40 mb-1">With Stock</p>
+          <p className="text-2xl font-bold">{withStock}</p>
+        </div>
+      </div>
+
+      {/* Quick Actions */}
       <div className="flex gap-3">
-        {site?.printify_api_key && (
-          <button onClick={onPrintifySync} className="px-4 py-2 rounded-full border border-blue-200 bg-blue-50 text-blue-700 text-sm font-bold hover:bg-blue-100 flex items-center gap-2">
-            <span>🔄</span> Sync Printify
-          </button>
-        )}
-        <button onClick={onGenerateStarters} className="px-4 py-2 rounded-full border border-black/10 text-sm font-bold hover:bg-black/5">✨ Generate starters</button>
-        <button onClick={onAdd} className="px-4 py-2 rounded-full bg-black text-white text-sm font-bold">+ Add item</button>
+        <button onClick={onGenerateStarters} className="px-4 py-2 rounded-full border border-black/10 text-sm font-bold hover:bg-black/5">✨ Generate starter items</button>
+        <button onClick={onAdd} className="px-4 py-2 rounded-full bg-black text-white text-sm font-bold">+ Quick add</button>
       </div>
+
+      {/* Empty State */}
       {inventory.length === 0 && (
         <div className="bg-white border border-dashed border-black/10 rounded-2xl p-12 text-center">
-          <p className="text-black/40 mb-4">No items yet</p>
-          <button onClick={onGenerateStarters} className="px-6 py-3 rounded-full bg-black text-white font-bold">Generate starter items</button>
+          <p className="text-black/40 mb-4">No products yet</p>
+          <div className="flex gap-3 justify-center">
+            <button onClick={onGenerateStarters} className="px-6 py-3 rounded-full bg-black text-white font-bold">✨ Generate starters</button>
+            <Link
+              href={`/build/${site?.id}/inventory`}
+              className="px-6 py-3 rounded-full border border-black/10 font-bold hover:border-black/30"
+            >
+              Open full editor
+            </Link>
+          </div>
         </div>
       )}
-      <div className="space-y-3">
-        {inventory.map((item, index) => {
-          const imgId = `inv-img-${index}`;
-          return (
-            <div key={index} className="bg-white border border-black/5 rounded-2xl p-4">
-              <div className="grid grid-cols-12 gap-3 items-start">
-                <div className="col-span-3 md:col-span-1">
-                  {item.image_url ? (
-                    <div className="relative group">
-                      <img src={item.image_url} alt={item.name} className="w-full aspect-square object-cover rounded-lg" />
-                      <button onClick={() => onUpdate(index, 'image_url', '')} className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white rounded-full text-xs opacity-0 group-hover:opacity-100" aria-label="Remove image">✕</button>
-                    </div>
-                  ) : (
-                    <label htmlFor={imgId} className="flex items-center justify-center w-full aspect-square border border-dashed border-black/15 rounded-lg cursor-pointer hover:border-black/30">
-                      <input id={imgId} name={imgId} type="file" accept="image/*" className="hidden" onChange={e => { const f = e.target.files?.[0]; if (f) onImageUpload(index, f); }} />
-                      <span className="text-black/25 text-lg">+</span>
-                    </label>
-                  )}
+
+      {/* Product Preview Grid (compact) */}
+      {inventory.length > 0 && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {inventory.map((item, index) => (
+            <div key={index} className={`bg-white rounded-2xl border overflow-hidden ${item.enabled === false ? 'border-black/5 opacity-50' : 'border-black/5'}`}>
+              <div className="h-24 bg-[#F9F8F6] relative">
+                {item.image_url ? (
+                  <img src={item.image_url} alt={item.name} className="w-full h-full object-cover" />
+                ) : (
+                  <div className="flex items-center justify-center h-full text-black/20 text-sm">No image</div>
+                )}
+              </div>
+              <div className="p-3">
+                <div className="flex items-start justify-between gap-2">
+                  <input
+                    name={`inv-name-${index}`}
+                    value={item.name}
+                    onChange={e => onUpdate(index, 'name', e.target.value)}
+                    placeholder="Name *"
+                    className="flex-1 min-w-0 bg-transparent text-sm font-bold placeholder:font-normal focus:outline-none"
+                  />
+                  <span className={`shrink-0 text-[10px] px-1.5 py-0.5 rounded-full ${item.enabled === false ? 'bg-gray-100 text-gray-400' : 'bg-green-100 text-green-700'}`}>
+                    {item.enabled === false ? 'Off' : 'On'}
+                  </span>
                 </div>
-                <label className="col-span-9 md:col-span-3">
-                  <span className="sr-only">Name</span>
-                  <input name={`inv-name-${index}`} value={item.name} onChange={e => onUpdate(index, 'name', e.target.value)} placeholder="Name *" className="w-full border border-black/10 rounded-xl px-3 py-2.5 text-sm" />
-                </label>
-                <label className="col-span-6 md:col-span-2">
-                  <span className="sr-only">Price</span>
-                  <input name={`inv-price-${index}`} value={item.price} onChange={e => onUpdate(index, 'price', e.target.value)} placeholder="Price" className="w-full border border-black/10 rounded-xl px-3 py-2.5 text-sm" />
-                </label>
-                <label className="col-span-6 md:col-span-2">
-                  <span className="sr-only">Category</span>
-                  <input name={`inv-cat-${index}`} value={item.category} onChange={e => onUpdate(index, 'category', e.target.value)} placeholder="Category" className="w-full border border-black/10 rounded-xl px-3 py-2.5 text-sm" />
-                </label>
-                <label className="col-span-10 md:col-span-3">
-                  <span className="sr-only">Description</span>
-                  <input name={`inv-desc-${index}`} value={item.description} onChange={e => onUpdate(index, 'description', e.target.value)} placeholder="Description" className="w-full border border-black/10 rounded-xl px-3 py-2.5 text-sm" />
-                </label>
-                <button onClick={() => onRemove(index)} className="col-span-2 md:col-span-1 flex items-center justify-center rounded-xl border border-black/10 hover:bg-red-50 py-2.5 text-xs" aria-label="Remove item">✕</button>
+                <div className="flex items-center gap-2 mt-1.5">
+                  <input
+                    name={`inv-price-${index}`}
+                    value={item.price}
+                    onChange={e => onUpdate(index, 'price', e.target.value)}
+                    placeholder="Price"
+                    className="w-20 bg-transparent text-sm text-black/60 focus:outline-none"
+                  />
+                  <span className="text-xs text-black/30">|</span>
+                  <input
+                    name={`inv-stock-${index}`}
+                    value={item.stock ?? ''}
+                    onChange={e => onUpdate(index, 'stock', e.target.value)}
+                    placeholder="Stock"
+                    className="w-16 bg-transparent text-xs text-black/40 focus:outline-none"
+                  />
+                  <button
+                    onClick={() => onRemove(index)}
+                    className="ml-auto text-xs text-black/30 hover:text-red-500 px-2"
+                    aria-label="Remove item"
+                  >
+                    ✕
+                  </button>
+                </div>
               </div>
             </div>
-          );
-        })}
-      </div>
+          ))}
+        </div>
+      )}
+
       {inventory.length > 0 && (
         <div className="flex justify-end">
-          <button onClick={onSave} disabled={saving} className="px-6 py-3 rounded-full border border-black/10 font-bold disabled:opacity-50">{saving ? 'Saving...' : 'Save inventory'}</button>
+          <button onClick={onSave} disabled={saving} className="px-6 py-3 rounded-full border border-black/10 font-bold disabled:opacity-50">{saving ? 'Saving...' : 'Save quick edits'}</button>
         </div>
       )}
     </div>

@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import Stripe from 'stripe';
 import { supabaseAdmin } from '@/lib/supabase';
-import { sendOrderNotificationEmail, sendCustomerOrderConfirmationEmail } from '@/lib/email';
 
 let stripeInstance: Stripe | null = null;
 
@@ -27,7 +26,7 @@ export async function POST(request: NextRequest) {
     // Get the site
     const { data: site, error: siteError } = await supabaseAdmin
       .from('sites')
-      .select('stripe_account_id, business_name, contact_email, shipping_rate')
+      .select('stripe_account_id, business_name, contact_email, shipping_rate, business_address, business_city, business_state, business_zip')
       .eq('id', siteId)
       .single();
 
@@ -72,11 +71,52 @@ export async function POST(request: NextRequest) {
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
     const subtotal = lineItems.reduce((sum, li) => sum + (li.price_data!.unit_amount * li.quantity), 0);
 
-    // Flat shipping from site settings
+    // --- LIVE SHIPPING via Shippo ---
     let shippingCents = 0;
-    if (site.shipping_rate != null && site.shipping_rate > 0) {
-      shippingCents = Math.round(site.shipping_rate * 100);
+    let shippoRateId: string | null = null;
+    const shippoConfigured = !!process.env.SHIPPO_API_KEY;
+
+    if (shippoConfigured) {
+      try {
+        const { getCheapestRate, getParcelForItemCount } = await import('@/lib/shippo');
+        const fromAddress = {
+          name: site.business_name || 'Store',
+          street1: site.business_address || '123 Main St',
+          city: site.business_city || 'New York',
+          state: site.business_state || 'NY',
+          zip: site.business_zip || '10001',
+          country: 'US',
+        };
+        // Use a generic "to" address for rate estimation (customer enters real one in Stripe)
+        const toAddress = {
+          name: 'Customer',
+          street1: '456 Sample Ave',
+          city: 'Los Angeles',
+          state: 'CA',
+          zip: '90001',
+          country: 'US',
+        };
+        const parcel = getParcelForItemCount(items.length);
+        const rate = await getCheapestRate(fromAddress, toAddress, [parcel]);
+        if (rate) {
+          shippingCents = Math.round(parseFloat(rate.amount) * 100);
+          shippoRateId = rate.object_id;
+        } else {
+          // Fallback to flat rate if Shippo returns no rates
+          shippingCents = site.shipping_rate ? Math.round(site.shipping_rate * 100) : 0;
+        }
+      } catch (shippoErr: any) {
+        console.error('Shippo rate fetch failed:', shippoErr.message);
+        // Fallback to flat rate
+        shippingCents = site.shipping_rate ? Math.round(site.shipping_rate * 100) : 0;
+      }
+    } else {
+      // Flat rate fallback
+      if (site.shipping_rate != null && site.shipping_rate > 0) {
+        shippingCents = Math.round(site.shipping_rate * 100);
+      }
     }
+
     const totalAmount = subtotal + shippingCents;
 
     // Determine checkout mode
@@ -94,17 +134,22 @@ export async function POST(request: NextRequest) {
         business_name: site.business_name,
         customer_email: customerEmail || '',
         is_test_mode: isTestMode ? 'true' : 'false',
+        shippo_rate_id: shippoRateId || '',
+        item_count: String(items.length),
       },
       customer_email: customerEmail || undefined,
       shipping_address_collection: { allowed_countries: ['US', 'CA', 'GB', 'AU'] },
     };
 
-    // Add shipping line item if applicable
+    // Add shipping line item
     if (shippingCents > 0) {
       sessionConfig.line_items.push({
         price_data: {
           currency: 'usd',
-          product_data: { name: 'Shipping' },
+          product_data: {
+            name: 'Shipping',
+            description: shippoConfigured ? 'Estimated live rate' : 'Flat rate shipping',
+          },
           unit_amount: shippingCents,
         },
         quantity: 1,
@@ -114,24 +159,23 @@ export async function POST(request: NextRequest) {
     let session;
     const stripe = getStripe();
     if (hasStripeConnected) {
-      // Real merchant Stripe account — use Connect
       session = await stripe.checkout.sessions.create(
         {
           ...sessionConfig,
           payment_intent_data: {
-            application_fee_amount: Math.round(totalAmount * 0.05), // 5% platform fee
+            application_fee_amount: Math.round(totalAmount * 0.05),
           },
         },
         { stripeAccount: site.stripe_account_id }
       );
     } else {
-      // Test mode — use platform account directly
       session = await stripe.checkout.sessions.create(sessionConfig);
     }
 
     return NextResponse.json({
       url: session.url,
       testMode: isTestMode,
+      shippingCents,
     });
   } catch (error) {
     console.error('Checkout error:', error);
@@ -142,8 +186,6 @@ export async function POST(request: NextRequest) {
   }
 }
 
-// Webhook handler for completed checkouts
-export async function GET(request: NextRequest) {
-  // Health check
+export async function GET() {
   return NextResponse.json({ ok: true });
 }

@@ -13,35 +13,52 @@ function getStripe(): Stripe {
   return stripeInstance;
 }
 
+// Stripe webhook handler — reliable order creation when success page misses
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();
-    const { sessionId, siteId } = body;
-
-    if (!sessionId || !siteId) {
-      return NextResponse.json({ error: 'sessionId and siteId required' }, { status: 400 });
-    }
+    const payload = await request.text();
+    const signature = request.headers.get('stripe-signature') || '';
 
     const stripe = getStripe();
-    const session = await stripe.checkout.sessions.retrieve(sessionId);
+    const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
 
-    if (!session.payment_intent) {
-      return NextResponse.json({ error: 'No payment intent found' }, { status: 400 });
+    let event: Stripe.Event;
+
+    if (webhookSecret) {
+      try {
+        event = stripe.webhooks.constructEvent(payload, signature, webhookSecret);
+      } catch (err: any) {
+        console.error('Webhook signature verification failed:', err.message);
+        return NextResponse.json({ error: 'Invalid signature' }, { status: 400 });
+      }
+    } else {
+      event = JSON.parse(payload);
+      console.warn('STRIPE_WEBHOOK_SECRET not set — webhook not verified');
     }
 
-    const paymentIntent = await stripe.paymentIntents.retrieve(session.payment_intent as string);
-    const lineItems = await stripe.checkout.sessions.listLineItems(sessionId);
+    if (event.type === 'checkout.session.completed') {
+      const session = event.data.object as Stripe.Checkout.Session;
 
-    // Check if order already exists
-    const { data: existing } = await supabaseAdmin
-      .from('orders')
-      .select('id')
-      .eq('stripe_session_id', sessionId)
-      .maybeSingle();
+      const siteId = session.metadata?.site_id;
+      if (!siteId) {
+        console.error('No site_id in session metadata');
+        return NextResponse.json({ ok: true });
+      }
 
-    let orderId = existing?.id;
+      // Check if order already exists
+      const { data: existing } = await supabaseAdmin
+        .from('orders')
+        .select('id')
+        .eq('stripe_session_id', session.id)
+        .maybeSingle();
 
-    if (!orderId) {
+      if (existing) {
+        return NextResponse.json({ ok: true, orderId: existing.id, duplicate: true });
+      }
+
+      // Fetch line items
+      const lineItems = await stripe.checkout.sessions.listLineItems(session.id);
+
       const subtotal = lineItems.data
         .filter(li => li.description !== 'Shipping')
         .reduce((sum, li) => sum + (li.amount_subtotal || 0), 0);
@@ -49,13 +66,14 @@ export async function POST(request: NextRequest) {
         .filter(li => li.description === 'Shipping')
         .reduce((sum, li) => sum + (li.amount_subtotal || 0), 0);
 
+      // Create order
       const { data: order, error: orderError } = await supabaseAdmin
         .from('orders')
         .insert({
           site_id: siteId,
-          status: paymentIntent.status === 'succeeded' ? 'paid' : 'pending',
-          stripe_session_id: sessionId,
-          stripe_payment_intent_id: paymentIntent.id,
+          status: 'paid',
+          stripe_session_id: session.id,
+          stripe_payment_intent_id: session.payment_intent as string,
           customer_email: session.customer_details?.email || session.customer_email || '',
           customer_name: session.customer_details?.name || '',
           shipping_address: session.customer_details?.address || null,
@@ -68,16 +86,15 @@ export async function POST(request: NextRequest) {
         .single();
 
       if (orderError) {
-        console.error('Order creation error:', orderError);
+        console.error('Webhook order creation error:', orderError);
         return NextResponse.json({ error: 'Order creation failed' }, { status: 500 });
       }
 
-      orderId = order.id;
-
+      // Create order items
       const orderItems = lineItems.data
         .filter(li => li.description !== 'Shipping')
         .map(li => ({
-          order_id: orderId,
+          order_id: order.id,
           name: li.description || 'Item',
           price_cents: li.price?.unit_amount || 0,
           quantity: li.quantity || 1,
@@ -106,13 +123,14 @@ export async function POST(request: NextRequest) {
         }
       }
 
-      // Get site info for emails
+      // Get site info for email
       const { data: site } = await supabaseAdmin
         .from('sites')
         .select('business_name, contact_email')
         .eq('id', siteId)
         .single();
 
+      // Send emails (fire and forget)
       if (site) {
         const emailItems = lineItems.data
           .filter(li => li.description !== 'Shipping')
@@ -123,43 +141,42 @@ export async function POST(request: NextRequest) {
           }));
         const total = `$${((session.amount_total || 0) / 100).toFixed(2)}`;
 
-        // Merchant notification
         if (site.contact_email) {
           sendOrderNotificationEmail({
             to: site.contact_email,
             businessName: site.business_name,
-            orderId: orderId!,
+            orderId: order.id,
             items: emailItems,
             total,
             customerEmail: session.customer_details?.email || session.customer_email || '',
           }).catch(err => console.error('Merchant email error:', err));
         }
 
-        // Customer confirmation
         const customerEmail = session.customer_details?.email || session.customer_email;
         if (customerEmail) {
           sendCustomerOrderConfirmationEmail({
             to: customerEmail,
             businessName: site.business_name,
-            orderId: orderId!,
+            orderId: order.id,
             items: emailItems,
             total,
           }).catch(err => console.error('Customer email error:', err));
         }
       }
+
+      return NextResponse.json({ ok: true, orderId: order.id });
     }
 
-    return NextResponse.json({
-      clientSecret: paymentIntent.client_secret,
-      amount: paymentIntent.amount,
-      orderId,
-      status: paymentIntent.status,
-    });
+    return NextResponse.json({ ok: true });
   } catch (error: any) {
-    console.error('Checkout confirm error:', error);
+    console.error('Stripe webhook error:', error);
     return NextResponse.json(
-      { error: error.message || 'Failed to confirm checkout' },
+      { error: error.message || 'Webhook handler failed' },
       { status: 500 }
     );
   }
+}
+
+export async function GET() {
+  return NextResponse.json({ ok: true, handler: 'stripe-webhook' });
 }
