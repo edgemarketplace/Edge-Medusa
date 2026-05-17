@@ -10,8 +10,8 @@ cp .env.local.example .env.local
 
 | Variable | Description | Where to get it |
 |---|---|---|
-| `NEXT_PUBLIC_SUPABASE_URL` | Supabase project URL | Supabase Dashboard → Settings → API |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase anon key | Supabase Dashboard → Settings → API |
+| `NEXT_PUBLIC_SUPABASE_URL` | Supabase project URL. Current Edge-Medusa project: `https://nzxedlagqtzadyrmgkhq.supabase.co` | Supabase Dashboard → Settings → API |
+| `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | Supabase publishable key. `NEXT_PUBLIC_SUPABASE_ANON_KEY` remains supported as a legacy alias. | Supabase Dashboard → Settings → API |
 | `SUPABASE_SERVICE_ROLE_KEY` | Supabase service role key | Supabase Dashboard → Settings → API (secret) |
 | `OPENAI_API_KEY` | OpenAI API key | platform.openai.com/api-keys |
 | `GEMINI_API_KEY` | Google Gemini API key | aistudio.google.com/app/apikey |

@@ -9,9 +9,11 @@ function getSupabaseUrl(): string {
   return url;
 }
 
-function getSupabaseAnonKey(): string {
-  const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-  if (!key) throw new Error('Missing NEXT_PUBLIC_SUPABASE_ANON_KEY');
+function getSupabasePublishableKey(): string {
+  const key = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  if (!key) {
+    throw new Error('Missing NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY or NEXT_PUBLIC_SUPABASE_ANON_KEY');
+  }
   return key;
 }
 
@@ -25,7 +27,7 @@ function getSupabaseServiceKey(): string {
 export const supabase: SupabaseClient = new Proxy({} as SupabaseClient, {
   get(_target, prop) {
     if (!_supabase) {
-      _supabase = createClient(getSupabaseUrl(), getSupabaseAnonKey());
+      _supabase = createClient(getSupabaseUrl(), getSupabasePublishableKey());
     }
     return Reflect.get(_supabase, prop);
   },
