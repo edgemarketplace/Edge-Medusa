@@ -6,8 +6,10 @@ import { supabaseAdmin } from '@/lib/supabase'
  * When a user clicks "Skip for now" in email-gate,
  * we create a temporary auth session tied to their site's email.
  * This lets them use the builder without a password/magic link.
- * Session expires in 30 minutes (same as normal magic link).
+ * Session expires in 7 days so skipped users can come back to finish.
  */
+const SESSION_MAX_AGE_SECONDS = 7 * 24 * 60 * 60
+
 export async function POST(request: NextRequest) {
   try {
     const { siteId } = await request.json()
@@ -34,7 +36,7 @@ export async function POST(request: NextRequest) {
 
     // Generate a secure token
     const token = crypto.randomUUID()
-    const expiresAt = new Date(Date.now() + 30 * 60 * 1000) // 30 minutes
+    const expiresAt = new Date(Date.now() + SESSION_MAX_AGE_SECONDS * 1000)
 
     // Store the session token
     await supabaseAdmin.from('auth_sessions').insert({
@@ -43,33 +45,22 @@ export async function POST(request: NextRequest) {
       expires_at: expiresAt.toISOString(),
     })
 
-    // Set auth cookies
-    const cookieOptions = [
-      `auth_token=${token}`,
-      'HttpOnly',
-      'Secure',
-      'SameSite=Lax',
-      'Path=/',
-      `Max-Age=${30 * 60}`,
-    ].join('; ')
+    const response = NextResponse.json({ ok: true, email }, { status: 200 })
+    response.cookies.set('auth_token', token, {
+      httpOnly: true,
+      secure: true,
+      sameSite: 'lax',
+      path: '/',
+      maxAge: SESSION_MAX_AGE_SECONDS,
+    })
+    response.cookies.set('auth_email', email, {
+      secure: true,
+      sameSite: 'lax',
+      path: '/',
+      maxAge: SESSION_MAX_AGE_SECONDS,
+    })
 
-    const emailCookieOptions = [
-      `auth_email=${encodeURIComponent(email)}`,
-      'Secure',
-      'SameSite=Lax',
-      'Path=/',
-      `Max-Age=${30 * 60}`,
-    ].join('; ')
-
-    return NextResponse.json(
-      { ok: true, email },
-      {
-        status: 200,
-        headers: {
-          'Set-Cookie': [cookieOptions, emailCookieOptions].join(', '),
-        },
-      }
-    )
+    return response
   } catch (error: any) {
     console.error('Skip-auth error:', error)
     return NextResponse.json(

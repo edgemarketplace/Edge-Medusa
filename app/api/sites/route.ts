@@ -2,6 +2,23 @@ import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
 import { validateAuthSession } from '@/lib/auth-server'
 
+const SESSION_MAX_AGE_SECONDS = 7 * 24 * 60 * 60
+
+async function createBuilderSession(email: string) {
+  const token = crypto.randomUUID()
+  const expiresAt = new Date(Date.now() + SESSION_MAX_AGE_SECONDS * 1000)
+
+  const { error } = await supabaseAdmin.from('auth_sessions').insert({
+    email: email.toLowerCase().trim(),
+    token,
+    expires_at: expiresAt.toISOString(),
+  })
+
+  if (error) throw error
+
+  return { token, email: email.toLowerCase().trim() }
+}
+
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
@@ -68,7 +85,23 @@ export async function POST(request: NextRequest) {
       console.error('Welcome email failed:', emailErr)
     }
 
-    return NextResponse.json(data, { status: 201 })
+    const session = await createBuilderSession(contact_email)
+    const response = NextResponse.json(data, { status: 201 })
+    response.cookies.set('auth_token', session.token, {
+      httpOnly: true,
+      secure: true,
+      sameSite: 'lax',
+      path: '/',
+      maxAge: SESSION_MAX_AGE_SECONDS,
+    })
+    response.cookies.set('auth_email', session.email, {
+      secure: true,
+      sameSite: 'lax',
+      path: '/',
+      maxAge: SESSION_MAX_AGE_SECONDS,
+    })
+
+    return response
   } catch (error: any) {
     console.error('POST /api/sites error:', error)
     return NextResponse.json(
