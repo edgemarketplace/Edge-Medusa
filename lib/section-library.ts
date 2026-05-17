@@ -290,6 +290,14 @@ export const SECTION_LIBRARY: Record<SectionType, SectionDefinition> = {
     icon: '📌',
     defaultData: { text: 'Ready to get started?', ctaText: 'Shop now', position: 'bottom' },
   },
+  'trust-badges': {
+    type: 'trust-badges',
+    category: 'conversion',
+    label: 'Trust Badges',
+    description: 'Security and guarantee badges row',
+    icon: '🛡️',
+    defaultData: { badges: [{ label: 'SSL Secure', icon: '🔒' }, { label: 'Free Shipping', icon: '🚚' }, { label: '24/7 Support', icon: '💬' }] },
+  },
 
   // Footers
   'footer-basic': {

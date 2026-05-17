@@ -87,16 +87,26 @@ export default function StorefrontRenderer({
 
   const [showContactModal, setShowContactModal] = useState(false);
   const [showTestBanner, setShowTestBanner] = useState(false);
+  function getCartItems() {
+    return Object.entries(cart)
+      .filter(([, qty]) => qty > 0)
+      .map(([key, quantity]) => {
+        const item = inventory.find((i) => i.id === key || i.name === key);
+        if (!item) return null;
+        return {
+          id: item.id,
+          name: item.name,
+          price: item.price,
+          description: item.description,
+          quantity,
+        };
+      })
+      .filter(Boolean) as { id:string; name:string; price:string; description?:string; quantity:number }[];
+  }
 
   async function handleCheckout() {
-    const items = Object.entries(cart)
-      .filter(([, qty]) => qty > 0)
-      .map(([itemId, qty]) => {
-        const item = inventory.find((i) => i.id === itemId);
-        return { id: itemId, name: item?.name || 'Item', price: item?.price || '0', description: item?.description || '', quantity: qty };
-      });
+    const items = getCartItems();
     if (items.length === 0) return;
-    // Client-side stock guard
     for (const it of items) {
       const item = inventory.find((i) => i.id === it.id);
       if (item && item.stock != null && it.quantity > item.stock) {
@@ -402,6 +412,37 @@ function ContactForm({ siteId, primaryColor, onCancel }: { siteId: string; prima
   );
 }
 
+// --- Mobile Nav Component ---
+
+function MobileNav({ links, ctaText, ctaUrl, primary }: { links: any[]; ctaText?: string; ctaUrl?: string; primary: string }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div className="md:hidden">
+      <button onClick={() => setOpen(!open)} className="p-2 rounded-lg hover:bg-black/5" aria-label="Menu">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          {open ? (
+            <><path d="M18 6L6 18" /><path d="M6 6l12 12" /></>
+          ) : (
+            <><path d="M3 12h18" /><path d="M3 6h18" /><path d="M3 18h18" /></>
+          )}
+        </svg>
+      </button>
+      {open && (
+        <div className="absolute top-full left-0 right-0 bg-white border-b border-black/5 shadow-lg z-50 px-4 py-4 space-y-3">
+          {links.slice(0, 6).map((l, i) => (
+            <a key={i} href={l.url || '#'} className="block text-sm text-black/70 hover:text-black py-2" onClick={() => setOpen(false)}>{l.label}</a>
+          ))}
+          {ctaText && (
+            <a href={ctaUrl || '#'} className="block px-4 py-3 rounded-full text-white text-sm font-bold text-center" style={{ backgroundColor: primary }} onClick={() => setOpen(false)}>
+              {ctaText}
+            </a>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // --- Section Renderer ---
 
 function SectionRenderer({ section, template, inventory, onAddToCart, site }: {
@@ -413,22 +454,29 @@ function SectionRenderer({ section, template, inventory, onAddToCart, site }: {
   // Headers
   if (type.startsWith('header-')) {
     return (
-      <div className="bg-white border-b border-black/5 px-8 py-4 flex items-center justify-between">
-        <span className="font-bold">{data.logoText || 'Your Brand'}</span>
-        <div className="flex gap-6 text-sm text-black/60">
-          {(data.links || []).slice(0, 5).map((l: any, i: number) => (
-            <a key={i} href={l.url || '#'} className="hover:text-black">{l.label}</a>
-          ))}
+      <header className="bg-white border-b border-black/5 px-4 sm:px-8 py-4 relative">
+        <div className="flex items-center justify-between max-w-6xl mx-auto">
+          <span className="font-bold text-lg truncate">{data.logoText || site.business_name || 'Your Brand'}</span>
+          {/* Desktop nav */}
+          <nav className="hidden md:flex gap-6 text-sm text-black/60 items-center">
+            {(data.links || []).slice(0, 6).map((l: any, i: number) => (
+              <a key={i} href={l.url || '#'} className="hover:text-black transition-colors">{l.label}</a>
+            ))}
+            {data.ctaText && (
+              <a href={data.ctaUrl || '#'} className="px-4 py-2 rounded-full text-white text-sm font-bold" style={{ backgroundColor: primary }}>
+                {data.ctaText}
+              </a>
+            )}
+          </nav>
+          {/* Mobile hamburger */}
+          <MobileNav links={data.links || []} ctaText={data.ctaText} ctaUrl={data.ctaUrl} primary={primary} />
         </div>
-        {data.ctaText && (
-          <a href={data.ctaUrl || '#'} className="px-4 py-2 rounded-full text-white text-sm font-bold" style={{ backgroundColor: primary }}>
-            {data.ctaText}
-          </a>
-        )}
         {data.announcement && (
-          <div className="absolute top-0 left-0 right-0 bg-black text-white text-xs text-center py-1">{data.announcement}</div>
+          <div className="bg-black text-white text-xs text-center py-1.5 -mx-4 sm:-mx-8 mt-3">
+            {data.announcement}
+          </div>
         )}
-      </div>
+      </header>
     );
   }
 
@@ -468,30 +516,32 @@ function SectionRenderer({ section, template, inventory, onAddToCart, site }: {
 
   // Commerce sections
   if (['product-grid', 'featured-collection', 'best-sellers', 'hero-products', 'collection-carousel'].includes(type)) {
-    // Prefer data.items from sync (only if has actual items), fall back to inventory
     const items = (data.items?.length ? data.items : inventory).filter((it: any) => it && it.name).slice(0, data.itemCount || 12);
     const columns = data.columns || 3;
     if (items.length === 0) return null;
+    const colClass = columns >= 4 ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-4' :
+                     columns === 3 ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3' :
+                     columns === 2 ? 'grid-cols-1 sm:grid-cols-2' : 'grid-cols-1';
     return (
-      <div className="px-8 py-16 max-w-6xl mx-auto">
-        <h2 className="text-3xl font-serif italic text-center mb-12">{data.title || 'Products'}</h2>
-        <div className="grid gap-8" style={{ gridTemplateColumns: `repeat(${Math.min(columns, items.length)}, 1fr)` }}>
+      <div className="px-4 sm:px-8 py-12 sm:py-16 max-w-6xl mx-auto">
+        <h2 className="text-2xl sm:text-3xl font-serif italic text-center mb-8 sm:mb-12">{data.title || 'Products'}</h2>
+        <div className={`grid gap-4 sm:gap-8 ${colClass}`}>
           {items.map((item: any, j: number) => (
             <div key={item.id || j} className="bg-white rounded-2xl overflow-hidden shadow-sm">
               {item.image_url ? (
-                <img src={item.image_url} alt={item.name} className="w-full h-48 object-cover" />
+                <img src={item.image_url} alt={item.name} className="w-full h-48 sm:h-56 object-cover" loading="lazy" />
               ) : (
-                <div className="w-full h-48 bg-[#F9F8F6] flex items-center justify-center text-4xl">📦</div>
+                <div className="w-full h-48 sm:h-56 bg-[#F9F8F6] flex items-center justify-center text-4xl">📦</div>
               )}
-              <div className="p-6">
-                <h3 className="font-bold text-lg">{item.name}</h3>
-                <p className="text-black/50 text-sm mt-1">{item.description}</p>
+              <div className="p-4 sm:p-6">
+                <h3 className="font-bold text-base sm:text-lg truncate">{item.name}</h3>
+                <p className="text-black/50 text-sm mt-1 line-clamp-2">{item.description}</p>
                 {item.stock != null && item.stock <= 5 && item.stock > 0 && (
                   <p className="text-red-500 text-xs mt-1 font-medium">Only {item.stock} left</p>
                 )}
-                <div className="flex items-center justify-between mt-4">
-                  <p className="font-bold text-xl" style={{ color: primary }}>{item.price}</p>
-                  <button onClick={() => onAddToCart(item.id || item.name)} className="px-4 py-2 rounded-full text-white text-sm font-bold" style={{ backgroundColor: primary }}>
+                <div className="flex items-center justify-between mt-4 gap-2">
+                  <p className="font-bold text-lg sm:text-xl" style={{ color: primary }}>{item.price}</p>
+                  <button onClick={() => onAddToCart(item.id || item.name)} className="px-4 py-2 rounded-full text-white text-sm font-bold active:scale-95 transition-transform" style={{ backgroundColor: primary }}>
                     Add to cart
                   </button>
                 </div>
@@ -505,7 +555,6 @@ function SectionRenderer({ section, template, inventory, onAddToCart, site }: {
 
   // Service sections
   if (['service-list', 'packages', 'pricing-tiers'].includes(type)) {
-    // Prefer synced data, but fallback to inventory
     const raw = data.items?.length ? data.items : data.tiers?.length ? data.tiers : data.packages?.length ? data.packages : inventory;
     if (!raw || raw.length === 0) return null;
     const items = raw.filter((it: any) => it && it.name);
@@ -513,14 +562,14 @@ function SectionRenderer({ section, template, inventory, onAddToCart, site }: {
 
     const isPricing = type === 'pricing-tiers';
     return (
-      <div className="px-8 py-16 max-w-5xl mx-auto">
-        <h2 className="text-3xl font-serif italic text-center mb-12">{data.title || 'Services'}</h2>
+      <div className="px-4 sm:px-8 py-12 sm:py-16 max-w-5xl mx-auto">
+        <h2 className="text-2xl sm:text-3xl font-serif italic text-center mb-8 sm:mb-12">{data.title || 'Services'}</h2>
         {isPricing ? (
-          <div className="grid gap-6" style={{ gridTemplateColumns: `repeat(${Math.min(items.length, 3)}, 1fr)` }}>
+          <div className="grid gap-4 sm:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
             {items.map((tier: any, j: number) => (
-              <div key={tier.id || j} className={`rounded-2xl p-8 text-center ${tier.highlighted ? 'bg-black text-white ring-2 ring-black' : 'bg-white'}`}>
-                <h3 className="font-bold text-lg mb-2">{tier.name}</h3>
-                <p className="text-3xl font-bold mb-4">{tier.price}</p>
+              <div key={tier.id || j} className={`rounded-2xl p-6 sm:p-8 text-center ${tier.highlighted ? 'bg-black text-white ring-2 ring-black' : 'bg-white'}`}>
+                <h3 className="font-bold text-base sm:text-lg mb-2">{tier.name}</h3>
+                <p className="text-2xl sm:text-3xl font-bold mb-4">{tier.price}</p>
                 {tier.description && <p className="text-sm text-black/50 mb-4">{tier.description}</p>}
                 <ul className="space-y-2 mb-6">
                   {(tier.features || []).map((f: string, k: number) => (
@@ -530,18 +579,18 @@ function SectionRenderer({ section, template, inventory, onAddToCart, site }: {
                     <li className="text-sm text-black/50">{tier.description}</li>
                   )}
                 </ul>
-                <button className="px-6 py-2 rounded-full text-sm font-bold" style={{ backgroundColor: tier.highlighted ? 'white' : primary, color: tier.highlighted ? 'black' : 'white' }}>
+                <button className="px-6 py-2 rounded-full text-sm font-bold active:scale-95 transition-transform" style={{ backgroundColor: tier.highlighted ? 'white' : primary, color: tier.highlighted ? 'black' : 'white' }}>
                   Get started
                 </button>
               </div>
             ))}
           </div>
         ) : type === 'packages' ? (
-          <div className="grid gap-6" style={{ gridTemplateColumns: `repeat(${Math.min(items.length, 3)}, 1fr)` }}>
+          <div className="grid gap-4 sm:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
             {items.map((item: any, j: number) => (
-              <div key={item.id || j} className="bg-white rounded-2xl p-8 text-center shadow-sm">
-                <h3 className="font-bold text-lg mb-2">{item.name}</h3>
-                <p className="text-2xl font-bold mb-4" style={{ color: primary }}>{item.price}</p>
+              <div key={item.id || j} className="bg-white rounded-2xl p-6 sm:p-8 text-center shadow-sm">
+                <h3 className="font-bold text-base sm:text-lg mb-2">{item.name}</h3>
+                <p className="text-xl sm:text-2xl font-bold mb-4" style={{ color: primary }}>{item.price}</p>
                 <p className="text-sm text-black/50 mb-6">{item.description}</p>
                 {(item.features || []).length > 0 && (
                   <ul className="space-y-2 mb-6 text-left">
@@ -550,7 +599,7 @@ function SectionRenderer({ section, template, inventory, onAddToCart, site }: {
                     ))}
                   </ul>
                 )}
-                <button className="px-6 py-2 rounded-full text-sm font-bold text-white" style={{ backgroundColor: primary }}>
+                <button className="px-6 py-2 rounded-full text-sm font-bold text-white active:scale-95 transition-transform" style={{ backgroundColor: primary }}>
                   Book now
                 </button>
               </div>

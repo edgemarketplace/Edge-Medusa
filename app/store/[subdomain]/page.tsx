@@ -21,20 +21,15 @@ export default async function StorePage({ params, searchParams }: StorePageProps
     .eq('status', 'live')
     .single();
 
-  // If not found by subdomain, try by site ID (UUID format — from old Stripe URLs)
-  if (!site && subdomainOrId.includes('-')) {
+  // If not found by subdomain (or subdomain not set), try by site ID direct match
+  if (!site) {
     const { data: siteById } = await supabaseAdmin
       .from('sites')
       .select('*')
       .eq('id', subdomainOrId)
       .single();
 
-    if (siteById) {
-      if (siteById.subdomain && siteById.status === 'live') {
-        redirect(`/store/${siteById.subdomain}`);
-      }
-      site = siteById;
-    }
+    if (siteById) site = siteById;
   }
 
   if (!site) notFound();

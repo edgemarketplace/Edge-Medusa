@@ -64,6 +64,7 @@ export type SectionType =
   | 'newsletter'
   | 'promo-banner'
   | 'sticky-cta'
+  | 'trust-badges'
   // Footers
   | 'footer-basic'
   | 'footer-commerce'
