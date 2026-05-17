@@ -84,6 +84,7 @@ export interface SectionDefinition {
 export interface TemplateManifest {
   family: TemplateFamily;
   requiredSections: SectionType[];
+  requiredCategories?: Partial<Record<SectionCategory, number>>; // e.g. { commerce: 1, story: 1 }
   recommendedSections: SectionType[];
   allowedSections: SectionType[];
   maxDuplicates: Partial<Record<SectionType, number>>;

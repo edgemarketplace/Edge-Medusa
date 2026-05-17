@@ -345,8 +345,9 @@ export const TEMPLATE_MANIFESTS: Record<TemplateFamily, TemplateManifest> = {
   'retail-core': {
     family: 'retail-core',
     requiredSections: ['header-simple', 'hero-visual', 'product-grid', 'footer-commerce'],
+    requiredCategories: { commerce: 1 }, // any commerce section counts
     recommendedSections: ['featured-collection', 'best-sellers', 'testimonials', 'newsletter', 'faq'],
-    allowedSections: ['header-simple', 'header-promo', 'header-mega', 'hero-split', 'hero-visual', 'hero-products', 'hero-cta', 'hero-trust', 'featured-collection', 'product-grid', 'best-sellers', 'collection-carousel', 'brand-story', 'value-icons', 'editorial-split', 'testimonials', 'reviews', 'logo-bar', 'stats', 'gallery', 'video', 'faq', 'newsletter', 'promo-banner', 'sticky-cta', 'footer-basic', 'footer-commerce'],
+    allowedSections: ['header-simple', 'header-promo', 'header-mega', 'hero-split', 'hero-visual', 'hero-products', 'hero-cta', 'hero-trust', 'featured-collection', 'product-grid', 'best-sellers', 'collection-carousel', 'brand-story', 'value-icons', 'editorial-split', 'founder-note', 'testimonials', 'reviews', 'logo-bar', 'stats', 'trust-badges', 'gallery', 'video', 'faq', 'newsletter', 'promo-banner', 'sticky-cta', 'quote-cta', 'footer-basic', 'footer-commerce'],
     maxDuplicates: { 'product-grid': 2, 'hero-visual': 1, 'hero-split': 1, 'testimonials': 1, 'faq': 1 },
   },
   'service-pro': {
@@ -600,9 +601,26 @@ export function validatePublish(sections: GeneratedSection[], manifest: Template
         const label = category === 'header' ? 'Header' : category === 'hero' ? 'Hero' : 'Footer';
         errors.push(`Missing required section: ${label} (any type)`);
       }
+    // For commerce/story/conversion — accept any type in that category if manifest has requiredCategories
+    } else if (manifest.requiredCategories && manifest.requiredCategories[category as keyof typeof manifest.requiredCategories]) {
+      const hasType = sectionTypes.some(t => SECTION_LIBRARY[t]?.category === category);
+      if (!hasType) {
+        errors.push(`Missing required section: ${category} section (any type)`);
+      }
     } else if (!sectionTypes.includes(required)) {
       const def = SECTION_LIBRARY[required];
       errors.push(`Missing required section: ${def?.label || required}`);
+    }
+  }
+
+  // Validate requiredCategories (category-level counts)
+  if (manifest.requiredCategories) {
+    for (const [cat, minCount] of Object.entries(manifest.requiredCategories)) {
+      if (!minCount) continue;
+      const count = sectionTypes.filter(t => SECTION_LIBRARY[t]?.category === cat).length;
+      if (count < minCount) {
+        errors.push(`Missing required section: At least ${minCount} ${cat} section(s)`);
+      }
     }
   }
 
@@ -618,8 +636,8 @@ export function validatePublish(sections: GeneratedSection[], manifest: Template
   if (footerCount === 0) errors.push('Missing required section: Footer');
   if (footerCount > 1) errors.push('Only one footer section allowed');
 
-  // Check at least one conversion section
-  const conversionTypes = ['faq', 'newsletter', 'promo-banner', 'sticky-cta', 'quote-cta', 'booking-cta', 'hero-cta'];
+  // Check at least one conversion section (includes trust badges as they build conversion confidence)
+  const conversionTypes = ['faq', 'newsletter', 'promo-banner', 'sticky-cta', 'quote-cta', 'booking-cta', 'hero-cta', 'trust-badges'];
   const hasConversion = sectionTypes.some(t => conversionTypes.includes(t));
   if (!hasConversion) errors.push('Missing required section: At least one conversion section (FAQ, Newsletter, CTA, etc.)');
 
