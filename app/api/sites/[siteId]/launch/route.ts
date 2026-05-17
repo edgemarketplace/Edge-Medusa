@@ -63,7 +63,11 @@ export async function POST(
 
     const { data: site, error } = await supabaseAdmin
       .from('sites')
-      .update(updates)
+      .update({
+        ...updates,
+        published: true,
+        published_at: new Date().toISOString(),
+      })
       .eq('id', siteId)
       .select()
       .single();
@@ -82,7 +86,14 @@ export async function POST(
       stripeConnectUrl: `${appUrl}/api/stripe/connect?site_id=${site.id}`,
     }).catch(err => console.error('Launch email failed:', err));
 
-    return NextResponse.json({ ok: true, site });
+    // Return in format expected by frontend
+    return NextResponse.json({
+      ok: true,
+      siteId: site.id,
+      subdomain: site.subdomain,
+      url: site.subdomain ? `${appUrl}/store/${site.subdomain}` : `${appUrl}/store/${site.id}`,
+      site,
+    });
   } catch (error) {
     console.error('Launch site error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
