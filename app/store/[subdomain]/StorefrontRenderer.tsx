@@ -18,6 +18,42 @@ export default function StorefrontRenderer({
   inventory,
   template,
 }: StorefrontRendererProps) {
+  // Build a unified item catalog from all visible commerce sections (AI items OR real inventory)
+  const visibleItems: InventoryItem[] = (() => {
+    const all: InventoryItem[] = [];
+    const seen = new Set<string>();
+    for (const section of sections) {
+      const isCommerce = ['product-grid', 'featured-collection', 'best-sellers', 'hero-products', 'collection-carousel'].includes(section.type);
+      const isService = ['service-list', 'packages', 'pricing-tiers'].includes(section.type);
+      if (!isCommerce && !isService) continue;
+      const raw = section.data?.items || section.data?.tiers || section.data?.packages || [];
+      for (const it of raw) {
+        if (!it || !it.name) continue;
+        const id = it.id || it.name;
+        if (seen.has(id)) continue;
+        seen.add(id);
+        all.push({
+          id,
+          name: it.name,
+          price: it.price || '$0',
+          description: it.description || '',
+          category: it.category || 'General',
+          image_url: it.image_url || '',
+          stock: it.stock ?? Infinity,
+          enabled: true,
+          sku: it.sku || '',
+          variants: it.variants || null,
+          shipping_class: it.shipping_class || 'standard',
+          tax_rate: it.tax_rate || null,
+          weight: it.weight || null,
+        });
+      }
+    }
+    // If no visible items from sections, fallback to real inventory
+    if (all.length === 0 && inventory.length > 0) return inventory;
+    return all;
+  })();
+
   // Cart keyed by item ID, persisted to localStorage
   const [cart, setCart] = useState<Record<string, number>>({});
   const [showCart, setShowCart] = useState(false);
@@ -38,19 +74,8 @@ export default function StorefrontRenderer({
     } catch { /* ignore */ }
   }, [cart, site.id]);
 
-  // Merge inventory into commerce sections
-  const mergedSections = sections.map((section) => {
-    const isCommerce = ['product-grid', 'featured-collection', 'best-sellers', 'hero-products', 'collection-carousel'].includes(section.type);
-    const isService = ['service-list', 'packages', 'pricing-tiers'].includes(section.type);
-
-    if ((isCommerce || isService) && inventory.length > 0) {
-      return { ...section, data: { ...section.data, items: inventory } };
-    }
-    return section;
-  });
-
   function addToCart(itemId: string) {
-    const item = inventory.find((i) => i.id === itemId);
+    const item = visibleItems.find((i) => i.id === itemId);
     if (!item) return;
     const currentQty = cart[itemId] || 0;
     const stock = item.stock ?? Infinity;
@@ -71,7 +96,7 @@ export default function StorefrontRenderer({
   }
 
   function updateCartQty(itemId: string, qty: number) {
-    const item = inventory.find((i) => i.id === itemId);
+    const item = visibleItems.find((i) => i.id === itemId);
     if (!item) return;
     const stock = item.stock ?? Infinity;
     if (qty > stock) {
@@ -91,7 +116,7 @@ export default function StorefrontRenderer({
     return Object.entries(cart)
       .filter(([, qty]) => qty > 0)
       .map(([key, quantity]) => {
-        const item = inventory.find((i) => i.id === key || i.name === key);
+        const item = visibleItems.find((i) => i.id === key || i.name === key);
         if (!item) return null;
         return {
           id: item.id,
@@ -108,7 +133,7 @@ export default function StorefrontRenderer({
     const items = getCartItems();
     if (items.length === 0) return;
     for (const it of items) {
-      const item = inventory.find((i) => i.id === it.id);
+      const item = visibleItems.find((i) => i.id === it.id);
       if (item && item.stock != null && it.quantity > item.stock) {
         alert(`"${item.name}" only has ${item.stock} in stock. Please adjust your cart.`);
         setCheckingOut(false);
@@ -138,7 +163,7 @@ export default function StorefrontRenderer({
   const cartItems = Object.entries(cart)
     .filter(([, qty]) => qty > 0)
     .map(([itemId, qty]) => {
-      const item = inventory.find((i) => i.id === itemId);
+      const item = visibleItems.find((i) => i.id === itemId);
       return { itemId, qty, item };
     })
     .filter((x): x is { itemId: string; qty: number; item: InventoryItem } => !!x.item);
@@ -303,12 +328,12 @@ export default function StorefrontRenderer({
         </div>
       )}
 
-      {mergedSections.map((section, i) => (
+      {sections.map((section, i) => (
         <SectionRenderer key={section.id || i} section={section} template={template} inventory={inventory} onAddToCart={addToCart} site={site} />
       ))}
 
       {/* Only show hardcoded footer if no footer section exists */}
-      {!mergedSections.some(s => s.type.startsWith('footer-')) && (
+      {!sections.some(s => s.type.startsWith('footer-')) && (
         <footer className="border-t border-black/5 py-8 px-8 text-center text-sm text-black/40">
           <p>© {new Date().getFullYear()} {site.business_name}. Powered by Edge Marketplace Hub.</p>
         </footer>
@@ -907,7 +932,7 @@ function SectionRenderer({ section, template, inventory, onAddToCart, site }: {
       <footer className="bg-white border-t border-black/5 px-8 py-12">
         <div className="max-w-5xl mx-auto">
           <div className="flex items-center justify-between mb-8">
-            <span className="font-bold text-lg">{data.logoText || 'Your Brand'}</span>
+            <span className="font-bold text-lg">{data.logoText || site.business_name || 'Your Brand'}</span>
             <div className="flex gap-6 text-sm text-black/50">
               {(data.links || []).map((l: any, i: number) => (
                 <a key={i} href={l.url || '#'} className="hover:text-black">{l.label}</a>
