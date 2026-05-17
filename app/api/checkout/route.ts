@@ -159,6 +159,16 @@ export async function POST(request: NextRequest) {
       shippingCents,
     });
   } catch (error: any) {
+    // Stripe account business name missing — give helpful error
+    if (error?.code === 'account_invalid' || (error?.message || '').includes('business name')) {
+      return NextResponse.json(
+        {
+          error: 'Stripe account needs setup. Please go to https://dashboard.stripe.com/test/settings/account and set your Business name & website.',
+          dashboardURL: 'https://dashboard.stripe.com/test/settings/account'
+        },
+        { status: 400 }
+      );
+    }
     console.error('Checkout error:', error?.message || error);
     return NextResponse.json(
       { error: error?.message || 'Checkout failed' },
