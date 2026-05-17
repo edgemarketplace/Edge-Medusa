@@ -23,44 +23,25 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'siteId and items array required' }, { status: 400 });
     }
 
-    // Get the site — select all columns to avoid column-existence errors
-    let site: any = null;
-    try {
-      const result = await supabaseAdmin
-        .from('sites')
-        .select('*')
-        .eq('id', siteId)
-        .single();
-      site = result.data;
-      if (result.error) {
-        console.error('Checkout: site query error:', result.error.message);
-        return NextResponse.json({ error: 'Site query failed' }, { status: 500 });
-      }
-    } catch (dbErr: any) {
-      console.error('Checkout: DB connection error:', dbErr.message);
-      return NextResponse.json({ error: 'Database connection failed' }, { status: 500 });
+    // Get the site — use * to fetch all known columns, then cast to any
+    const result = await supabaseAdmin
+      .from('sites')
+      .select('*')
+      .eq('id', siteId)
+      .single();
+
+    if (result.error) {
+      console.error('Checkout site query error:', result.error.message);
+      return NextResponse.json({ error: 'Site not found' }, { status: 404 });
     }
 
+    const site = result.data as any;
     if (!site) {
       return NextResponse.json({ error: 'Site not found' }, { status: 404 });
     }
 
-    // Fetch inventory to validate stock and build line items
-    const itemIds = items.map((it: any) => it.id).filter(Boolean);
-    const { data: inventoryData } = await supabaseAdmin
-      .from('inventory_items')
-      .select('id, name, price, stock')
-      .in('id', itemIds)
-      .eq('site_id', siteId);
-
-    const inventoryMap = new Map((inventoryData || []).map((i: any) => [i.id, i]));
-
-    // Build line items with stock validation
+    // Build line items with basic validation
     const lineItems = items.map((item: any) => {
-      const inv = inventoryMap.get(item.id);
-      if (inv && inv.stock != null && item.quantity > inv.stock) {
-        throw new Error(`"${item.name}" only has ${inv.stock} in stock`);
-      }
       const rawPrice = String(item.price).replace(/[^0-9.]/g, '');
       const unitAmount = Math.round(parseFloat(rawPrice) * 100);
       if (!unitAmount || unitAmount <= 0) {
@@ -80,9 +61,9 @@ export async function POST(request: NextRequest) {
     });
 
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
-    const subtotal = lineItems.reduce((sum, li) => sum + (li.price_data!.unit_amount * li.quantity), 0);
+    const subtotal = lineItems.reduce((sum: number, li: any) => sum + (li.price_data!.unit_amount * li.quantity), 0);
 
-    // --- LIVE SHIPPING via Shippo ---
+    // --- Shipping ---
     let shippingCents = 0;
     let shippoRateId: string | null = null;
     const shippoConfigured = !!process.env.SHIPPO_API_KEY;
@@ -98,33 +79,24 @@ export async function POST(request: NextRequest) {
           zip: site.business_zip || '10001',
           country: 'US',
         };
-        // Use a generic "to" address for rate estimation (customer enters real one in Stripe)
-        const toAddress = {
-          name: 'Customer',
-          street1: '456 Sample Ave',
-          city: 'Los Angeles',
-          state: 'CA',
-          zip: '90001',
-          country: 'US',
-        };
         const parcel = getParcelForItemCount(items.length);
-        const rate = await getCheapestRate(fromAddress, toAddress, [parcel]);
+        const rate = await getCheapestRate(
+          fromAddress,
+          { name: 'Customer', street1: '456 Sample Ave', city: 'Los Angeles', state: 'CA', zip: '90001', country: 'US' },
+          [parcel]
+        );
         if (rate) {
           shippingCents = Math.round(parseFloat(rate.amount) * 100);
           shippoRateId = rate.object_id;
-        } else {
-          // Fallback to flat rate if Shippo returns no rates
-          shippingCents = site.shipping_rate ? Math.round(site.shipping_rate * 100) : 0;
         }
-      } catch (shippoErr: any) {
-        console.error('Shippo rate fetch failed:', shippoErr.message);
-        // Fallback to flat rate
-        shippingCents = site.shipping_rate ? Math.round(site.shipping_rate * 100) : 0;
-      }
-    } else {
-      // Flat rate fallback
-      if (site.shipping_rate != null && site.shipping_rate > 0) {
-        shippingCents = Math.round(site.shipping_rate * 100);
+      } catch { /* Silently fall back to flat rate */ }
+    }
+
+    // Flat rate fallback
+    if (shippingCents === 0) {
+      const flatRate = site.shipping_rate ? Number(site.shipping_rate) : 0;
+      if (flatRate > 0) {
+        shippingCents = Math.round(flatRate * 100);
       }
     }
 
@@ -134,7 +106,6 @@ export async function POST(request: NextRequest) {
     const hasStripeConnected = !!site.stripe_account_id;
     const isTestMode = !hasStripeConnected;
 
-    // Create checkout session
     const sessionConfig: any = {
       line_items: lineItems,
       mode: 'payment',
@@ -142,24 +113,22 @@ export async function POST(request: NextRequest) {
       cancel_url: `${appUrl}/checkout/canceled?site_id=${siteId}`,
       metadata: {
         site_id: siteId,
-        business_name: site.business_name,
+        business_name: site.business_name || '',
         customer_email: customerEmail || '',
         is_test_mode: isTestMode ? 'true' : 'false',
-        shippo_rate_id: shippoRateId || '',
         item_count: String(items.length),
       },
       customer_email: customerEmail || undefined,
       shipping_address_collection: { allowed_countries: ['US', 'CA', 'GB', 'AU'] },
     };
 
-    // Add shipping line item
     if (shippingCents > 0) {
       sessionConfig.line_items.push({
         price_data: {
           currency: 'usd',
           product_data: {
             name: 'Shipping',
-            description: shippoConfigured ? 'Estimated live rate' : 'Flat rate shipping',
+            description: shippoConfigured && shippoRateId ? 'Estimated live rate' : 'Flat rate shipping',
           },
           unit_amount: shippingCents,
         },
@@ -188,10 +157,10 @@ export async function POST(request: NextRequest) {
       testMode: isTestMode,
       shippingCents,
     });
-  } catch (error) {
-    console.error('Checkout error:', error);
+  } catch (error: any) {
+    console.error('Checkout error:', error?.message || error);
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Checkout failed' },
+      { error: error?.message || 'Checkout failed' },
       { status: 500 }
     );
   }
