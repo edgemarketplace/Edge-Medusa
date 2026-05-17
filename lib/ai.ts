@@ -63,7 +63,7 @@ export async function generateSiteContent(
     try {
       const { GoogleGenerativeAI } = await import('@google/generative-ai');
       const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY!);
-      const model = genAI.getGenerativeModel({ model: 'gemini-pro' });
+      const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
       const result = await model.generateContent(promptText);
       const text = result.response.text();
       const jsonMatch = text.match(/\{[\s\S]*\}/);
@@ -91,15 +91,30 @@ function buildPrompt(
   tagline: string,
   stylePreset?: string
 ): string {
-  return `You are an expert web designer and copywriter. Generate a complete website structure for a ${businessType} business called "${businessName}".
+  // Map business types to recommended sections and psychology
+  const verticalGuidance: Record<string, string> = {
+    'retail-core': `This is a PRODUCT/RETAIL business. Focus on: catalog, product discovery, trust badges, seasonal promos, email capture. Use commerce sections heavily.`,
+    'service-pro': `This is a SERVICE business. Focus on: trust, process, testimonials, quote requests, booking. Use service-list, pricing-tiers, quote-cta, stats. Avoid product-grid.`,
+    'food-catering': `This is a FOOD/CATERING business. Focus on: menus, appetite imagery, event types, booking, gallery. Use hero-products, service-list (menus), gallery, testimonials, booking-cta.`,
+    'artisan-market': `This is a HANDMADE/ARTISAN business. Focus on: maker story, process, provenance, limited editions, founder narrative. Use brand-story, founder-note, editorial-split, product-grid, gallery.`,
+    'event-floral': `This is an EVENT/FLORAL business. Focus on: gallery, transformation, luxury, inquiry form, social proof. Use gallery, hero-visual, testimonials, quote-cta, logo-bar.`,
+    'coach-educator': `This is a COACHING/EDUCATION business. Focus on: transformation, packages, social proof, free resource, booking. Use hero-trust, pricing-tiers, testimonials, newsletter, quote-cta.`,
+  };
 
-Business details:
-- Offerings: ${offerings}
-- Contact: ${contactEmail}
-- Tagline: ${tagline}
-- Style: ${stylePreset || 'modern'}
+  const vertical = verticalGuidance[businessType] || `This is a ${businessType} business. Use a mix of hero, commerce/storytelling, social proof, and conversion sections.`;
 
-Generate a JSON response with this structure:
+  return `You are an elite web designer and conversion copywriter. You create complete, high-converting website structures.
+
+BUSINESS: "${businessName}"
+TYPE: ${businessType}
+${vertical}
+
+WHAT THEY OFFER: ${offerings || 'Products and services'}
+TAGLINE: ${tagline || 'Quality you can trust'}
+CONTACT: ${contactEmail || ''}
+STYLE: ${stylePreset || 'milano'} (milano = luxury serif, ocean = calm blues, sunlit = warm amber, sage = organic green)
+
+OUTPUT FORMAT — JSON only, no markdown fences, no extra text:
 {
   "pages": [
     {
@@ -108,24 +123,69 @@ Generate a JSON response with this structure:
       "sections": [
         {
           "id": "hero-1",
-          "type": "hero-products",
+          "type": "hero-split",
           "data": {
-            "headline": "Compelling hero headline",
-            "subheading": "Supporting subheading text",
-            "ctaText": "Call to action",
-            "ctaUrl": "/contact",
-            "imageUrl": "",
-            "background": "#000000",
-            "textColor": "#ffffff"
+            "heading": "Compelling 4-8 word headline",
+            "subheading": "2 sentences that explain the unique value proposition",
+            "ctaText": "Shop Now / Book / Get Quote",
+            "ctaUrl": "#",
+            "imageUrl": "https://images.unsplash.com/photo-RELEVANT_ID?w=1200&h=700&fit=crop&auto=format",
+            "overlayOpacity": 0.35,
+            "trustBadges": ["Free shipping", "Secure checkout", "5-star rated"]
           }
         },
         {
-          "id": "text-1",
+          "id": "value-1",
+          "type": "value-icons",
+          "data": {
+            "title": "Why choose us",
+            "values": [
+              {"icon":"✦","title":"Handcrafted","description":"Made with care"},
+              {"icon":"✦","title":"Fast Delivery","description":"Ships in 2 days"},
+              {"icon":"✦","title":"Premium Quality","description":"Only the best materials"}
+            ]
+          }
+        },
+        {
+          "id": "products-1",
+          "type": "featured-collection",
+          "data": {
+            "title": "Featured",
+            "items": [
+              {"name":"Example Item","price":"$49","description":"Short description","image_url":"https://images.unsplash.com/photo-RELEVANT_ID?w=600&h=400&fit=crop"}
+            ],
+            "columns": 3,
+            "itemCount": 6
+          }
+        },
+        {
+          "id": "story-1",
           "type": "brand-story",
           "data": {
-            "headline": "About Us",
-            "body": "Our story and mission",
-            "imageUrl": ""
+            "headline": "Our Story",
+            "body": "3-4 sentences about the business origin, mission, and passion.",
+            "imageUrl": "https://images.unsplash.com/photo-RELEVANT_ID?w=800&h=600&fit=crop"
+          }
+        },
+        {
+          "id": "testimonials-1",
+          "type": "testimonials",
+          "data": {
+            "title": "What customers say",
+            "testimonials": [
+              {"name":"Sarah M.","quote":"Absolutely loved the experience. Highly recommend!","rating":5},
+              {"name":"James K.","quote":"Exceeded my expectations. Will definitely return.","rating":5}
+            ]
+          }
+        },
+        {
+          "id": "cta-1",
+          "type": "quote-cta",
+          "data": {
+            "headline": "Ready to get started?",
+            "subheading": "Contact us today and let's bring your vision to life.",
+            "ctaText": "Contact us",
+            "showForm": true
           }
         }
       ]
@@ -133,14 +193,28 @@ Generate a JSON response with this structure:
   ]
 }
 
-IMPORTANT: Use ONLY these section types: hero-products, brand-story, quote-cta, featured-collection, product-grid, testimonials, gallery, faq, newsletter, contact-simple.
-Each section MUST have an "id", "type", and "data" field. The "data" field should match the expected fields for that section type.
-
-CRITICAL IMAGE RULES:
-- For imageUrl fields, use Unsplash URLs in this format: https://images.unsplash.com/photo-{ID}?w=1200&h=600&fit=crop&auto=format
-- Use relevant Unsplash photo IDs for the business type (e.g., coffee shop = photo-1495474171907, retail = photo-1607089264410)
-- OR leave imageUrl as empty string "" if you cannot find a suitable image
-- NEVER use relative paths like "images/hero.jpg" - these will not work!`;
+CRITICAL RULES:
+1. Generate 6-8 sections for the home page. NEVER fewer than 5.
+2. Use ONLY these section types (pick relevant ones for the vertical):
+   - hero-split, hero-visual, hero-products, hero-cta, hero-trust
+   - featured-collection, product-grid, best-sellers, collection-carousel
+   - service-list, packages, pricing-tiers
+   - brand-story, value-icons, editorial-split, founder-note
+   - testimonials, reviews, logo-bar, stats, press
+   - quote-cta, booking-cta, newsletter, faq, promo-banner
+   - gallery, video
+3. Every section MUST have "id" (unique), "type", and "data".
+4. Write REAL, SPECIFIC copy — never generic filler. Use the business name and offerings.
+5. For imageUrl, use REAL Unsplash URLs. Pick IDs relevant to the business type:
+   - Food/catering: photo-1504674900247-0877df9cc836, photo-1559339352-11d035aa65de
+   - Retail/products: photo-1607089264410, photo-1441986300917-64674bd600d8
+   - Services/consulting: photo-1557804506, photo-1556761175-5973dc0f32e7
+   - Floral/events: photo-1490750967868-58cb75069ed6, photo-1527529482837-4698179b6e2a
+   - Artisan/handmade: photo-1452860606245-08befc0ff44b, photo-1516975080664-ed2fc6a32937
+   - Coaching/education: photo-1522202176988-66273c2fd55f, photo-1503676260728-1c00da094a0b
+   If unsure, leave imageUrl as "".
+6. NEVER use relative paths. NEVER use placeholder text like "Lorem ipsum".
+7. The output must be ONLY valid JSON. No markdown, no explanations.`;
 }
 
 function getFallbackSiteStructure(
@@ -157,33 +231,57 @@ function getFallbackSiteStructure(
         sections: [
           {
             id: 'hero-1',
-            type: 'hero-products' as SectionType,
+            type: 'hero-split' as SectionType,
             data: {
-              headline: `Welcome to ${businessName}`,
-              subheading: tagline || `Your trusted ${businessType} business`,
+              heading: `Welcome to ${businessName}`,
+              subheading: tagline || `Your trusted ${businessType} partner`,
               ctaText: 'Get Started',
-              ctaUrl: '/contact',
+              ctaUrl: '#',
               imageUrl: '',
-              background: '#000000',
-              textColor: '#ffffff',
+              overlayOpacity: 0.35,
+              trustBadges: ['Quality guaranteed', 'Fast response', 'Expert team'],
             }
           },
           {
-            id: 'text-1',
+            id: 'value-1',
+            type: 'value-icons' as SectionType,
+            data: {
+              title: 'Why choose us',
+              values: [
+                { icon: '✦', title: 'Expertise', description: 'Years of industry experience' },
+                { icon: '✦', title: 'Quality', description: 'Premium materials and service' },
+                { icon: '✦', title: 'Support', description: 'Dedicated customer care' },
+              ]
+            }
+          },
+          {
+            id: 'story-1',
             type: 'brand-story' as SectionType,
             data: {
-              headline: 'About Us',
-              body: `Learn more about ${businessName} and our commitment to quality service.`,
+              headline: 'Our Story',
+              body: `${businessName} was founded with a simple mission: to deliver exceptional ${businessType} experiences. Every project reflects our commitment to quality, creativity, and customer satisfaction.`,
               imageUrl: '',
             }
           },
           {
-            id: 'contact-1',
+            id: 'testimonials-1',
+            type: 'testimonials' as SectionType,
+            data: {
+              title: 'What customers say',
+              testimonials: [
+                { name: 'Alex R.', quote: 'Absolutely outstanding service. Would highly recommend!', rating: 5 },
+                { name: 'Jordan T.', quote: 'The attention to detail exceeded all my expectations.', rating: 5 },
+              ]
+            }
+          },
+          {
+            id: 'cta-1',
             type: 'quote-cta' as SectionType,
             data: {
-              headline: 'Contact Us',
-              body: `Get in touch with us at ${contactEmail || 'your email'}.`,
-              imageUrl: '',
+              headline: 'Ready to get started?',
+              subheading: `Contact ${businessName} today and let's discuss your project.`,
+              ctaText: 'Contact us',
+              showForm: true,
             }
           }
         ]

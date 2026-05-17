@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { TEMPLATES } from '@/lib/templates';
 import type { TemplateFamily } from '@/lib/types';
@@ -56,7 +56,16 @@ export default function OnboardingPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  const step1Valid = businessName.trim() && offerings.trim() && email.trim() && selectedType;
+  // Ensure step1Valid always reflects current state
+  const step1Valid = useMemo(
+    () => !!(businessName.trim() && offerings.trim() && email.trim() && selectedType),
+    [businessName, offerings, email, selectedType]
+  );
+
+  // Explicit selection handler with defensive fallback
+  const handleSelectType = useCallback((family: TemplateFamily) => {
+    setSelectedType(family);
+  }, []);
 
   async function handleSubmit() {
     if (!step1Valid || loading) return;
@@ -231,11 +240,15 @@ export default function OnboardingPage() {
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     {templateEntries.map(t => (
                       <button
-                        key={t.family} type="button"
-                        onClick={() => setSelectedType(t.family)}
+                        key={t.family}
+                        type="button"
+                        data-template={t.family}
+                        data-selected={selectedType === t.family}
+                        aria-pressed={selectedType === t.family}
+                        onClick={() => handleSelectType(t.family)}
                         className={`text-left rounded-2xl border p-5 transition-all ${
                           selectedType === t.family
-                            ? 'border-black bg-white shadow-md'
+                            ? 'border-black bg-white shadow-md ring-2 ring-black'
                             : 'border-black/10 bg-white hover:border-black/20'
                         }`}
                       >
@@ -249,7 +262,7 @@ export default function OnboardingPage() {
               </div>
 
               <button
-                onClick={() => step1Valid && setStep(2)}
+                onClick={() => setStep(2)}
                 disabled={!step1Valid}
                 className="w-full bg-[#1A1A1A] text-white py-5 rounded-full text-lg font-bold disabled:opacity-40 disabled:cursor-not-allowed hover:scale-[1.02] transition-transform"
               >

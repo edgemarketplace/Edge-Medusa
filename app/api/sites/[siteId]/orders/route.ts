@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { stripe } from '@/lib/stripe';
 import { supabaseAdmin } from '@/lib/supabase';
 
 export async function GET(
@@ -9,36 +8,71 @@ export async function GET(
   const { siteId } = await params;
 
   try {
-    // 1. Get the site and its stripe_account_id
-    const { data: site, error: siteError } = await supabaseAdmin
-      .from('sites')
-      .select('stripe_account_id')
-      .eq('id', siteId)
-      .single();
+    const { data: orders, error } = await supabaseAdmin
+      .from('orders')
+      .select('*, order_items(*)')
+      .eq('site_id', siteId)
+      .order('created_at', { ascending: false });
 
-    if (siteError || !site?.stripe_account_id) {
-      return NextResponse.json({ orders: [] });
+    if (error) {
+      console.error('Orders API error:', error);
+      return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    // 2. Fetch recent PaymentIntents from Stripe for this connected account
-    const payments = await stripe.paymentIntents.list(
-      { limit: 20 },
-      { stripeAccount: site.stripe_account_id }
-    );
-
-    // 3. Map to a clean UI format
-    const orders = payments.data.map(p => ({
-      id: p.id,
-      amount: p.amount / 100,
-      currency: p.currency.toUpperCase(),
-      status: p.status,
-      email: p.receipt_email || 'No email',
-      date: new Date(p.created * 1000).toISOString(),
+    // Normalize to a clean UI format
+    const normalized = (orders || []).map(o => ({
+      id: o.id,
+      status: o.status,
+      customerEmail: o.customer_email,
+      customerName: o.customer_name,
+      total: (o.total_cents || 0) / 100,
+      currency: (o.currency || 'usd').toUpperCase(),
+      date: o.created_at,
+      items: (o.order_items || []).map((it: any) => ({
+        name: it.name,
+        quantity: it.quantity,
+        price: (it.price_cents || 0) / 100,
+      })),
+      stripeSessionId: o.stripe_session_id,
+      shippingAddress: o.shipping_address,
     }));
 
-    return NextResponse.json({ orders });
+    return NextResponse.json({ orders: normalized });
   } catch (error: any) {
     console.error('Orders API error:', error);
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+}
+
+// Update order status (e.g., mark as shipped)
+export async function PATCH(
+  request: NextRequest,
+  { params }: { params: Promise<{ siteId: string }> }
+) {
+  const { siteId } = await params;
+  try {
+    const body = await request.json();
+    const { orderId, status } = body;
+
+    if (!orderId || !status) {
+      return NextResponse.json({ error: 'orderId and status required' }, { status: 400 });
+    }
+
+    const { data, error } = await supabaseAdmin
+      .from('orders')
+      .update({ status })
+      .eq('id', orderId)
+      .eq('site_id', siteId)
+      .select()
+      .single();
+
+    if (error) {
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+
+    return NextResponse.json({ order: data });
+  } catch (error: any) {
+    console.error('Order update error:', error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }

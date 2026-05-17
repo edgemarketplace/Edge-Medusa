@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import type { SiteData, GeneratedSection, InventoryItem, TemplateDefinition, SectionType } from '@/lib/types';
 import { SECTION_LIBRARY } from '@/lib/section-library';
 import { THEME_PRESETS } from '@/lib/types';
@@ -18,8 +18,25 @@ export default function StorefrontRenderer({
   inventory,
   template,
 }: StorefrontRendererProps) {
+  // Cart keyed by item ID, persisted to localStorage
   const [cart, setCart] = useState<Record<string, number>>({});
+  const [showCart, setShowCart] = useState(false);
   const [checkingOut, setCheckingOut] = useState(false);
+
+  // Hydrate cart from localStorage on mount
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem(`cart-${site.id}`);
+      if (saved) setCart(JSON.parse(saved));
+    } catch { /* ignore */ }
+  }, [site.id]);
+
+  // Persist cart to localStorage
+  useEffect(() => {
+    try {
+      localStorage.setItem(`cart-${site.id}`, JSON.stringify(cart));
+    } catch { /* ignore */ }
+  }, [cart, site.id]);
 
   // Merge inventory into commerce sections
   const mergedSections = sections.map((section) => {
@@ -32,8 +49,40 @@ export default function StorefrontRenderer({
     return section;
   });
 
-  function addToCart(itemName: string) {
-    setCart((prev) => ({ ...prev, [itemName]: (prev[itemName] || 0) + 1 }));
+  function addToCart(itemId: string) {
+    const item = inventory.find((i) => i.id === itemId);
+    if (!item) return;
+    const currentQty = cart[itemId] || 0;
+    const stock = item.stock ?? Infinity;
+    if (currentQty >= stock) {
+      alert(`Only ${stock} available — adjust quantity in cart`);
+      return;
+    }
+    setCart((prev) => ({ ...prev, [itemId]: currentQty + 1 }));
+    setShowCart(true);
+  }
+
+  function removeFromCart(itemId: string) {
+    setCart((prev) => {
+      const next = { ...prev };
+      delete next[itemId];
+      return next;
+    });
+  }
+
+  function updateCartQty(itemId: string, qty: number) {
+    const item = inventory.find((i) => i.id === itemId);
+    if (!item) return;
+    const stock = item.stock ?? Infinity;
+    if (qty > stock) {
+      alert(`Only ${stock} in stock`);
+      return;
+    }
+    if (qty <= 0) {
+      removeFromCart(itemId);
+      return;
+    }
+    setCart((prev) => ({ ...prev, [itemId]: qty }));
   }
 
   const [showContactModal, setShowContactModal] = useState(false);
@@ -42,11 +91,20 @@ export default function StorefrontRenderer({
   async function handleCheckout() {
     const items = Object.entries(cart)
       .filter(([, qty]) => qty > 0)
-      .map(([name, qty]) => {
-        const item = inventory.find((i) => i.name === name);
-        return { name, price: item?.price || '0', description: item?.description || '', quantity: qty };
+      .map(([itemId, qty]) => {
+        const item = inventory.find((i) => i.id === itemId);
+        return { id: itemId, name: item?.name || 'Item', price: item?.price || '0', description: item?.description || '', quantity: qty };
       });
     if (items.length === 0) return;
+    // Client-side stock guard
+    for (const it of items) {
+      const item = inventory.find((i) => i.id === it.id);
+      if (item && item.stock != null && it.quantity > item.stock) {
+        alert(`"${item.name}" only has ${item.stock} in stock. Please adjust your cart.`);
+        setCheckingOut(false);
+        return;
+      }
+    }
     setCheckingOut(true);
     try {
       const res = await fetch('/api/checkout', {
@@ -66,6 +124,14 @@ export default function StorefrontRenderer({
   }
 
   const cartCount = Object.values(cart).reduce((sum, qty) => sum + qty, 0);
+
+  const cartItems = Object.entries(cart)
+    .filter(([, qty]) => qty > 0)
+    .map(([itemId, qty]) => {
+      const item = inventory.find((i) => i.id === itemId);
+      return { itemId, qty, item };
+    })
+    .filter((x): x is { itemId: string; qty: number; item: InventoryItem } => !!x.item);
 
   // Get theme tokens
   const themePreset = THEME_PRESETS.find(t => t.id === (site.theme_id || 'milano')) || THEME_PRESETS[0];
@@ -172,11 +238,58 @@ export default function StorefrontRenderer({
       )}
       {cartCount > 0 && (
         <div className="fixed bottom-6 right-6 z-50">
-          <button onClick={handleCheckout} disabled={checkingOut}
+          <button onClick={() => setShowCart(true)} disabled={checkingOut}
             className="bg-black text-white px-6 py-4 rounded-full font-bold shadow-lg flex items-center gap-3 hover:scale-105 transition-transform disabled:opacity-50">
             <span>🛒 {cartCount} item{cartCount > 1 ? 's' : ''}</span>
-            <span className="bg-white text-black px-3 py-1 rounded-full text-sm">{checkingOut ? 'Processing...' : 'Checkout'}</span>
+            <span className="bg-white text-black px-3 py-1 rounded-full text-sm">View</span>
           </button>
+        </div>
+      )}
+
+      {/* Cart Drawer */}
+      {showCart && (
+        <div className="fixed inset-0 z-50 flex items-end justify-end" onClick={() => setShowCart(false)}>
+          <div className="absolute inset-0 bg-black/30" />
+          <div className="relative bg-white w-full max-w-md h-full sm:h-auto sm:max-h-[90vh] sm:rounded-t-3xl sm:m-4 shadow-2xl flex flex-col"
+               onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between px-6 py-4 border-b border-black/5">
+              <h2 className="text-lg font-bold">Your Cart ({cartCount})</h2>
+              <button onClick={() => setShowCart(false)} className="w-8 h-8 rounded-full bg-black/5 flex items-center justify-center text-sm font-bold">✕</button>
+            </div>
+            <div className="flex-1 overflow-y-auto p-6 space-y-4">
+              {cartItems.length === 0 && <p className="text-black/40 text-center">Your cart is empty</p>}
+              {cartItems.map(({ itemId, qty, item }) => (
+                <div key={itemId} className="flex items-center gap-4">
+                  <div className="w-16 h-16 bg-[#F9F8F6] rounded-xl flex items-center justify-center text-xl flex-shrink-0">
+                    {item.image_url ? <img src={item.image_url} alt={item.name} className="w-full h-full object-cover rounded-xl" /> : '📦'}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h4 className="font-bold text-sm truncate">{item.name}</h4>
+                    <p className="text-black/50 text-xs">{item.price}</p>
+                    {item.stock != null && <p className="text-black/30 text-[10px]">{item.stock - qty} remaining</p>}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button onClick={() => updateCartQty(itemId, qty - 1)} className="w-7 h-7 rounded-full bg-black/5 flex items-center justify-center text-sm font-bold">−</button>
+                    <span className="w-6 text-center text-sm font-bold">{qty}</span>
+                    <button onClick={() => updateCartQty(itemId, qty + 1)} className="w-7 h-7 rounded-full bg-black/5 flex items-center justify-center text-sm font-bold">+</button>
+                  </div>
+                  <button onClick={() => removeFromCart(itemId)} className="text-black/20 hover:text-red-500 text-xs px-1">✕</button>
+                </div>
+              ))}
+            </div>
+            <div className="border-t border-black/5 p-6 space-y-3">
+              <button onClick={handleCheckout} disabled={checkingOut || cartItems.length === 0}
+                className="w-full py-4 rounded-full bg-black text-white font-bold text-lg hover:scale-[1.02] transition-transform disabled:opacity-40">
+                {checkingOut ? 'Processing...' : `Checkout • ${cartItems.reduce((sum, { qty, item }) => {
+                  const price = parseFloat(String(item.price).replace(/[^0-9.]/g, '')) || 0;
+                  return sum + price * qty;
+                }, 0).toLocaleString('en-US', { style: 'currency', currency: 'USD' })}`}
+              </button>
+              <button onClick={() => setShowCart(false)} className="w-full py-3 rounded-full border border-black/10 font-bold text-sm">
+                Continue shopping
+              </button>
+            </div>
+          </div>
         </div>
       )}
 
@@ -371,7 +484,7 @@ function SectionRenderer({ section, template, inventory, onAddToCart, site }: {
                 <p className="text-black/50 text-sm mt-1">{item.description}</p>
                 <div className="flex items-center justify-between mt-4">
                   <p className="font-bold text-xl" style={{ color: primary }}>{item.price}</p>
-                  <button onClick={() => onAddToCart(item.name)} className="px-4 py-2 rounded-full text-white text-sm font-bold" style={{ backgroundColor: primary }}>
+                  <button onClick={() => onAddToCart(item.id || item.name)} className="px-4 py-2 rounded-full text-white text-sm font-bold" style={{ backgroundColor: primary }}>
                     Add to cart
                   </button>
                 </div>

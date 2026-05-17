@@ -30,14 +30,15 @@ export async function POST(
     );
   }
 
-  const { business_name, business_type, contact_email } = site;
+  const { business_name, business_type, contact_email, offerings, tagline } = site;
 
   const { pages } = await generateSiteContent(
     business_name,
     business_type,
-    '', // offerings no longer collected
+    offerings || '',
     contact_email,
-    '', // tagline no longer collected
+    tagline || '',
+    site.style_preset || '',
   );
 
   const templateData = { pages };

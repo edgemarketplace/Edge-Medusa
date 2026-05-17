@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { stripe } from '@/lib/stripe';
+import { getStripe } from '@/lib/stripe';
 import { supabaseAdmin } from '@/lib/supabase';
 
 export async function GET(
@@ -18,6 +18,8 @@ export async function GET(
     if (siteError || !site?.stripe_account_id) {
       return NextResponse.json({ clients: [] });
     }
+
+    const stripe = getStripe();
 
     // Fetch customers from the connected account
     const stripeCustomers = await stripe.customers.list(

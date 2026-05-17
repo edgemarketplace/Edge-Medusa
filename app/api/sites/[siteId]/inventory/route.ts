@@ -4,16 +4,16 @@ import { supabaseAdmin } from '@/lib/supabase';
 // Helper: Sync inventory items to site sections (service-list, packages, product-grid)
 async function syncInventoryToSections(siteId: string, items: any[]) {
   try {
-    // Fetch site with pages
+    // Fetch site with template_data
     const { data: site, error } = await supabaseAdmin
       .from('sites')
-      .select('pages')
+      .select('template_data')
       .eq('id', siteId)
       .single();
     
-    if (error || !site?.pages) return;
+    if (error || !site?.template_data?.pages) return;
 
-    const pages = site.pages as Array<{ slug: string; title: string; sections: any[] }>;
+    const pages = site.template_data.pages as Array<{ slug: string; title: string; sections: any[] }>;
     let updated = false;
 
     // Map inventory to different section formats
@@ -60,7 +60,7 @@ async function syncInventoryToSections(siteId: string, items: any[]) {
     if (updated) {
       await supabaseAdmin
         .from('sites')
-        .update({ pages: updatedPages })
+        .update({ template_data: { ...site.template_data, pages: updatedPages } })
         .eq('id', siteId);
       console.log(`[Inventory] Synced ${items.length} items to sections for site ${siteId}`);
     }

@@ -27,7 +27,7 @@ export async function POST(request: NextRequest) {
     // Get the site
     const { data: site, error: siteError } = await supabaseAdmin
       .from('sites')
-      .select('stripe_account_id, business_name, contact_email')
+      .select('stripe_account_id, business_name, contact_email, shipping_rate')
       .eq('id', siteId)
       .single();
 
@@ -35,8 +35,22 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Site not found' }, { status: 404 });
     }
 
-    // Build line items
+    // Fetch inventory to validate stock and build line items
+    const itemIds = items.map((it: any) => it.id).filter(Boolean);
+    const { data: inventoryData } = await supabaseAdmin
+      .from('inventory_items')
+      .select('id, name, price, stock')
+      .in('id', itemIds)
+      .eq('site_id', siteId);
+
+    const inventoryMap = new Map((inventoryData || []).map((i: any) => [i.id, i]));
+
+    // Build line items with stock validation
     const lineItems = items.map((item: any) => {
+      const inv = inventoryMap.get(item.id);
+      if (inv && inv.stock != null && item.quantity > inv.stock) {
+        throw new Error(`"${item.name}" only has ${inv.stock} in stock`);
+      }
       const rawPrice = String(item.price).replace(/[^0-9.]/g, '');
       const unitAmount = Math.round(parseFloat(rawPrice) * 100);
       if (!unitAmount || unitAmount <= 0) {
@@ -56,7 +70,14 @@ export async function POST(request: NextRequest) {
     });
 
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
-    const totalAmount = lineItems.reduce((sum, li) => sum + (li.price_data!.unit_amount * li.quantity), 0);
+    const subtotal = lineItems.reduce((sum, li) => sum + (li.price_data!.unit_amount * li.quantity), 0);
+
+    // Flat shipping from site settings
+    let shippingCents = 0;
+    if (site.shipping_rate != null && site.shipping_rate > 0) {
+      shippingCents = Math.round(site.shipping_rate * 100);
+    }
+    const totalAmount = subtotal + shippingCents;
 
     // Determine checkout mode
     const hasStripeConnected = !!site.stripe_account_id;
@@ -75,7 +96,20 @@ export async function POST(request: NextRequest) {
         is_test_mode: isTestMode ? 'true' : 'false',
       },
       customer_email: customerEmail || undefined,
+      shipping_address_collection: { allowed_countries: ['US', 'CA', 'GB', 'AU'] },
     };
+
+    // Add shipping line item if applicable
+    if (shippingCents > 0) {
+      sessionConfig.line_items.push({
+        price_data: {
+          currency: 'usd',
+          product_data: { name: 'Shipping' },
+          unit_amount: shippingCents,
+        },
+        quantity: 1,
+      });
+    }
 
     let session;
     const stripe = getStripe();
