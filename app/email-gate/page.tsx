@@ -50,8 +50,22 @@ function EmailGateContent() {
     }
   }
 
-  function handleSkip() {
-    setCountdown(5);
+  async function handleSkip() {
+    setLoading(true)
+    setError('')
+    try {
+      const res = await fetch('/api/auth/skip', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ siteId }),
+      })
+      if (!res.ok) throw new Error('Failed to create session')
+      // Start countdown for UX, then redirect
+      setCountdown(5)
+    } catch (err: any) {
+      setError(err.message)
+      setLoading(false)
+    }
   }
 
   if (sent) {
@@ -142,9 +156,10 @@ function EmailGateContent() {
             </p>
             <button
               onClick={handleSkip}
-              className="w-full px-4 py-3 rounded-full border border-black/10 text-sm font-bold hover:bg-black/5 transition-colors"
+              disabled={loading}
+              className="w-full px-4 py-3 rounded-full border border-black/10 text-sm font-bold hover:bg-black/5 transition-colors disabled:opacity-40"
             >
-              Skip for now →
+              {loading ? 'Starting session...' : 'Skip for now →'}
             </button>
             <p className="text-[11px] text-black/40 text-center mt-2">
               Your store will be saved for 7 days.

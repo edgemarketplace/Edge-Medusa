@@ -18,19 +18,19 @@ export async function POST(
     return NextResponse.json({ error: 'Email and message are required' }, { status: 400 })
   }
 
+  let stored = false
+
+  // 1. Try to store in DB (best-effort — tables may not exist)
   try {
-    // 1. Find or create conversation
-    let { data: conversation, error: convError } = await supabaseAdmin
+    let { data: conversation } = await supabaseAdmin
       .from('conversations')
       .select('id')
       .eq('site_id', siteId)
       .eq('customer_email', email)
       .maybeSingle()
 
-    if (convError && convError.code !== 'PGRST116') throw convError
-
     if (!conversation) {
-      const { data: newConv, error: createError } = await supabaseAdmin
+      const { data: newConv } = await supabaseAdmin
         .from('conversations')
         .insert({
           site_id: siteId,
@@ -42,11 +42,8 @@ export async function POST(
         })
         .select()
         .single()
-
-      if (createError) throw createError
       conversation = newConv
     } else {
-      // Update existing conversation
       await supabaseAdmin
         .from('conversations')
         .update({
@@ -57,22 +54,55 @@ export async function POST(
         .eq('id', conversation.id)
     }
 
-    if (!conversation) throw new Error('Failed to create or find conversation')
-
-    // 2. Insert message
-    const { error: msgError } = await supabaseAdmin
-      .from('messages')
-      .insert({
+    if (conversation) {
+      await supabaseAdmin.from('messages').insert({
         conversation_id: conversation.id,
         sender: 'customer',
         content: message
       })
-
-    if (msgError) throw msgError
-
-    return NextResponse.json({ success: true })
-  } catch (err: any) {
-    console.error('Contact error:', err)
-    return NextResponse.json({ error: err.message }, { status: 500 })
+      stored = true
+    }
+  } catch (dbErr) {
+    console.warn('[CONTACT] DB storage failed (tables may not exist):', dbErr)
   }
+
+  // 2. Email notification to store owner (critical — works even without DB)
+  try {
+    const { data: site } = await supabaseAdmin
+      .from('sites')
+      .select('business_name, contact_email')
+      .eq('id', siteId)
+      .single()
+
+    if (site?.contact_email && process.env.RESEND_API_KEY) {
+      const { Resend } = await import('resend')
+      const resend = new Resend(process.env.RESEND_API_KEY)
+      const key = process.env.RESEND_API_KEY || ''
+      const fromAddr = key.startsWith('re_test') ? 'onboarding@resend.dev' : 'contact@edgemarketplacehub.com'
+
+      await resend.emails.send({
+        from: `Edge Marketplace Hub <${fromAddr}>`,
+        to: site.contact_email,
+        subject: `New contact form: ${subject || 'No subject'} — ${site.business_name || 'your store'}`,
+        html: `
+          <div style="font-family: system-ui, sans-serif; max-width: 600px; margin: 0 auto; padding: 40px 20px;">
+            <h2 style="font-size: 20px; font-weight: bold; margin-bottom: 16px;">New contact form submission</h2>
+            <p><strong>Store:</strong> ${site.business_name || 'Your store'}</p>
+            <p><strong>From:</strong> ${name || 'Unknown'} (${email})</p>
+            <p><strong>Subject:</strong> ${subject || 'No subject'}</p>
+            <p><strong>Message:</strong></p>
+            <div style="background: #f5f5f5; padding: 16px; border-radius: 8px; white-space: pre-wrap;">${message}</div>
+            <p style="margin-top: 24px; font-size: 12px; color: #999;">
+              Reply directly to this email to respond to the customer.
+            </p>
+          </div>
+        `,
+        replyTo: email,
+      })
+    }
+  } catch (emailErr) {
+    console.error('[CONTACT] Email notification failed:', emailErr)
+  }
+
+  return NextResponse.json({ ok: true, stored })
 }
