@@ -121,6 +121,7 @@ export default async function BackendPage() {
                 ['Products', '#products'],
                 ['Orders', '#orders'],
                 ['Sales channels', '#channels'],
+                ['Client marketplace', '/marketplace'],
                 ['Backend service', '#service'],
               ].map(([label, href], index) => (
                 <a key={label} href={href} className={`flex items-center justify-between rounded-xl px-3 py-2.5 ${index === 0 ? 'bg-white text-black' : 'text-white/65 hover:bg-white/10 hover:text-white'}`}>

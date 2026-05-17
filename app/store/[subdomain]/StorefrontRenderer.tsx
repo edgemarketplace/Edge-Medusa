@@ -159,6 +159,14 @@ export default function StorefrontRenderer({
   }
 
   const cartCount = Object.values(cart).reduce((sum, qty) => sum + qty, 0);
+  const channelLabel = site.subdomain || site.id.slice(0, 8);
+  const tenantType = site.business_type?.replace(/-/g, ' ') || 'commerce';
+  const activeCatalogCount = visibleItems.filter((item) => item.enabled !== false).length;
+  const medusaBadges = [
+    `${activeCatalogCount} shared catalog item${activeCatalogCount === 1 ? '' : 's'}`,
+    'Supabase RLS tenant',
+    site.stripe_account_id ? 'Stripe connected' : 'Checkout pending',
+  ];
 
   const cartItems = Object.entries(cart)
     .filter(([, qty]) => qty > 0)
@@ -251,6 +259,15 @@ export default function StorefrontRenderer({
         </div>
       )}
 
+      <MedusaMarketplaceShell
+        siteName={site.business_name}
+        channelLabel={channelLabel}
+        tenantType={tenantType}
+        badges={medusaBadges}
+        productCount={activeCatalogCount}
+        primary={tokens.primary}
+      />
+
       {/* Stripe not connected modal */}
       {showContactModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30" onClick={() => setShowContactModal(false)}>
@@ -333,12 +350,92 @@ export default function StorefrontRenderer({
       ))}
 
       {/* Only show hardcoded footer if no footer section exists */}
+      <SharedMarketplaceRail site={site} items={visibleItems} primary={tokens.primary} />
+
       {!sections.some(s => s.type.startsWith('footer-')) && (
-        <footer className="border-t border-black/5 py-8 px-8 text-center text-sm text-black/40">
-          <p>© {new Date().getFullYear()} {site.business_name}. Powered by Edge Marketplace Hub.</p>
+        <footer className="border-t border-black/5 bg-white py-10 px-8 text-center text-sm text-black/45">
+          <p className="font-bold text-black/70">© {new Date().getFullYear()} {site.business_name}</p>
+          <p className="mt-2">A tenant storefront on Edge Medusa — shared marketplace catalog, Supabase RLS isolation, Medusa-style commerce operations.</p>
         </footer>
       )}
     </div>
+  );
+}
+
+
+function MedusaMarketplaceShell({ siteName, channelLabel, tenantType, badges, productCount, primary }: {
+  siteName: string;
+  channelLabel: string;
+  tenantType: string;
+  badges: string[];
+  productCount: number;
+  primary: string;
+}) {
+  return (
+    <div className="border-b border-black/10 bg-[#111113] text-white">
+      <div className="mx-auto flex max-w-7xl flex-col gap-4 px-4 py-4 sm:px-8 lg:flex-row lg:items-center lg:justify-between">
+        <a href="/marketplace" className="flex items-center gap-3">
+          <span className="grid h-10 w-10 place-items-center rounded-2xl bg-white text-black font-serif italic font-bold">M</span>
+          <span>
+            <span className="block text-xs font-black uppercase tracking-[0.24em] text-white/40">Edge Medusa Marketplace</span>
+            <span className="block text-lg font-bold leading-tight">{siteName}</span>
+          </span>
+        </a>
+        <div className="flex flex-wrap items-center gap-2 text-xs font-bold">
+          <span className="rounded-full border border-white/10 bg-white/10 px-3 py-1.5 capitalize text-white/80">Channel: {channelLabel}</span>
+          <span className="rounded-full border border-white/10 bg-white/10 px-3 py-1.5 capitalize text-white/80">{tenantType}</span>
+          {badges.map((badge) => (
+            <span key={badge} className="rounded-full border border-emerald-400/20 bg-emerald-400/10 px-3 py-1.5 text-emerald-100">{badge}</span>
+          ))}
+          <a href="/marketplace" className="rounded-full bg-white px-3 py-1.5 text-black hover:bg-emerald-50">Explore all stores →</a>
+        </div>
+      </div>
+      <div className="border-t border-white/10 bg-white/[0.03]">
+        <div className="mx-auto grid max-w-7xl gap-3 px-4 py-3 text-xs text-white/55 sm:px-8 md:grid-cols-3">
+          <p><span className="font-bold text-white/80">Medusa page model:</span> this storefront is a sales channel view, not a standalone template.</p>
+          <p><span className="font-bold text-white/80">Tenant boundary:</span> catalog, cart, and orders resolve by site_id/RLS.</p>
+          <p><span className="font-bold text-white/80">Shared products:</span> {productCount} products can participate in the marketplace-of-marketplaces catalog.</p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function SharedMarketplaceRail({ site, items, primary }: { site: SiteData; items: InventoryItem[]; primary: string }) {
+  const featured = items.filter((item) => item.enabled !== false).slice(0, 4);
+  if (!featured.length) return null;
+
+  return (
+    <section className="border-y border-black/5 bg-[#111113] px-4 py-12 text-white sm:px-8">
+      <div className="mx-auto max-w-6xl">
+        <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+          <div>
+            <p className="text-xs font-black uppercase tracking-[0.24em] text-emerald-300">Shared Medusa catalog</p>
+            <h2 className="mt-3 text-3xl font-serif italic">Products from this tenant can flow into the network marketplace.</h2>
+            <p className="mt-3 max-w-2xl text-sm leading-relaxed text-white/55">
+              Customer-facing pages now speak the same model as the backend: tenant storefronts, sales channels, shared products, Stripe checkout, and order ledgers backed by Supabase RLS.
+            </p>
+          </div>
+          <a href="/marketplace" className="rounded-full bg-white px-5 py-3 text-sm font-black text-black hover:bg-emerald-50">Open marketplace hub →</a>
+        </div>
+        <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {featured.map((item, index) => (
+            <div key={item.id || item.name || index} className="rounded-3xl border border-white/10 bg-white/[0.04] p-4">
+              <div className="mb-4 flex h-36 items-center justify-center overflow-hidden rounded-2xl bg-white/5 text-3xl">
+                {item.image_url ? <img src={item.image_url} alt={item.name} className="h-full w-full object-cover" loading="lazy" /> : '📦'}
+              </div>
+              <p className="text-xs font-bold uppercase tracking-[0.18em] text-white/35">{site.business_name}</p>
+              <h3 className="mt-2 font-bold">{item.name}</h3>
+              <p className="mt-1 line-clamp-2 text-xs text-white/45">{item.description}</p>
+              <div className="mt-4 flex items-center justify-between">
+                <span className="font-bold" style={{ color: '#D1FAE5' }}>{item.price}</span>
+                <span className="rounded-full px-3 py-1 text-[11px] font-black text-white" style={{ backgroundColor: primary }}>Tenant item</span>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
   );
 }
 

@@ -58,6 +58,7 @@ export default function LandingPage() {
         </div>
         <div className="flex items-center gap-4">
           <Link href="/backend" className="text-sm font-bold text-black/60 hover:text-black transition-colors">Backend</Link>
+          <Link href="/marketplace" className="text-sm font-bold text-black/60 hover:text-black transition-colors">Marketplace</Link>
           <Link href="/login" className="text-sm text-black/50 hover:text-black transition-colors">Sign in</Link>
           <Link
             href="/onboarding"
