@@ -11,9 +11,6 @@ type PublicationRow = {
   channel_slug: string | null
   channel_name: string | null
   submitted_at: string
-  reviewed_at: string | null
-  reviewer_email: string | null
-  rejection_reason: string | null
 }
 
 async function loadPublications(): Promise<PublicationRow[]> {
@@ -43,9 +40,6 @@ async function loadPublications(): Promise<PublicationRow[]> {
       channel_slug: row.marketplace_channels?.[0]?.channel_slug || null,
       channel_name: row.marketplace_channels?.[0]?.channel_name || null,
       submitted_at: row.updated_at,
-      reviewed_at: null,
-      reviewer_email: null,
-      rejection_reason: null,
     }))
   } catch (err) {
     console.error('Publications error:', err)
@@ -67,7 +61,7 @@ function statusBadge(status: string) {
     gray: 'bg-zinc-100 text-zinc-600 border-zinc-200',
     red: 'bg-red-50 text-red-700 border-red-200',
   }
-  return <span className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-xs font-bold ${colors[s.tone]}`}>{s.label}</span>
+  return `<span className={\`inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-xs font-bold ${colors[s.tone]}\`}>{s.label}</span>`
 }
 
 function timeAgo(dateStr: string) {
@@ -84,7 +78,6 @@ function timeAgo(dateStr: string) {
 export default async function PublicationsPage() {
   const publications = await loadPublications()
   const pending = publications.filter(p => p.status === 'draft')
-  const live = publications.filter(p => p.status === 'published')
 
   return (
     <main className="min-h-screen bg-[#f6f5f2] text-zinc-950">
@@ -137,7 +130,7 @@ export default async function PublicationsPage() {
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
             {[
               ['Pending Review', pending.length, 'Awaiting approval'],
-              ['Live Publications', live.length, 'Published stores'],
+              ['Live Publications', publications.filter(p => p.status === 'published').length, 'Published stores'],
               ['Channels', publications.filter(p => p.channel_name).length, 'Distribution networks'],
               ['Total Sites', publications.length, 'All storefronts'],
             ].map(([label, value, sub]) => (
@@ -182,15 +175,20 @@ export default async function PublicationsPage() {
                           <td className="px-6 py-4 text-xs text-black/40">{timeAgo(p.submitted_at)}</td>
                           <td className="px-6 py-4">
                             <div className="flex gap-2">
-                              <Link
-                                href={`/build/${p.site_id}`}
-                                className="text-xs font-bold underline underline-offset-4 text-emerald-600 hover:text-emerald-800"
+                              <form action={`/api/sites/${p.site_id}/approve`} method="POST">
+                                <button
+                                  type="submit"
+                                  className="text-xs font-bold underline underline-offset-4 text-emerald-600 hover:text-emerald-800"
+                                >
+                                  Approve
+                                </button>
+                              </form>
+                              <a
+                                href={`/backend/publications/${p.site_id}/reject`}
+                                className="text-xs font-bold underline underline-offset-4 text-red-600 hover:text-red-800"
                               >
-                                Approve
-                              </Link>
-                              <button className="text-xs font-bold underline underline-offset-4 text-red-600 hover:text-red-800">
                                 Reject
-                              </button>
+                              </a>
                             </div>
                           </td>
                         </tr>
@@ -286,11 +284,9 @@ export default async function PublicationsPage() {
 ✗ Reject → status: 'draft' + reason
 ⚠ Suspend → status: 'suspended'
 
-// Future:
-// - auto-approval rules
-// - quality scoring
-// - moderation AI
-// - appeal process`}</code></pre>
+// Events emitted:
+- publication.approved
+- publication.rejected`}</code></pre>
             </div>
           </div>
         </section>
