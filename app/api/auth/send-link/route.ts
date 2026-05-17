@@ -43,9 +43,13 @@ export async function POST(request: NextRequest) {
     // Send email via Resend
     if (process.env.RESEND_API_KEY) {
       const resend = new Resend(process.env.RESEND_API_KEY!);
+      
+      // Use test sender for test keys, verified domain for production
+      const key = process.env.RESEND_API_KEY || '';
+      const fromAddr = key.startsWith('re_test') ? 'onboarding@resend.dev' : 'login@edgemarketplacehub.com';
 
       await resend.emails.send({
-        from: 'Edge Marketplace Hub <login@edgemarketplacehub.com>',
+        from: `Edge Marketplace Hub <${fromAddr}>`,
         to: email,
         subject: 'Your login link for Edge Marketplace Hub',
         html: `
