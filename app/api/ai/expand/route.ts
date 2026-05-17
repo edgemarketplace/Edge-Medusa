@@ -1,7 +1,11 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { expandBusinessDescription } from '@/lib/ai';
+import { NextRequest, NextResponse } from 'next/server'
+import { expandBusinessDescription } from '@/lib/ai'
+import { rateLimitResponse } from '@/lib/rate-limit'
 
 export async function POST(request: NextRequest) {
+  const limited = rateLimitResponse(request, 'ai-expand')
+  if (limited) return limited
+
   try {
     const { prompt, businessName, businessType } = await request.json();
     

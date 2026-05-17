@@ -1,11 +1,16 @@
 import { NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
+import { rateLimitResponse } from '@/lib/rate-limit'
+import { NextRequest } from 'next/server'
 
-// Public endpoint — customers contact store owners through their storefront
+// Public endpoint — rate limited to prevent spam
 export async function POST(
-  req: Request,
+  req: NextRequest,
   { params }: { params: Promise<{ siteId: string }> }
 ) {
+  const limited = rateLimitResponse(req, 'contact')
+  if (limited) return limited
+
   const { siteId } = await params
   const { name, email, subject, message } = await req.json()
 

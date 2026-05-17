@@ -1,7 +1,11 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server'
+import { rateLimitResponse } from '@/lib/rate-limit'
 
 // Search Unsplash for images
 export async function GET(request: NextRequest) {
+  const limited = rateLimitResponse(request, 'images-search')
+  if (limited) return limited
+
   try {
     const query = request.nextUrl.searchParams.get('q');
     const count = parseInt(request.nextUrl.searchParams.get('count') || '9');

@@ -1,7 +1,11 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { supabaseAdmin } from '@/lib/supabase';
+import { NextRequest, NextResponse } from 'next/server'
+import { supabaseAdmin } from '@/lib/supabase'
+import { rateLimitResponse } from '@/lib/rate-limit'
 
 export async function GET(request: NextRequest) {
+  const limited = rateLimitResponse(request, 'auth-verify')
+  if (limited) return limited
+
   try {
     const token = request.nextUrl.searchParams.get('token');
 

@@ -1,20 +1,24 @@
-import { NextRequest, NextResponse } from 'next/server';
-import Stripe from 'stripe';
-import { supabaseAdmin } from '@/lib/supabase';
+import { NextRequest, NextResponse } from 'next/server'
+import Stripe from 'stripe'
+import { supabaseAdmin } from '@/lib/supabase'
+import { rateLimitResponse } from '@/lib/rate-limit'
 
-let stripeInstance: Stripe | null = null;
+let stripeInstance: Stripe | null = null
 
 function getStripe(): Stripe {
   if (!stripeInstance) {
     if (!process.env.STRIPE_SECRET_KEY) {
-      throw new Error('STRIPE_SECRET_KEY is not set');
+      throw new Error('STRIPE_SECRET_KEY is not set')
     }
-    stripeInstance = new Stripe(process.env.STRIPE_SECRET_KEY);
+    stripeInstance = new Stripe(process.env.STRIPE_SECRET_KEY)
   }
-  return stripeInstance;
+  return stripeInstance
 }
 
 export async function POST(request: NextRequest) {
+  const limited = rateLimitResponse(request, 'checkout')
+  if (limited) return limited
+
   try {
     const body = await request.json();
     const { siteId, items, customerEmail } = body;

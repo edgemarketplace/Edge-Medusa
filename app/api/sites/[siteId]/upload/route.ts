@@ -1,11 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
 import { requireSiteAdmin } from '@/lib/auth-server'
+import { rateLimitResponse } from '@/lib/rate-limit'
 
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ siteId: string }> }
 ) {
+  const limited = rateLimitResponse(request, 'upload')
+  if (limited) return limited
+
   try {
     const { siteId } = await params
     await requireSiteAdmin(request, siteId)

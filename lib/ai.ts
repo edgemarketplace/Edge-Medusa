@@ -24,6 +24,106 @@ export async function expandBusinessDescription(
   return prompt;
 }
 
+/**
+ * Validate AI output and detect placeholder/generic content.
+ * Returns { valid: true } or { valid: false, reasons: string[] }.
+ */
+function validateAIOutput(parsed: any): { valid: boolean; reasons?: string[] } {
+  const reasons: string[] = []
+
+  if (!parsed || !parsed.pages || !Array.isArray(parsed.pages) || parsed.pages.length === 0) {
+    return { valid: false, reasons: ['Missing pages array'] }
+  }
+
+  for (const page of parsed.pages) {
+    if (!page.sections || !Array.isArray(page.sections)) {
+      reasons.push(`Page "${page.slug || '?'}" missing sections`)
+      continue
+    }
+    for (const section of page.sections) {
+      const data = section.data || {}
+
+      // Check for placeholder copy (case-insensitive partial match)
+      const allText = JSON.stringify(data).toLowerCase()
+      const placeholders = [
+        'example item', 'your business', 'your brand', 'enter your',
+        'lorem ipsum', 'sample text', 'placeholder', 'your company',
+        'your name', 'yourname', 'yourwebsite', 'yourdomain',
+      ]
+      for (const ph of placeholders) {
+        if (allText.includes(ph)) {
+          reasons.push(`Section "${section.type || '?'}" contains placeholder text: "${ph}"`)
+        }
+      }
+
+      // Check product items for generic names
+      const items = data.items || data.tiers || data.packages || []
+      for (const it of items) {
+        const name = (it.name || '').toLowerCase()
+        const desc = (it.description || '').toLowerCase()
+        if (name && (name.includes('example') || name.includes('sample') || name.includes('item'))) {
+          reasons.push(`Product name looks generic: "${it.name}"`)
+        }
+        if (desc && (desc.includes('short description') || desc.includes('describe your'))) {
+          reasons.push(`Product description looks generic: "${it.description}"`)
+        }
+      }
+
+      // Testimonials shouldn't be "Example Name"
+      const testimonials = data.testimonials || []
+      for (const t of testimonials) {
+        const name = (t.name || '').toLowerCase()
+        if (name.includes('sarah m') || name.includes('james k') || name.includes('maya t') || name.includes('john doe')) {
+          reasons.push(`Testimonial name looks like a prompt example: "${t.name}"`)
+        }
+      }
+    }
+  }
+
+  if (reasons.length > 0) {
+    return { valid: false, reasons: reasons.slice(0, 5) } // cap at 5
+  }
+  return { valid: true }
+}
+
+/**
+ * Quality gates for AI output beyond placeholder check.
+ */
+function enforceQuality(parsed: any): { valid: boolean; reasons?: string[] } {
+  const reasons: string[] = []
+
+  const allSections = parsed.pages.flatMap((p: any) => p.sections || [])
+  const types = allSections.map((s: any) => s.type)
+
+  // Must have header + footer
+  if (!types.some((t: string) => t.startsWith('header-'))) {
+    reasons.push('Missing header section')
+  }
+  if (!types.some((t: string) => t.startsWith('footer-'))) {
+    reasons.push('Missing footer section')
+  }
+
+  // Must have at least one commerce or conversion section
+  const hasCommerce = types.some((t: string) =>
+    ['product-grid', 'featured-collection', 'best-sellers',
+     'service-list', 'pricing-tiers', 'packages', 'quote-cta', 'booking-cta',
+     'hero-products', 'collection-carousel'].includes(t)
+  )
+  if (!hasCommerce) {
+    reasons.push('Missing commerce or conversion section')
+  }
+
+  // Must have at least 5 sections
+  if (allSections.length < 5) {
+    reasons.push(`Only ${allSections.length} sections (min 5)`)
+  }
+
+  if (reasons.length > 0) {
+    return { valid: false, reasons }
+  }
+  return { valid: true }
+}
+
 export async function generateSiteContent(
   businessName: string,
   businessType: string,
@@ -32,55 +132,75 @@ export async function generateSiteContent(
   tagline: string,
   stylePreset?: string
 ): Promise<{ pages: { slug: string; title: string; sections: GeneratedSection[] }[] }> {
-  const promptText = buildPrompt(businessName, businessType, offerings, contactEmail, tagline, stylePreset);
-  
+  const promptText = buildPrompt(businessName, businessType, offerings, contactEmail, tagline, stylePreset)
+
   // Try OpenAI first (more reliable)
   if (process.env.OPENAI_API_KEY) {
     try {
-      const { default: OpenAI } = await import('openai');
-      const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+      const { default: OpenAI } = await import('openai')
+      const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
       const response = await openai.chat.completions.create({
         model: 'gpt-4o',
         messages: [{ role: 'user', content: promptText }],
         temperature: 0.7,
         max_tokens: 4000,
-      });
-      const text = response.choices[0].message.content || '';
-      const jsonMatch = text.match(/\{[\s\S]*\}/);
+      })
+      const text = response.choices[0].message.content || ''
+      const jsonMatch = text.match(/\{[\s\S]*\}/)
       if (jsonMatch) {
-        const parsed = JSON.parse(jsonMatch[0]);
+        const parsed = JSON.parse(jsonMatch[0])
         if (parsed && parsed.pages && Array.isArray(parsed.pages) && parsed.pages.length > 0) {
-          return parsed;
+          const placeholderCheck = validateAIOutput(parsed)
+          const qualityCheck = enforceQuality(parsed)
+          if (placeholderCheck.valid && qualityCheck.valid) {
+            console.log('[AI] OpenAI output validated successfully')
+            return parsed
+          }
+          const allReasons = [
+            ...(placeholderCheck.reasons || []),
+            ...(qualityCheck.reasons || []),
+          ]
+          console.warn('[AI] OpenAI output rejected — falling back:', allReasons.join('; '))
         }
       }
     } catch (error) {
-      console.error('OpenAI generation failed:', error);
+      console.error('OpenAI generation failed:', error)
     }
   }
 
   // Try Gemini as backup
   if (process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY) {
     try {
-      const { GoogleGenerativeAI } = await import('@google/generative-ai');
-      const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY!);
-      const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
-      const result = await model.generateContent(promptText);
-      const text = result.response.text();
-      const jsonMatch = text.match(/\{[\s\S]*\}/);
+      const { GoogleGenerativeAI } = await import('@google/generative-ai')
+      const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY!)
+      const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' })
+      const result = await model.generateContent(promptText)
+      const text = result.response.text()
+      const jsonMatch = text.match(/\{[\s\S]*\}/)
       if (jsonMatch) {
-        const parsed = JSON.parse(jsonMatch[0]);
+        const parsed = JSON.parse(jsonMatch[0])
         if (parsed && parsed.pages && Array.isArray(parsed.pages) && parsed.pages.length > 0) {
-          return parsed;
+          const placeholderCheck = validateAIOutput(parsed)
+          const qualityCheck = enforceQuality(parsed)
+          if (placeholderCheck.valid && qualityCheck.valid) {
+            console.log('[AI] Gemini output validated successfully')
+            return parsed
+          }
+          const allReasons = [
+            ...(placeholderCheck.reasons || []),
+            ...(qualityCheck.reasons || []),
+          ]
+          console.warn('[AI] Gemini output rejected — falling back:', allReasons.join('; '))
         }
       }
     } catch (error) {
-      console.error('Gemini generation failed, using fallback:', error);
+      console.error('Gemini generation failed, using fallback:', error)
     }
   }
 
   // Fallback
-  console.log('All AI paths failed. Using hardcoded fallback structure.');
-  return generateFallbackSiteContent(businessName, businessType, offerings, contactEmail, tagline);
+  console.log('[AI] All AI paths failed. Using hardcoded fallback structure.')
+  return generateFallbackSiteContent(businessName, businessType, offerings, contactEmail, tagline)
 }
 
 function buildPrompt(

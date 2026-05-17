@@ -1,9 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
 import { Resend } from 'resend';
+import { rateLimitResponse } from '@/lib/rate-limit';
 
 // Send magic link email
 export async function POST(request: NextRequest) {
+  const limited = rateLimitResponse(request, 'auth-send-link');
+  if (limited) return limited;
+
   try {
     const body = await request.json();
     const { email } = body;
