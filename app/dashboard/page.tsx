@@ -70,7 +70,8 @@ export default function DashboardPage() {
           <div className="w-8 h-8 bg-[#1A1A1A] rounded-lg flex items-center justify-center">
             <span className="font-serif italic font-bold text-white text-lg">E</span>
           </div>
-          <span className="font-bold tracking-tight">Edge Marketplace Hub</span>
+          <span className="font-bold tracking-tight">Edge Medusa</span>
+          <span className="hidden sm:inline-flex ml-2 rounded-full bg-emerald-50 border border-emerald-100 px-2.5 py-1 text-[10px] font-black uppercase tracking-widest text-emerald-700">Backend console live</span>
           <span className="ml-2 text-black/30 text-sm">/</span>
           <span className="text-sm text-black/50 ml-1">Dashboard</span>
         </div>
@@ -87,7 +88,15 @@ export default function DashboardPage() {
         {/* ── GREETING ── */}
         <div>
           <h1 className="text-3xl font-serif italic mb-1">Your Stores</h1>
-          <p className="text-black/50">Manage, edit, and launch your storefronts.</p>
+          <p className="text-black/50">Manage, edit, and launch your Medusa-backed storefronts.</p>
+        </div>
+
+        <div className="bg-[#111113] text-white rounded-3xl p-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+          <div>
+            <p className="text-xs font-black uppercase tracking-[0.22em] text-emerald-300 mb-2">Medusa backend is separate from this store list</p>
+            <h2 className="text-2xl font-serif italic">Open the commerce-ops console for products, orders, channels, and backend health.</h2>
+          </div>
+          <Link href="/backend" className="shrink-0 rounded-full bg-white text-black px-5 py-3 text-sm font-black hover:bg-emerald-50 transition-colors">Open Medusa Backend →</Link>
         </div>
 
         {/* ── TIP BANNER ── */}

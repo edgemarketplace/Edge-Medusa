@@ -624,11 +624,21 @@ export default function BuildPage({ params }: BuildPageProps) {
       <div className="w-72 fixed inset-y-0 left-0 bg-white border-r border-black/5 z-50 flex flex-col shadow-[10px_0_40px_-15px_rgba(0,0,0,0.03)]">
         <div className="p-8 pb-4">
           <Link href="/dashboard" className="flex items-center gap-2 group mb-8">
-            <div className="w-8 h-8 rounded-xl bg-black flex items-center justify-center text-white font-black text-lg group-hover:scale-105 transition-transform">E</div>
-            <span className="font-bold tracking-tight text-xl">Edge Hub</span>
+            <div className="w-8 h-8 rounded-xl bg-black flex items-center justify-center text-white font-black text-lg group-hover:scale-105 transition-transform">M</div>
+            <div>
+              <span className="font-bold tracking-tight text-xl block">Edge Medusa</span>
+              <span className="text-[10px] uppercase tracking-[0.18em] text-black/35 font-black">commerce admin</span>
+            </div>
           </Link>
           
           <div className="space-y-1">
+            <Link
+              href="/backend"
+              className="w-full flex items-center justify-between px-4 py-3 rounded-2xl text-sm font-bold bg-emerald-50 text-emerald-800 border border-emerald-100 hover:bg-emerald-100 transition-all mb-2"
+            >
+              <span className="flex items-center gap-3"><span className="text-lg">🧠</span>Medusa Backend</span>
+              <span className="text-[10px] uppercase tracking-widest">Open</span>
+            </Link>
             {([
               { id: 'onboarding', label: 'Start here', icon: '✅', count: null },
               { id: 'design', label: 'Edit Page', icon: '✏️', count: null },
@@ -664,6 +674,12 @@ export default function BuildPage({ params }: BuildPageProps) {
         </div>
 
         <div className="mt-auto p-6 space-y-3">
+          <div className="bg-emerald-50 rounded-2xl p-4 border border-emerald-100 mb-2">
+            <p className="text-[10px] font-black uppercase tracking-widest text-emerald-700 mb-1">Medusa commerce layer</p>
+            <p className="text-xs text-emerald-800/75 leading-relaxed">Inventory, orders, Stripe, and fulfillment are now mirrored through the Edge Medusa backend console.</p>
+            <Link href="/backend" className="mt-3 inline-flex text-xs font-black text-emerald-900 underline underline-offset-4">Open backend console</Link>
+          </div>
+
           <div className="bg-black/[0.02] rounded-2xl p-4 border border-black/5 mb-2">
             <div className="flex items-center gap-2 mb-1">
               <span className="text-[10px] font-black uppercase tracking-widest text-black/30">Current Project</span>
@@ -771,9 +787,9 @@ export default function BuildPage({ params }: BuildPageProps) {
         {activeTab === 'onboarding' && (
           <div className="p-8 space-y-8">
             <div className="bg-[#1A1A1A] text-white rounded-3xl p-8">
-              <p className="text-xs uppercase tracking-[0.25em] text-white/40 font-bold mb-3">Welcome to Edge</p>
+              <p className="text-xs uppercase tracking-[0.25em] text-emerald-300 font-bold mb-3">Edge Medusa backend-first launch</p>
               <h2 className="text-3xl md:text-4xl font-serif italic mb-3">Start here: get {site.business_name} ready to take real customers.</h2>
-              <p className="text-white/60 max-w-2xl">This is the launch checklist. Work top to bottom: add your offers, connect payments if you sell online, edit the page copy, confirm pages, then publish.</p>
+              <p className="text-white/60 max-w-2xl">This is the launch checklist. Work top to bottom: add your offers, connect payments if you sell online, edit the page copy, confirm pages, then publish. Use the Medusa Backend console for the commerce-ops view across catalog, orders, channels, and backend health.</p>
             </div>
 
             <div className="grid md:grid-cols-2 gap-5">

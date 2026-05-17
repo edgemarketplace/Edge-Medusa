@@ -116,7 +116,8 @@ export default function OnboardingPage() {
           <div className="w-7 h-7 bg-[#1A1A1A] rounded-md flex items-center justify-center">
             <span className="font-serif italic font-bold text-white text-base">E</span>
           </div>
-          <span className="font-bold tracking-tight text-sm">Edge Marketplace Hub</span>
+          <span className="font-bold tracking-tight text-sm">Edge Medusa</span>
+          <span className="hidden sm:inline-flex ml-2 rounded-full bg-emerald-50 border border-emerald-100 px-2.5 py-1 text-[10px] font-black uppercase tracking-widest text-emerald-700">Medusa commerce onboarding</span>
         </div>
 
         {/* Step indicator */}
