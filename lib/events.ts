@@ -75,4 +75,20 @@ export const Events = {
       event_type: 'page.updated',
       payload: { site_id: siteId, section_count: sectionCount },
     }),
+
+  published: (siteId: string, businessName: string | null, organizationId?: string | null) =>
+    emitEvent({
+      aggregate_type: 'site',
+      aggregate_id: siteId,
+      event_type: 'publication.approved',
+      payload: { business_name: businessName, organization_id: organizationId },
+    }),
+
+  rejected: (siteId: string, businessName: string | null, reason: string) =>
+    emitEvent({
+      aggregate_type: 'site',
+      aggregate_id: siteId,
+      event_type: 'publication.rejected',
+      payload: { business_name: businessName, reason },
+    }),
 }
