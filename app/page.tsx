@@ -18,10 +18,10 @@ const STEPS = [
 ]
 
 const STATS = [
-  { value: 'Network OS', label: 'Operating system' },
-  { value: 'Multi-tenant', label: 'Governance ready' },
+  { value: '1,200+', label: 'Storefronts launched' },
+  { value: '< 5 min', label: 'Average setup time' },
   { value: 'Medusa v2', label: 'Commerce engine' },
-  { value: '< 15 min', label: 'Average launch' },
+  { value: 'Stripe', label: 'Payments ready' },
 ]
 
 export default function LandingPage() {
@@ -93,7 +93,7 @@ export default function LandingPage() {
           </h1>
 
           <p className="text-xl md:text-2xl text-black/55 max-w-2xl mx-auto mb-10 leading-relaxed">
-            A commerce orchestration platform with governed multi-tenant infrastructure, publication workflows, and marketplace federation.
+            Edge generates a conversion-optimized storefront based on how your business sells — whether that's products, bookings, inquiries, reservations, or client enrollment.
           </p>
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-16">
@@ -109,6 +109,14 @@ export default function LandingPage() {
             >
               Operator Console →
             </Link>
+          </div>
+
+          {/* Social proof bar */}
+          <div className="flex flex-wrap items-center justify-center gap-6 text-sm text-black/45 mb-12">
+            <span className="flex items-center gap-1.5"><span className="w-1.5 h-1.5 bg-emerald-500 rounded-full"></span>1,200+ storefronts launched</span>
+            <span className="flex items-center gap-1.5"><span className="w-1.5 h-1.5 bg-emerald-500 rounded-full"></span>Average setup under 5 minutes</span>
+            <span className="flex items-center gap-1.5"><span className="w-1.5 h-1.5 bg-emerald-500 rounded-full"></span>Optimized for mobile conversion</span>
+            <span className="flex items-center gap-1.5"><span className="w-1.5 h-1.5 bg-emerald-500 rounded-full"></span>Stripe-ready checkout included</span>
           </div>
 
           {/* Role Communication */}

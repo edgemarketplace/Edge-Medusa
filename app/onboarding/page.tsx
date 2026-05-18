@@ -17,12 +17,18 @@ const PRIMARY_GOALS = [
 ];
 
 const BUYING_BEHAVIORS = [
-  { id: 'buy-now', label: 'Buy immediately online', desc: 'Push stronger product discovery, faster checkout, and higher CTA frequency.' },
-  { id: 'compare-first', label: 'Compare options before purchasing', desc: 'Show more proof, explanation, and side-by-side offer structure.' },
-  { id: 'custom-pricing', label: 'Request custom pricing', desc: 'Lean into quote forms, proof, and trust before price commitment.' },
-  { id: 'consult-first', label: 'Book a consultation first', desc: 'Route visitors into authority, qualification, and booking conversion.' },
-  { id: 'reserve-time', label: 'Reserve a date / time', desc: 'Prioritize date availability, urgency, and low-friction inquiry paths.' },
-  { id: 'contact-first', label: 'Contact before purchasing', desc: 'Use softer CTAs, stronger proof, and a guided decision flow.' },
+  { id: 'buy-now', label: 'Buy immediately online', desc: 'Push stronger product discovery, faster checkout, and higher CTA frequency.', group: 'fast' },
+  { id: 'reserve-time', label: 'Reserve a date / time', desc: 'Prioritize date availability, urgency, and low-friction inquiry paths.', group: 'fast' },
+  { id: 'compare-first', label: 'Compare options before purchasing', desc: 'Show more proof, explanation, and side-by-side offer structure.', group: 'considered' },
+  { id: 'custom-pricing', label: 'Request custom pricing', desc: 'Lean into quote forms, proof, and trust before price commitment.', group: 'considered' },
+  { id: 'contact-first', label: 'Contact before purchasing', desc: 'Use softer CTAs, stronger proof, and a guided decision flow.', group: 'considered' },
+  { id: 'consult-first', label: 'Book a consultation first', desc: 'Route visitors into authority, qualification, and booking conversion.', group: 'relationship' },
+];
+
+const BEHAVIOR_GROUPS = [
+  { id: 'fast' as const, label: 'Fast decision', desc: 'Customers know what they want', icon: '⚡' },
+  { id: 'considered' as const, label: 'Considered decision', desc: 'Customers compare before committing', icon: '🔍' },
+  { id: 'relationship' as const, label: 'Relationship-led', desc: 'Trust and consultation come first', icon: '🤝' },
 ];
 
 const STYLE_PRESETS = [
@@ -68,6 +74,40 @@ const STYLE_PRESETS = [
   },
 ];
 
+const BRAND_POSITIONING = [
+  { id: 'approachable', label: 'Approachable', icon: '👋' },
+  { id: 'premium', label: 'Premium', icon: '✨' },
+  { id: 'luxury', label: 'Luxury', icon: '💎' },
+  { id: 'playful', label: 'Playful', icon: '🎉' },
+  { id: 'bold', label: 'Bold', icon: '🔥' },
+  { id: 'minimal', label: 'Minimal', icon: '◻️' },
+  { id: 'editorial', label: 'Editorial', icon: '📰' },
+  { id: 'earthy', label: 'Earthy', icon: '🌿' },
+  { id: 'modern', label: 'Modern', icon: '🏗️' },
+];
+
+const VISUAL_DENSITY = [
+  { id: 'minimal', label: 'Clean / Minimal', desc: 'More whitespace, fewer elements per section' },
+  { id: 'balanced', label: 'Balanced', desc: 'Standard layout with clear visual hierarchy' },
+  { id: 'image-heavy', label: 'Image-heavy', desc: 'Gallery-forward with rich visual content' },
+];
+
+const EMOTIONAL_TONE = [
+  { id: 'trustworthy', label: 'Trustworthy', icon: '🛡️' },
+  { id: 'energetic', label: 'Energetic', icon: '⚡' },
+  { id: 'calm', label: 'Calm', icon: '🧘' },
+  { id: 'aspirational', label: 'Aspirational', icon: '🌟' },
+  { id: 'romantic', label: 'Romantic', icon: '💕' },
+  { id: 'authoritative', label: 'Authoritative', icon: '🎓' },
+];
+
+const PRICE_POSITIONING = [
+  { id: 'budget', label: 'Budget-friendly', icon: '💵' },
+  { id: 'mid-market', label: 'Mid-market', icon: '💰' },
+  { id: 'premium', label: 'Premium', icon: '💎' },
+  { id: 'luxury', label: 'Luxury', icon: '👑' },
+];
+
 const BUSINESS_TYPE_COPY: Record<TemplateFamily, { customerLabel: string; engineLabel: string }> = {
   'retail-core': { customerLabel: 'Retail & Product Store', engineLabel: 'Editorial Commerce Engine' },
   'service-pro': { customerLabel: 'Service Business', engineLabel: 'Trust-First Services Engine' },
@@ -93,6 +133,12 @@ export default function OnboardingPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
+  // Step 2 brand positioning state
+  const [brandPositioning, setBrandPositioning] = useState<string[]>([]);
+  const [visualDensity, setVisualDensity] = useState('');
+  const [emotionalTone, setEmotionalTone] = useState<string[]>([]);
+  const [pricePositioning, setPricePositioning] = useState('');
+
   // Pre-select vertical from URL if provided (client-side only)
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -109,9 +155,22 @@ export default function OnboardingPage() {
     [businessName, offerings, email, selectedType, primaryGoal, buyingBehavior]
   );
 
+  const step2Valid = useMemo(
+    () => !!(selectedStyle && brandPositioning.length > 0 && visualDensity && emotionalTone.length > 0 && pricePositioning),
+    [selectedStyle, brandPositioning, visualDensity, emotionalTone, pricePositioning]
+  );
+
   // Explicit selection handler with defensive fallback
   const handleSelectType = useCallback((family: TemplateFamily) => {
     setSelectedType(family);
+  }, []);
+
+  const toggleBrandPositioning = useCallback((id: string) => {
+    setBrandPositioning(prev => prev.includes(id) ? prev.filter(p => p !== id) : [...prev, id]);
+  }, []);
+
+  const toggleEmotionalTone = useCallback((id: string) => {
+    setEmotionalTone(prev => prev.includes(id) ? prev.filter(t => t !== id) : [...prev, id]);
   }, []);
 
   async function handleSubmit() {
@@ -136,6 +195,10 @@ export default function OnboardingPage() {
             buying_behavior_label: BUYING_BEHAVIORS.find((item) => item.id === buyingBehavior)?.label || buyingBehavior,
             recommended_engine: BUSINESS_TYPE_COPY[selectedType!].engineLabel,
             recommended_style: STYLE_PRESETS.find((preset) => preset.id === selectedStyle)?.name || selectedStyle,
+            brand_positioning: brandPositioning,
+            visual_density: visualDensity,
+            emotional_tone: emotionalTone,
+            price_positioning: pricePositioning,
           },
         }),
       });
@@ -170,8 +233,63 @@ export default function OnboardingPage() {
     if (primaryGoal === 'take-orders') note = 'Designed for fast local ordering, menu clarity, and checkout speed.';
     if (primaryGoal === 'get-quotes') note = 'Structured for considered purchases, trust, and low-friction quote requests.';
 
-    return { engine, goalLabel, note };
-  }, [primaryGoal, selectedType]);
+    // Determine variant based on buying behavior
+    let variant = '';
+    if (buyingBehavior === 'buy-now') variant = 'Direct-Checkout Variant';
+    else if (buyingBehavior === 'compare-first') variant = 'Comparison-Proof Variant';
+    else if (buyingBehavior === 'custom-pricing') variant = 'Quote-First Variant';
+    else if (buyingBehavior === 'consult-first') variant = 'Authority-Funnel Variant';
+    else if (buyingBehavior === 'reserve-time') variant = 'Availability-First Variant';
+    else if (buyingBehavior === 'contact-first') variant = 'Trust-Led Variant';
+
+    return { engine, goalLabel, note, variant };
+  }, [primaryGoal, selectedType, buyingBehavior]);
+
+  // Dynamic recommendation intelligence
+  const recommendationPreview = useMemo(() => {
+    if (!selectedType || !primaryGoal || !buyingBehavior) return null;
+
+    const engine = BUSINESS_TYPE_COPY[selectedType].engineLabel;
+    const behaviorLabel = BUYING_BEHAVIORS.find(b => b.id === buyingBehavior)?.label || '';
+    const goalLabel = PRIMARY_GOALS.find(g => g.id === primaryGoal)?.label || '';
+
+    const reasons: string[] = [];
+
+    // Business type reasons
+    if (selectedType === 'retail-core') reasons.push('Product catalog with fast mobile checkout');
+    if (selectedType === 'service-pro') reasons.push('Service packaging with trust-first layout');
+    if (selectedType === 'food-catering') reasons.push('Menu-forward design with ordering speed');
+    if (selectedType === 'artisan-market') reasons.push('Story-driven product presentation');
+    if (selectedType === 'event-floral') reasons.push('Gallery-led visual inquiry flow');
+    if (selectedType === 'coach-educator') reasons.push('Authority-building conversion structure');
+
+    // Goal reasons
+    if (primaryGoal === 'sell-products') reasons.push('Aggressive CTA placement for impulse conversion');
+    if (primaryGoal === 'book-service') reasons.push('Booking flow prioritized above the fold');
+    if (primaryGoal === 'get-quotes') reasons.push('Quote form with trust scaffolding');
+    if (primaryGoal === 'take-orders') reasons.push('Fast-path ordering with minimal friction');
+    if (primaryGoal === 'check-availability') reasons.push('Date-first inquiry with urgency signals');
+    if (primaryGoal === 'enroll-clients') reasons.push('Lead capture with authority positioning');
+
+    // Behavior reasons
+    if (buyingBehavior === 'buy-now') reasons.push('High CTA frequency, minimal decision steps');
+    if (buyingBehavior === 'compare-first') reasons.push('Side-by-side proof, detailed comparisons');
+    if (buyingBehavior === 'custom-pricing') reasons.push('Quote-first flow, trust before price');
+    if (buyingBehavior === 'consult-first') reasons.push('Consultation booking as primary conversion');
+    if (buyingBehavior === 'reserve-time') reasons.push('Availability calendar with urgency');
+    if (buyingBehavior === 'contact-first') reasons.push('Soft CTAs with guided decision path');
+
+    // Determine variant
+    let variant = '';
+    if (buyingBehavior === 'buy-now') variant = 'Direct-Checkout Variant';
+    else if (buyingBehavior === 'compare-first') variant = 'Comparison-Proof Variant';
+    else if (buyingBehavior === 'custom-pricing') variant = 'Quote-First Variant';
+    else if (buyingBehavior === 'consult-first') variant = 'Authority-Funnel Variant';
+    else if (buyingBehavior === 'reserve-time') variant = 'Availability-First Variant';
+    else if (buyingBehavior === 'contact-first') variant = 'Trust-Led Variant';
+
+    return { engine, variant, behaviorLabel, goalLabel, reasons: reasons.slice(0, 4) };
+  }, [selectedType, primaryGoal, buyingBehavior]);
 
   return (
     <div className="min-h-screen bg-[#F9F8F6] text-[#1A1A1A] font-sans flex flex-col">
@@ -214,7 +332,7 @@ export default function OnboardingPage() {
                 <h1 className="text-4xl md:text-5xl font-serif italic tracking-tight mb-3">
                   Launch a storefront built for how your business actually sells
                 </h1>
-                <p className="text-black/55 text-lg">Edge analyzes your business model, conversion goals, and brand positioning to generate a high-converting storefront — optimized for products, bookings, inquiries, or local ordering.</p>
+                <p className="text-black/55 text-lg">Edge generates a conversion-optimized storefront based on how your business sells — whether that's products, bookings, inquiries, reservations, or client enrollment.</p>
               </div>
 
               <div className="space-y-5">
@@ -366,122 +484,252 @@ export default function OnboardingPage() {
                 <div>
                   <label className="block text-sm font-bold mb-1">How do customers usually buy from you? *</label>
                   <p className="text-sm text-black/45 mb-4">This shapes CTA frequency, proof placement, and how aggressive the storefront should be.</p>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    {BUYING_BEHAVIORS.map(item => (
-                      <button
-                        key={item.id}
-                        type="button"
-                        onClick={() => setBuyingBehavior(item.id)}
-                        className={`text-left rounded-2xl border p-5 transition-all ${
-                          buyingBehavior === item.id
-                            ? 'border-black bg-white shadow-md ring-2 ring-black'
-                            : 'border-black/10 bg-white hover:border-black/20'
-                        }`}
-                      >
-                        <h3 className="font-bold mb-1">{item.label}</h3>
-                        <p className="text-sm text-black/50 leading-relaxed">{item.desc}</p>
-                      </button>
-                    ))}
-                  </div>
+
+                  {BEHAVIOR_GROUPS.map(group => {
+                    const groupBehaviors = BUYING_BEHAVIORS.filter(b => b.group === group.id);
+                    return (
+                      <div key={group.id} className="mb-4">
+                        <div className="flex items-center gap-2 mb-2">
+                          <span className="text-sm">{group.icon}</span>
+                          <span className="text-xs font-bold uppercase tracking-[0.15em] text-black/50">{group.label}</span>
+                          <span className="text-xs text-black/30">— {group.desc}</span>
+                        </div>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                          {groupBehaviors.map(item => (
+                            <button
+                              key={item.id}
+                              type="button"
+                              onClick={() => setBuyingBehavior(item.id)}
+                              className={`text-left rounded-xl border p-4 transition-all ${
+                                buyingBehavior === item.id
+                                  ? 'border-black bg-white shadow-md ring-2 ring-black'
+                                  : 'border-black/10 bg-white hover:border-black/20'
+                              }`}
+                            >
+                              <h3 className="font-bold text-sm mb-0.5">{item.label}</h3>
+                              <p className="text-xs text-black/50 leading-relaxed">{item.desc}</p>
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
 
-                {recommendedSetup && selectedTemplateMeta && (
-                  <div className="rounded-3xl border border-black/10 bg-white p-6 space-y-3">
-                    <p className="text-xs uppercase tracking-[0.2em] font-bold text-emerald-700">Recommended setup</p>
-                    <div>
-                      <h3 className="text-2xl font-serif italic tracking-tight">{recommendedSetup.engine} + {recommendedSetup.goalLabel}</h3>
-                      <p className="text-black/55 mt-2">{recommendedSetup.note}</p>
+                {/* Dynamic Recommendation Preview */}
+                {recommendationPreview && (
+                  <div className="rounded-3xl border border-emerald-200 bg-emerald-50/50 p-6 space-y-4">
+                    <div className="flex items-center gap-2">
+                      <span className="text-lg">🎯</span>
+                      <p className="text-xs uppercase tracking-[0.2em] font-bold text-emerald-700">Recommended storefront system</p>
                     </div>
-                    {selectedBehaviorMeta && (
-                      <p className="text-sm text-black/45">Buying behavior detected: {selectedBehaviorMeta.label}.</p>
-                    )}
+                    <div>
+                      <h3 className="text-2xl font-serif italic tracking-tight">{recommendationPreview.engine}</h3>
+                      {recommendationPreview.variant && (
+                        <p className="text-sm font-bold text-emerald-700 mt-1">{recommendationPreview.variant}</p>
+                      )}
+                    </div>
+                    <div className="space-y-1.5">
+                      {recommendationPreview.reasons.map((reason, i) => (
+                        <p key={i} className="text-sm text-black/60 flex items-start gap-2">
+                          <span className="text-emerald-600 mt-0.5">•</span>
+                          <span>{reason}</span>
+                        </p>
+                      ))}
+                    </div>
                   </div>
                 )}
               </div>
 
-              <button
-                onClick={() => setStep(2)}
-                disabled={!step1Valid}
-                className="w-full bg-[#1A1A1A] text-white py-5 rounded-full text-lg font-bold disabled:opacity-40 disabled:cursor-not-allowed hover:scale-[1.02] transition-transform"
-              >
-                Next: Style + positioning →
-              </button>
+              <div>
+                <button
+                  onClick={() => setStep(2)}
+                  disabled={!step1Valid}
+                  className="w-full bg-[#1A1A1A] text-white py-5 rounded-full text-lg font-bold disabled:opacity-40 disabled:cursor-not-allowed hover:scale-[1.02] transition-transform"
+                >
+                  Continue to Brand Positioning →
+                </button>
+                <p className="text-center text-xs text-black/35 mt-3">Typical setup: 3–5 minutes</p>
+              </div>
 
               <div className="rounded-3xl border border-black/5 bg-white/70 px-5 py-4">
-                <p className="text-sm font-bold mb-2">Edge automatically generates:</p>
+                <p className="text-sm font-bold mb-2">Edge automatically configures:</p>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm text-black/55">
-                  <p>• Layout structure</p>
-                  <p>• Product / service pages</p>
+                  <p>• Storefront architecture</p>
+                  <p>• Product or service page layouts</p>
                   <p>• Conversion-focused copy</p>
-                  <p>• Checkout & booking flows</p>
+                  <p>• Checkout or booking flows</p>
                   <p>• Mobile optimization</p>
-                  <p>• Payment setup</p>
+                  <p>• Payment onboarding</p>
+                  <p>• SEO-ready page structure</p>
                 </div>
+              </div>
+
+              {/* Social proof */}
+              <div className="flex items-center justify-center gap-6 text-xs text-black/40">
+                <span className="flex items-center gap-1.5"><span className="w-1.5 h-1.5 bg-emerald-500 rounded-full"></span>Generated for 1,200+ storefronts</span>
+                <span className="flex items-center gap-1.5"><span className="w-1.5 h-1.5 bg-emerald-500 rounded-full"></span>Average setup under 5 minutes</span>
+                <span className="flex items-center gap-1.5"><span className="w-1.5 h-1.5 bg-emerald-500 rounded-full"></span>Stripe-ready checkout included</span>
               </div>
             </div>
           )}
 
-          {/* ── STEP 2: Style preset ── */}
+          {/* ── STEP 2: Brand Positioning ── */}
           {step === 2 && (
             <div className="space-y-8">
               <div>
-                <p className="text-xs uppercase tracking-[0.2em] font-bold text-black/35 mb-2">Step 2 of 3 • Style + Positioning</p>
+                <p className="text-xs uppercase tracking-[0.2em] font-bold text-black/35 mb-2">Step 2 of 3 • Brand Positioning</p>
                 <h1 className="text-4xl md:text-5xl font-serif italic tracking-tight mb-3">
-                  Choose your brand positioning
+                  Define your brand positioning
                 </h1>
-                <p className="text-black/55 text-lg">Your style controls typography, spacing, image density, and merchandising behavior.</p>
+                <p className="text-black/55 text-lg">These choices control typography, spacing, image density, and merchandising behavior — not just colors.</p>
               </div>
 
               {recommendedSetup && (
-                <div className="rounded-3xl border border-black/10 bg-white p-6">
+                <div className="rounded-3xl border border-emerald-200 bg-emerald-50/50 p-6">
                   <p className="text-xs uppercase tracking-[0.2em] font-bold text-emerald-700 mb-2">Best match</p>
-                  <h3 className="text-2xl font-serif italic tracking-tight">{recommendedSetup.engine} + {recommendedSetup.goalLabel}</h3>
+                  <h3 className="text-2xl font-serif italic tracking-tight">{recommendedSetup.engine}{recommendedSetup.variant ? ` + ${recommendedSetup.variant}` : ''}</h3>
                   <p className="text-black/55 mt-2">{recommendedSetup.note}</p>
                 </div>
               )}
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {STYLE_PRESETS.map(preset => (
-                  <button
-                    key={preset.id} type="button"
-                    onClick={() => setSelectedStyle(preset.id)}
-                    className={`relative rounded-3xl overflow-hidden border-2 transition-all text-left ${
-                      selectedStyle === preset.id ? 'border-black shadow-lg scale-[1.02]' : 'border-transparent hover:border-black/20'
-                    }`}
-                  >
-                    {/* Preview swatch */}
-                    <div
-                      className="h-28 flex flex-col items-center justify-center gap-2 px-4"
-                      style={{ backgroundColor: preset.bg }}
+              {/* Style preset */}
+              <div>
+                <label className="block text-sm font-bold mb-1">Visual style</label>
+                <p className="text-sm text-black/45 mb-4">Choose the design system that best matches your brand.</p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {STYLE_PRESETS.map(preset => (
+                    <button
+                      key={preset.id} type="button"
+                      onClick={() => setSelectedStyle(preset.id)}
+                      className={`relative rounded-3xl overflow-hidden border-2 transition-all text-left ${
+                        selectedStyle === preset.id ? 'border-black shadow-lg scale-[1.02]' : 'border-transparent hover:border-black/20'
+                      }`}
                     >
-                      <div className={`text-lg font-serif italic ${preset.preview[0]}`} style={{ color: preset.accent }}>
-                        {businessName || 'Your Business'}
-                      </div>
-                      <div className="flex gap-2 flex-wrap justify-center">
-                        <div className="px-3 py-1 rounded-full text-xs font-bold" style={{ backgroundColor: preset.accent, color: preset.bg }}>
-                          {selectedGoalMeta?.label || 'Shop now'}
+                      {/* Preview swatch */}
+                      <div
+                        className="h-28 flex flex-col items-center justify-center gap-2 px-4"
+                        style={{ backgroundColor: preset.bg }}
+                      >
+                        <div className={`text-lg font-serif italic ${preset.preview[0]}`} style={{ color: preset.accent }}>
+                          {businessName || 'Your Business'}
                         </div>
-                        <div className="px-3 py-1 rounded-full text-xs border" style={{ borderColor: preset.accent, color: preset.accent }}>
-                          {selectedBehaviorMeta?.label || 'Learn more'}
+                        <div className="flex gap-2 flex-wrap justify-center">
+                          <div className="px-3 py-1 rounded-full text-xs font-bold" style={{ backgroundColor: preset.accent, color: preset.bg }}>
+                            {selectedGoalMeta?.label || 'Shop now'}
+                          </div>
+                          <div className="px-3 py-1 rounded-full text-xs border" style={{ borderColor: preset.accent, color: preset.accent }}>
+                            {selectedBehaviorMeta?.label || 'Learn more'}
+                          </div>
                         </div>
                       </div>
-                    </div>
-                    {/* Label */}
-                    <div className="bg-white px-4 py-3 border-t border-black/5">
-                      <div className="flex items-center justify-between mb-0.5 gap-3">
-                        <div>
-                          <p className="font-bold">{preset.name}</p>
-                          <p className="text-[11px] uppercase tracking-[0.18em] text-black/35 mt-1">{preset.system}</p>
+                      {/* Label */}
+                      <div className="bg-white px-4 py-3 border-t border-black/5">
+                        <div className="flex items-center justify-between mb-0.5 gap-3">
+                          <div>
+                            <p className="font-bold">{preset.name}</p>
+                            <p className="text-[11px] uppercase tracking-[0.18em] text-black/35 mt-1">{preset.system}</p>
+                          </div>
+                          {selectedStyle === preset.id && (
+                            <span className="text-xs bg-black text-white px-2 py-0.5 rounded-full">Selected</span>
+                          )}
                         </div>
-                        {selectedStyle === preset.id && (
-                          <span className="text-xs bg-black text-white px-2 py-0.5 rounded-full">Selected</span>
-                        )}
+                        <p className="text-xs text-black/50">{preset.desc}</p>
+                        <p className="text-xs text-black/35 mt-2">{preset.detail}</p>
                       </div>
-                      <p className="text-xs text-black/50">{preset.desc}</p>
-                      <p className="text-xs text-black/35 mt-2">{preset.detail}</p>
-                    </div>
-                  </button>
-                ))}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Brand positioning */}
+              <div>
+                <label className="block text-sm font-bold mb-1">Brand positioning</label>
+                <p className="text-sm text-black/45 mb-3">Select all that apply. This controls the overall feel of your storefront.</p>
+                <div className="flex flex-wrap gap-2">
+                  {BRAND_POSITIONING.map(bp => (
+                    <button
+                      key={bp.id}
+                      type="button"
+                      onClick={() => toggleBrandPositioning(bp.id)}
+                      className={`px-4 py-2.5 rounded-full border text-sm font-medium transition-all ${
+                        brandPositioning.includes(bp.id)
+                          ? 'border-black bg-black text-white'
+                          : 'border-black/10 bg-white hover:border-black/25'
+                      }`}
+                    >
+                      <span className="mr-1.5">{bp.icon}</span>{bp.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Visual density */}
+              <div>
+                <label className="block text-sm font-bold mb-1">Visual density</label>
+                <p className="text-sm text-black/45 mb-3">How much content should each section contain?</p>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                  {VISUAL_DENSITY.map(vd => (
+                    <button
+                      key={vd.id}
+                      type="button"
+                      onClick={() => setVisualDensity(vd.id)}
+                      className={`text-left rounded-xl border p-4 transition-all ${
+                        visualDensity === vd.id
+                          ? 'border-black bg-white shadow-md ring-2 ring-black'
+                          : 'border-black/10 bg-white hover:border-black/20'
+                      }`}
+                    >
+                      <h3 className="font-bold text-sm mb-0.5">{vd.label}</h3>
+                      <p className="text-xs text-black/50">{vd.desc}</p>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Emotional tone */}
+              <div>
+                <label className="block text-sm font-bold mb-1">Emotional tone</label>
+                <p className="text-sm text-black/45 mb-3">Select all that apply. This influences copy, pacing, and CTA language.</p>
+                <div className="flex flex-wrap gap-2">
+                  {EMOTIONAL_TONE.map(et => (
+                    <button
+                      key={et.id}
+                      type="button"
+                      onClick={() => toggleEmotionalTone(et.id)}
+                      className={`px-4 py-2.5 rounded-full border text-sm font-medium transition-all ${
+                        emotionalTone.includes(et.id)
+                          ? 'border-black bg-black text-white'
+                          : 'border-black/10 bg-white hover:border-black/25'
+                      }`}
+                    >
+                      <span className="mr-1.5">{et.icon}</span>{et.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Price positioning */}
+              <div>
+                <label className="block text-sm font-bold mb-1">Price positioning</label>
+                <p className="text-sm text-black/45 mb-3">This affects proof density, CTA urgency, and layout complexity.</p>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                  {PRICE_POSITIONING.map(pp => (
+                    <button
+                      key={pp.id}
+                      type="button"
+                      onClick={() => setPricePositioning(pp.id)}
+                      className={`text-left rounded-xl border p-4 transition-all ${
+                        pricePositioning === pp.id
+                          ? 'border-black bg-white shadow-md ring-2 ring-black'
+                          : 'border-black/10 bg-white hover:border-black/20'
+                      }`}
+                    >
+                      <span className="text-lg">{pp.icon}</span>
+                      <h3 className="font-bold text-sm mt-1">{pp.label}</h3>
+                    </button>
+                  ))}
+                </div>
               </div>
 
               <div className="flex gap-3">
@@ -493,11 +741,13 @@ export default function OnboardingPage() {
                 </button>
                 <button
                   onClick={() => setStep(3)}
-                  className="flex-1 bg-[#1A1A1A] text-white py-4 rounded-full text-lg font-bold hover:scale-[1.02] transition-transform"
+                  disabled={!step2Valid}
+                  className="flex-1 bg-[#1A1A1A] text-white py-4 rounded-full text-lg font-bold hover:scale-[1.02] transition-transform disabled:opacity-40 disabled:cursor-not-allowed"
                 >
-                  Generate My Storefront →
+                  Generate Recommended Directions →
                 </button>
               </div>
+              <p className="text-center text-xs text-black/35">Typical setup: 3–5 minutes</p>
             </div>
           )}
 
