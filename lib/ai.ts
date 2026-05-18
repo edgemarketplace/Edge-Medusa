@@ -326,7 +326,7 @@ OUTPUT FORMAT — JSON only, no markdown fences, no extra text:
 }
 
 CRITICAL RULES:
-1. Generate 7-9 sections for the home page. NEVER fewer than 6.
+1. Generate EXACTLY 4-6 sections for the home page (not counting header/footer). Fewer is more premium.
 2. You MUST respect the vertical guidance above EXACTLY:
    - Use ONLY the allowed section types listed for this business type.
    - NEVER generate FORBIDDEN section types.
@@ -334,18 +334,20 @@ CRITICAL RULES:
 3. FIRST section MUST ALWAYS be a header (header-simple, header-promo, or header-mega).
 4. LAST section MUST ALWAYS be a footer (footer-basic, footer-commerce, or footer-service).
 5. Every section MUST have "id" (unique), "type", and "data".
-6. Write REAL, SPECIFIC copy — never generic filler. Use actual product types and price points from the offerings.
-7. For product/service items, generate 3-6 SPECIFIC items with realistic names and prices based on the business type (e.g., for retail: "The Classic Tote — $89", "Waxed Canvas Backpack — $145"). NEVER use "Example Item" or generic placeholder names.
-8. For imageUrl, use REAL Unsplash URLs. Pick IDs relevant to the business type:
+6. Write REAL, SPECIFIC copy derived from the actual business offerings. NEVER use generic agency filler words: "Data-Driven", "Fast Execution", "Partnership", "Proven results", "Satisfaction guaranteed", or invented metrics ("150+", "98%", "3x", "24h response time").
+7. For product/service items, generate 3-6 SPECIFIC items with realistic names and prices based on the business type. NEVER use "Example Item" or generic placeholder names.
+8. NEVER generate fake testimonials with invented names/companies. If no real proof exists, use brand-story, process, or materials sections instead.
+9. NEVER use emoji icons in value propositions or feature grids (no 🎯 🚀 🤝 ✨). Use text-only or photography.
+10. For EVERY hero, brand-story, gallery, or image section: imageUrl MUST be a real Unsplash photo URL. NEVER leave imageUrl empty (never ""). Use ONLY these Unsplash photo IDs:
    - Food/catering: photo-1504674900247-0877df9cc836, photo-1559339352-11d035aa65de
    - Retail/products: photo-1607089264410, photo-1441986300917-64674bd600d8
    - Services/consulting: photo-1557804506, photo-1556761175-5973dc0f32e7
    - Floral/events: photo-1490750967868-58cb75069ed6, photo-1527529482837-4698179b6e2a
    - Artisan/handmade: photo-1452860606245-08befc0ff44b, photo-1516975080664-ed2fc6a32937
    - Coaching/education: photo-1522202176988-66273c2fd55f, photo-1503676260728-1c00da094a0b
-   If unsure, leave imageUrl as "".
-8. NEVER use relative paths. NEVER use placeholder text like "Lorem ipsum".
-9. The output must be ONLY valid JSON. No markdown, no explanations.`;
+   Format: https://images.unsplash.com/PHOTO_ID?w=1200&h=700&fit=crop&auto=format
+11. NEVER use relative paths. NEVER use placeholder text like "Lorem ipsum".
+12. The output must be ONLY valid JSON. No markdown, no explanations.`;
 }
 
 function generateFallbackSiteContent(

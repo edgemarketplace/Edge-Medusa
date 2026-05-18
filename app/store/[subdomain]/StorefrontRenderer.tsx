@@ -341,7 +341,6 @@ export default function StorefrontRenderer({
       ))}
 
       {/* Only show hardcoded footer if no footer section exists */}
-      <SharedMarketplaceRail site={site} items={visibleItems} primary={tokens.primary} />
 
       {!sections.some(s => s.type.startsWith('footer-')) && (
         <footer className="border-t border-black/5 bg-white py-10 px-8 text-center text-sm text-black/45">
