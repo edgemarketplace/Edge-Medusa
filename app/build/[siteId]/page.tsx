@@ -627,13 +627,13 @@ export default function BuildPage({ params }: BuildPageProps) {
             <div className="w-8 h-8 rounded-xl bg-black flex items-center justify-center text-white font-black text-lg group-hover:scale-105 transition-transform">E</div>
             <div>
               <span className="font-bold tracking-tight text-xl block">Edge</span>
-              <span className="text-[10px] uppercase tracking-[0.18em] text-black/35 font-black">workspace</span>
+              <span className="text-[10px] uppercase tracking-[0.18em] text-black/35 font-black">storefront workspace</span>
             </div>
           </Link>
           
           <div className="space-y-1">
             {([
-              { id: 'onboarding', label: 'Start here', icon: '✅', count: null },
+              { id: 'onboarding', label: 'Launch Checklist', icon: '✅', count: null },
               { id: 'design', label: 'Edit Page', icon: '✏️', count: null },
               { id: 'pages', label: 'Pages', icon: '📄', count: pages.length },
               { id: 'inventory', label: 'Inventory', icon: '📦', count: inventory.length },
@@ -672,7 +672,7 @@ export default function BuildPage({ params }: BuildPageProps) {
               <span className="text-[10px] font-black uppercase tracking-widest text-black/30">Current Project</span>
             </div>
             <p className="text-sm font-bold truncate">{site.business_name}</p>
-            <p className="text-[10px] text-black/40 font-medium">{site.theme_id ? `${site.theme_id.charAt(0).toUpperCase() + site.theme_id.slice(1)} Brand Direction Active` : 'Brand Direction Active'}</p>
+            <p className="text-[10px] text-black/40 font-medium">{site.theme_id ? `${site.theme_id.charAt(0).toUpperCase() + site.theme_id.slice(1)} Direction Active` : 'Direction Active'}</p>
           </div>
 
           <button 

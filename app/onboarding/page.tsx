@@ -286,7 +286,7 @@ export default function OnboardingPage() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-bold mb-4">What type of business? *</label>
+                  <label className="block text-sm font-bold mb-4">What best describes your business? *</label>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     {templateEntries.map(t => {
                       const copy = BUSINESS_TYPE_COPY[t.family];
@@ -309,6 +309,17 @@ export default function OnboardingPage() {
                       </button>
                       )})}
                   </div>
+
+                  {/* Live inference */}
+                  {selectedType && businessName.trim() && (
+                    <div className="mt-3 flex items-center gap-2 px-4 py-3 rounded-2xl bg-emerald-50/70 border border-emerald-100">
+                      <span className="text-sm">🎯</span>
+                      <p className="text-sm text-emerald-800">
+                        <span className="font-bold">{BUSINESS_TYPE_COPY[selectedType].customerLabel}</span>
+                        <span className="text-emerald-600"> — {BUSINESS_TYPE_COPY[selectedType].microcopy}</span>
+                      </p>
+                    </div>
+                  )}
                 </div>
 
                 <div>
@@ -338,7 +349,7 @@ export default function OnboardingPage() {
                   disabled={!step1Valid}
                   className="w-full bg-[#1A1A1A] text-white py-5 rounded-full text-lg font-bold disabled:opacity-40 disabled:cursor-not-allowed hover:scale-[1.02] transition-transform"
                 >
-                  Continue →
+                  Generate Brand Directions →
                  </button>
                </div>
 
@@ -372,36 +383,27 @@ export default function OnboardingPage() {
                       key={direction.id} type="button"
                       onClick={() => setSelectedDirection(direction.id)}
                       className={`relative rounded-3xl overflow-hidden border-2 transition-all text-left ${
-                        selectedDirection === direction.id ? 'border-black shadow-lg scale-[1.02]' : 'border-transparent hover:border-black/20'
+                        selectedDirection === direction.id ? 'border-black shadow-lg scale-[1.02] ring-2 ring-black/10' : 'border-transparent hover:border-black/20'
                       }`}
                     >
                       <div
-                        className="h-28 flex flex-col items-center justify-center gap-2 px-4"
+                        className="h-28 flex flex-col items-center justify-center gap-1 px-4"
                         style={{ backgroundColor: direction.bg }}
                       >
-                        <div className={`text-lg font-serif italic ${direction.preview[0]}`} style={{ color: direction.accent }}>
-                          {businessName || 'Your Business'}
-                        </div>
-                        <div className="flex gap-2 flex-wrap justify-center">
-                          <div className="px-3 py-1 rounded-full text-xs font-bold" style={{ backgroundColor: direction.accent, color: direction.bg }}>
-                            {selectedGoalMeta?.label || 'Shop now'}
-                          </div>
-                          <div className="px-3 py-1 rounded-full text-xs border" style={{ borderColor: direction.accent, color: direction.accent }}>
-                            Learn more
-                          </div>
-                        </div>
+                        <p className={`text-sm font-bold ${direction.preview[0]}`} style={{ color: direction.accent }}>
+                          {direction.name}
+                        </p>
+                        <p className="text-[10px] uppercase tracking-[0.18em] font-bold text-black/25">{direction.system}</p>
                       </div>
                       <div className="bg-white px-4 py-3 border-t border-black/5">
-                        <div className="flex items-center justify-between mb-0.5 gap-3">
-                          <div>
-                            <p className="font-bold">{direction.name}</p>
-                            <p className="text-[11px] uppercase tracking-[0.18em] text-black/35 mt-1">{direction.system}</p>
-                          </div>
+                        <div className="flex items-center justify-between gap-3">
+                          <p className="text-xs text-black/50">{direction.desc}</p>
                           {selectedDirection === direction.id && (
-                            <span className="text-xs bg-black text-white px-2 py-0.5 rounded-full">Selected</span>
+                            <span className="flex-shrink-0 w-5 h-5 rounded-full bg-black flex items-center justify-center">
+                              <svg className="w-3 h-3 text-white" viewBox="0 0 12 12" fill="none"><path d="M2.5 6L5 8.5L9.5 3.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                            </span>
                           )}
                         </div>
-                        <p className="text-xs text-black/50">{direction.desc}</p>
                       </div>
                     </button>
                   ))}

@@ -12,6 +12,13 @@ const VERTICALS = [
   { label: 'Coaches & Educators', microcopy: 'Funnels, enrollment, authority' },
 ]
 
+const DIRECTIONS = [
+  { name: 'Warm Artisan', system: 'Sage', desc: 'Handmade, approachable, naturally premium.', accent: '#6B7C6A', bg: '#F4F7F4', preview: 'font-serif italic', fit: 'Artisan · Floral · Events' },
+  { name: 'Editorial Premium', system: 'Milano', desc: 'Luxury, story-driven, high perceived value.', accent: '#1A1A1A', bg: '#F9F8F6', preview: 'font-serif italic', fit: 'Retail · Fashion · Lifestyle' },
+  { name: 'Professional Authority', system: 'Ocean', desc: 'Trusted authority with clean hierarchy.', accent: '#0891B2', bg: '#F0F9FF', preview: 'font-sans', fit: 'Services · Coaching · B2B' },
+  { name: 'Bold Commercial', system: 'Sunlit', desc: 'Fast, promotional, conversion-forward.', accent: '#F59E0B', bg: '#FFFBF0', preview: 'font-sans', fit: 'Food · Retail · Events' },
+]
+
 const STEPS = [
   { n: '01', title: 'Tell us about your business', desc: 'Products, services, goals, and buying behavior.' },
   { n: '02', title: 'Edge recommends the right storefront system', desc: 'Layouts, conversion flows, and brand direction are generated automatically.' },
@@ -19,12 +26,12 @@ const STEPS = [
 ]
 
 export default function LandingPage() {
-  const [activeVertical, setActiveVertical] = useState(0)
+  const [activeDirection, setActiveDirection] = useState(0)
 
   useEffect(() => {
     const t = setInterval(() => {
-      setActiveVertical(v => (v + 1) % VERTICALS.length)
-    }, 2800)
+      setActiveDirection(v => (v + 1) % DIRECTIONS.length)
+    }, 3000)
     return () => clearInterval(t)
   }, [])
 
@@ -79,26 +86,52 @@ export default function LandingPage() {
             >
               Launch Your Store →
             </Link>
-            <a
-              href="#how-it-works"
+            <Link
+              href="/onboarding"
               className="border border-black/10 bg-white px-8 py-4 rounded-full text-lg font-bold hover:border-black/30 transition-colors"
             >
-              How It Works
-            </a>
+              Explore Storefronts
+            </Link>
           </div>
 
           {/* Trust signals */}
-          <div className="flex flex-wrap items-center justify-center gap-4 sm:gap-6 text-xs text-black/40">
+          <div className="flex flex-wrap items-center justify-center gap-4 sm:gap-6 text-xs text-black/40 mb-16">
             <span className="flex items-center gap-1.5"><span className="w-1.5 h-1.5 bg-emerald-500 rounded-full"></span>Stripe-ready</span>
-            <span className="flex items-center gap-1.5"><span className="w-1.5 h-1.5 bg-emerald-500 rounded-full"></span>Built on Medusa</span>
             <span className="flex items-center gap-1.5"><span className="w-1.5 h-1.5 bg-emerald-500 rounded-full"></span>Mobile-optimized</span>
             <span className="flex items-center gap-1.5"><span className="w-1.5 h-1.5 bg-emerald-500 rounded-full"></span>Edge-deployed globally</span>
+          </div>
+
+          {/* ── AI-Generated Direction Previews ── */}
+          <div>
+            <p className="text-xs uppercase tracking-[0.2em] font-bold text-black/35 mb-5">
+              AI-generated storefront directions tailored to your business model
+            </p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
+              {DIRECTIONS.map((d, i) => (
+                <div
+                  key={d.system}
+                  className={`relative rounded-2xl overflow-hidden border transition-all duration-500 ${
+                    activeDirection === i ? 'border-black/20 shadow-md scale-[1.02]' : 'border-black/5 shadow-sm'
+                  }`}
+                >
+                  <div className="h-20 flex items-center justify-center" style={{ backgroundColor: d.bg }}>
+                    <span className={`text-sm font-bold ${d.preview}`} style={{ color: d.accent }}>
+                      {d.name}
+                    </span>
+                  </div>
+                  <div className="bg-white px-3 py-2.5 border-t border-black/5">
+                    <p className="text-[11px] uppercase tracking-[0.15em] font-bold text-black/35">{d.system}</p>
+                    <p className="text-[10px] text-black/40 mt-0.5">{d.fit}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </section>
 
       {/* ── BUILT FOR HOW BUSINESSES ACTUALLY SELL ── */}
-      <section id="how-it-works" className="px-6 py-12 md:py-24 bg-white">
+      <section className="px-6 py-12 md:py-24 bg-white">
         <div className="max-w-4xl mx-auto">
           <div className="text-center mb-14">
             <h2 className="text-3xl md:text-4xl font-serif italic">Built for how businesses actually sell</h2>
@@ -142,7 +175,7 @@ export default function LandingPage() {
             Ready to launch?
           </h2>
           <p className="text-black/55 text-xl mb-10">
-            Your storefront. Your products. Your way. Free to start.
+            Launch a storefront designed around how your business converts.
           </p>
           <Link
             href="/onboarding"
@@ -162,7 +195,7 @@ export default function LandingPage() {
             </div>
             <span className="font-bold text-sm">Edge</span>
           </div>
-          <p className="text-black/40 text-sm">© {new Date().getFullYear()} Edge. Launch your storefront today.</p>
+          <p className="text-black/40 text-sm">© {new Date().getFullYear()} Edge. Built on Medusa. Stripe-ready. Mobile-optimized.</p>
           <div className="flex gap-6 text-sm text-black/40">
             <Link href="/login" className="hover:text-black transition-colors">Login</Link>
             <Link href="/onboarding" className="hover:text-black transition-colors">Get Started</Link>
