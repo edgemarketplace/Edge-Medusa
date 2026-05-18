@@ -87,17 +87,12 @@ export async function POST(
 
     const enrichedOfferings = [
       offerings || '',
-      onboardingProfile?.primary_goal_label ? `Primary goal: ${onboardingProfile.primary_goal_label}` : '',
-      onboardingProfile?.buying_behavior_label ? `Buying behavior: ${onboardingProfile.buying_behavior_label}` : '',
-      onboardingProfile?.recommended_engine ? `Recommended engine: ${onboardingProfile.recommended_engine}` : '',
     ]
       .filter(Boolean)
       .join('\n')
 
     const enrichedTagline = [
       tagline || '',
-      onboardingProfile?.primary_goal_label ? `Primary CTA: ${onboardingProfile.primary_goal_label}` : '',
-      onboardingProfile?.recommended_style ? `Positioning: ${onboardingProfile.recommended_style}` : '',
     ]
       .filter(Boolean)
       .join(' · ')
@@ -114,29 +109,9 @@ export async function POST(
     const pages = generated.pages.map((page, index) => normalizePage(page, index === 0 ? 'home' : `page-${index + 1}`))
     const homePage = pages.find(page => page.slug === 'home') || pages[0]
     const secondaryPages = pages.filter(page => page.slug !== homePage.slug)
-    const defaultServiceSections = [
-      { id: 'services-overview', type: 'service-list' as const, data: { title: business_type === 'service-pro' ? 'Products / Services' : 'Products / Services', services: business_type === 'service-pro' ? [
-        { name: 'Primary Service', description: offerings || 'Describe your main customer offer here.', price: 'Request quote' },
-        { name: 'Priority Help', description: 'For urgent jobs that need a faster response.', price: 'Custom quote' },
-      ] : [] } },
-      { id: 'services-cta', type: 'quote-cta' as const, data: { headline: 'Need help choosing?', subheading: 'Tell us what you need and we will recommend the right next step.', ctaText: 'Contact us' } },
-    ]
-    const quickPages = [
-      { slug: 'services', title: business_type === 'retail-core' ? 'Products' : 'Products / Services', sections: defaultServiceSections },
-      { slug: 'about', title: 'About Us', sections: [
-        { id: 'about-story', type: 'brand-story' as const, data: { headline: `About ${business_name || 'us'}`, body: offerings || 'Tell customers who you serve, what you do best, and why your work is different.', imageUrl: business_type === 'service-pro' ? 'local service professional at work' : 'small business owner working' } },
-        { id: 'about-values', type: 'value-icons' as const, data: { title: 'How we work', values: [{ icon: '💬', title: 'Clear communication', description: 'Customers know what happens next.' }, { icon: '🧾', title: 'Fair pricing', description: 'Simple expectations before work begins.' }, { icon: '✅', title: 'Reliable delivery', description: 'A finished job customers can trust.' }] } },
-      ] },
-      { slug: 'contact', title: 'Contact Us', sections: [
-        { id: 'contact-hero', type: 'quote-cta' as const, data: { headline: 'Contact us', subheading: `Reach ${business_name || 'us'} at ${contact_email || 'your email'} or send the details of what you need.`, ctaText: 'Send request' } },
-        { id: 'contact-faq', type: 'faq' as const, data: { title: 'Before you reach out', questions: [{ question: 'What should I include?', answer: 'Share what you need, your timing, location, and any helpful photos or details.' }, { question: 'How fast do you reply?', answer: 'Most inquiries receive a response the same business day.' }] } },
-      ] },
-    ]
-
     const allPages = [
       homePage,
       ...secondaryPages,
-      ...quickPages.filter(page => !pages.some(existing => existing.slug === page.slug)),
     ]
 
     await upsertPages(siteId, allPages)

@@ -223,14 +223,14 @@ function buildPrompt(
   tagline: string,
   stylePreset?: string
 ): string {
-  // Map business types to recommended sections and psychology
+  // Map business types to allowed sections and forbidden modules
   const verticalGuidance: Record<string, string> = {
-    'retail-core': `This is a PRODUCT/RETAIL business. Focus on: catalog, product discovery, trust badges, seasonal promos, email capture. Use commerce sections heavily.`,
-    'service-pro': `This is a SERVICE business. Focus on: trust, process, testimonials, quote requests, booking. Use service-list, pricing-tiers, quote-cta, stats. Avoid product-grid.`,
-    'food-catering': `This is a FOOD/CATERING business. Focus on: menus, appetite imagery, event types, booking, gallery. Use hero-products, service-list (menus), gallery, testimonials, booking-cta.`,
-    'artisan-market': `This is a HANDMADE/ARTISAN business. Focus on: maker story, process, provenance, limited editions, founder narrative. Use brand-story, founder-note, editorial-split, product-grid, gallery.`,
-    'event-floral': `This is an EVENT/FLORAL business. Focus on: gallery, transformation, luxury, inquiry form, social proof. Use gallery, hero-visual, testimonials, quote-cta, logo-bar.`,
-    'coach-educator': `This is a COACHING/EDUCATION business. Focus on: transformation, packages, social proof, free resource, booking. Use hero-trust, pricing-tiers, testimonials, newsletter, quote-cta.`,
+    'retail-core': `This is a PRODUCT/RETAIL business. Use ONLY: product-grid, featured-collection, collection-carousel, best-sellers, hero-split, hero-visual, hero-products, brand-story, value-icons, testimonials, reviews, stats, newsletter, faq, promo-banner. FORBIDDEN: service-list, pricing-tiers, quote-cta, booking-cta, packages. Do NOT generate service packages, consultation funnels, or B2B retainers. Commerce behavior: cart-first, fast checkout, merchandising.`,
+    'service-pro': `This is a SERVICE business. Use ONLY: service-list, pricing-tiers, quote-cta, booking-cta, hero-trust, hero-split, brand-story, testimonials, stats, before-after, case-studies, faq, value-icons, newsletter. FORBIDDEN: product-grid, featured-collection, collection-carousel, best-sellers. Do NOT generate product catalogs, shopping carts, or retail product pages. Commerce behavior: inquiry-first or booking-first.`,
+    'food-catering': `This is a FOOD/CATERING business. Use ONLY: hero-products, hero-visual, service-list (as menu), featured-collection, gallery, testimonials, reviews, stats, faq, booking-cta, navigation-cta, newsletter. FORBIDDEN: pricing-tiers, packages, quote-cta, case-studies. Use menu-style layouts. Commerce behavior: order-first or reservation-first.`,
+    'artisan-market': `This is a HANDMADE/ARTISAN business. Use ONLY: hero-split, hero-visual, product-grid, featured-collection, collection-carousel, brand-story, value-icons, testimonials, reviews, faq, newsletter. FORBIDDEN: service-list, pricing-tiers, quote-cta, booking-cta, packages, case-studies, before-after. Do NOT generate service packages, strategy sessions, enterprise retainers, B2B consulting items, or consultation funnels. Commerce behavior: story-first, cart checkout. Product names must reflect handcrafted goods (furniture, jewelry, ceramics, textiles, etc.), never consulting services or digital products.`,
+    'event-floral': `This is an EVENT/FLORAL business. Use ONLY: hero-visual, gallery, testimonials, reviews, logo-bar, quote-cta, brand-story, value-icons, faq, stats. FORBIDDEN: product-grid, service-list, pricing-tiers, packages. Use inquiry-first conversion. Commerce behavior: inquiry-first, availability-check.`,
+    'coach-educator': `This is a COACHING/EDUCATION business. Use ONLY: hero-trust, hero-cta, pricing-tiers, testimonials, case-studies, stats, newsletter, quote-cta, booking-cta, brand-story, value-icons, faq. FORBIDDEN: product-grid, featured-collection, collection-carousel, best-sellers. Do NOT generate retail product catalogs or shopping carts. Commerce behavior: enrollment-first or booking-first.`,
   };
 
   const vertical = verticalGuidance[businessType] || `This is a ${businessType} business. Use a mix of hero, commerce/storytelling, social proof, and conversion sections.`;
@@ -327,16 +327,10 @@ OUTPUT FORMAT — JSON only, no markdown fences, no extra text:
 
 CRITICAL RULES:
 1. Generate 7-9 sections for the home page. NEVER fewer than 6.
-2. Use ONLY these section types (pick relevant ones for the vertical):
-   - header-simple, header-promo, header-mega
-   - hero-split, hero-visual, hero-products, hero-cta, hero-trust
-   - featured-collection, product-grid, best-sellers, collection-carousel
-   - service-list, packages, pricing-tiers
-   - brand-story, value-icons, editorial-split, founder-note
-   - testimonials, reviews, logo-bar, stats, press
-   - quote-cta, booking-cta, newsletter, faq, promo-banner
-   - gallery, video
-   - footer-basic, footer-commerce, footer-service
+2. You MUST respect the vertical guidance above EXACTLY:
+   - Use ONLY the allowed section types listed for this business type.
+   - NEVER generate FORBIDDEN section types.
+   - NEVER cross business-model boundaries (no service retainers for retail, no product catalogs for services).
 3. FIRST section MUST ALWAYS be a header (header-simple, header-promo, or header-mega).
 4. LAST section MUST ALWAYS be a footer (footer-basic, footer-commerce, or footer-service).
 5. Every section MUST have "id" (unique), "type", and "data".

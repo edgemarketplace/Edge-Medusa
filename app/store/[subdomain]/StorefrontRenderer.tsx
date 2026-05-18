@@ -259,15 +259,6 @@ export default function StorefrontRenderer({
         </div>
       )}
 
-      <MedusaMarketplaceShell
-        siteName={site.business_name}
-        channelLabel={channelLabel}
-        tenantType={tenantType}
-        badges={medusaBadges}
-        productCount={activeCatalogCount}
-        primary={tokens.primary}
-      />
-
       {/* Stripe not connected modal */}
       {showContactModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30" onClick={() => setShowContactModal(false)}>
@@ -355,7 +346,7 @@ export default function StorefrontRenderer({
       {!sections.some(s => s.type.startsWith('footer-')) && (
         <footer className="border-t border-black/5 bg-white py-10 px-8 text-center text-sm text-black/45">
           <p className="font-bold text-black/70">© {new Date().getFullYear()} {site.business_name}</p>
-          <p className="mt-2">A tenant storefront on Edge Medusa — shared marketplace catalog, Supabase RLS isolation, Medusa-style commerce operations.</p>
+          <p className="mt-2">Powered by Edge. Stripe-ready. Mobile-optimized.</p>
         </footer>
       )}
     </div>
