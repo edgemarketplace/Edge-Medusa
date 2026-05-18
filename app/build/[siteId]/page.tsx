@@ -672,7 +672,7 @@ export default function BuildPage({ params }: BuildPageProps) {
               <span className="text-[10px] font-black uppercase tracking-widest text-black/30">Current Project</span>
             </div>
             <p className="text-sm font-bold truncate">{site.business_name}</p>
-            <p className="text-[10px] text-black/40 font-medium">{site.theme_id ? `${site.theme_id.charAt(0).toUpperCase() + site.theme_id.slice(1)} Direction Active` : 'Direction Active'}</p>
+            <p className="text-[10px] text-black/40 font-medium">{site.theme_id ? `${site.theme_id.charAt(0).toUpperCase() + site.theme_id.slice(1)} Active` : ''}</p>
           </div>
 
           <button 
@@ -713,9 +713,6 @@ export default function BuildPage({ params }: BuildPageProps) {
             </div>
           )}
           
-          <Link href="/dashboard" className="w-full py-3 rounded-2xl border border-black/5 flex items-center justify-center gap-2 text-sm font-bold text-black/40 hover:text-black hover:bg-black/5 transition-all">
-            Back to Workspace
-          </Link>
         </div>
       </div>
 

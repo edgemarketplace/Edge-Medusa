@@ -21,7 +21,7 @@ const STYLE_DIRECTIONS = [
     id: 'milano',
     name: 'Editorial Premium',
     system: 'Milano',
-    desc: 'Luxury, story-driven, high perceived value.',
+    desc: 'Luxury editorial storefronts',
     accent: '#1A1A1A',
     bg: '#F9F8F6',
     preview: ['font-serif italic', 'font-serif italic'],
@@ -30,7 +30,7 @@ const STYLE_DIRECTIONS = [
     id: 'ocean',
     name: 'Professional Authority',
     system: 'Ocean',
-    desc: 'Trusted authority with clean hierarchy and calm precision.',
+    desc: 'Structured authority-driven layouts',
     accent: '#0891B2',
     bg: '#F0F9FF',
     preview: ['text-sky-900', 'text-cyan-600'],
@@ -39,7 +39,7 @@ const STYLE_DIRECTIONS = [
     id: 'sunlit',
     name: 'Bold High Energy',
     system: 'Sunlit',
-    desc: 'Fast, promotional, conversion-forward.',
+    desc: 'Fast-moving promotional commerce',
     accent: '#F59E0B',
     bg: '#FFFBF0',
     preview: ['text-amber-800', 'text-amber-600'],
@@ -48,7 +48,7 @@ const STYLE_DIRECTIONS = [
     id: 'sage',
     name: 'Warm Artisan',
     system: 'Sage',
-    desc: 'Handmade, approachable, naturally premium.',
+    desc: 'Warm storytelling and craftsmanship',
     accent: '#6B7C6A',
     bg: '#F4F7F4',
     preview: ['text-green-900', 'text-green-700'],
@@ -101,6 +101,9 @@ export default function OnboardingPage() {
 
   const handleSelectType = useCallback((family: TemplateFamily) => {
     setSelectedType(family);
+    // Auto-infer optimization goal from business type
+    const inferred = inferPrimaryGoal(family);
+    setPrimaryGoal(inferred);
   }, []);
 
   async function handleSubmit() {
@@ -310,37 +313,36 @@ export default function OnboardingPage() {
                       )})}
                   </div>
 
-                  {/* Live inference */}
+                  {/* Live inference — auto-recommends optimization goal */}
                   {selectedType && businessName.trim() && (
-                    <div className="mt-3 flex items-center gap-2 px-4 py-3 rounded-2xl bg-emerald-50/70 border border-emerald-100">
-                      <span className="text-sm">🎯</span>
-                      <p className="text-sm text-emerald-800">
-                        <span className="font-bold">{BUSINESS_TYPE_COPY[selectedType].customerLabel}</span>
-                        <span className="text-emerald-600"> — {BUSINESS_TYPE_COPY[selectedType].microcopy}</span>
-                      </p>
+                    <div className="mt-3 px-4 py-3 rounded-2xl bg-emerald-50/70 border border-emerald-100 space-y-2">
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm">🎯</span>
+                        <p className="text-sm text-emerald-800">
+                          <span className="font-bold">{BUSINESS_TYPE_COPY[selectedType].customerLabel}</span>
+                          <span className="text-emerald-600"> — {BUSINESS_TYPE_COPY[selectedType].microcopy}</span>
+                        </p>
+                      </div>
+                      {primaryGoal && (
+                        <div className="flex items-center gap-2 pl-6">
+                          <span className="text-[10px] uppercase tracking-[0.15em] font-bold text-black/35">Optimizing for</span>
+                          <span className="text-xs font-bold bg-white border border-black/10 rounded-full px-3 py-1">{PRIMARY_GOALS.find(g => g.id === primaryGoal)?.label}</span>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const goalInput = document.getElementById('goal-override') as HTMLSelectElement | null;
+                              if (goalInput) { goalInput.focus(); goalInput.click(); }
+                            }}
+                            className="text-[10px] font-bold text-black/40 hover:text-black underline underline-offset-2"
+                          >
+                            Change
+                          </button>
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
 
-                <div>
-                  <label className="block text-sm font-bold mb-4">What should this storefront optimize for? *</label>
-                  <div className="flex flex-wrap gap-2">
-                    {PRIMARY_GOALS.map(goal => (
-                      <button
-                        key={goal.id}
-                        type="button"
-                        onClick={() => setPrimaryGoal(goal.id)}
-                        className={`px-4 py-2.5 rounded-full border text-sm font-medium transition-all ${
-                          primaryGoal === goal.id
-                            ? 'border-black bg-black text-white'
-                            : 'border-black/10 bg-white hover:border-black/25'
-                        }`}
-                      >
-                        {goal.label}
-                      </button>
-                    ))}
-                  </div>
-                </div>
               </div>
 
               <div>
@@ -353,10 +355,6 @@ export default function OnboardingPage() {
                  </button>
                </div>
 
-              <div className="rounded-3xl border border-black/5 bg-white/70 px-5 py-4">
-                <p className="text-sm text-black/55">Includes AI-generated layouts, copy, payments, and mobile optimization.</p>
-              </div>
-
               <div className="flex flex-wrap items-center justify-center gap-4 sm:gap-6 text-xs text-black/40">
                 <span className="flex items-center gap-1.5"><span className="w-1.5 h-1.5 bg-emerald-500 rounded-full"></span>Stripe-ready</span>
                 <span className="flex items-center gap-1.5"><span className="w-1.5 h-1.5 bg-emerald-500 rounded-full"></span>Mobile-optimized</span>
@@ -366,11 +364,11 @@ export default function OnboardingPage() {
             </div>
           )}
 
-          {/* ── STEP 2: Brand Direction ── */}
-          {step === 2 && (
-            <div className="space-y-8">
-              <div>
-                <p className="text-xs uppercase tracking-[0.2em] font-bold text-black/35 mb-2">Step 2 of 3 • Brand Direction</p>
+        {/* ── STEP 2: Brand Direction ── */}
+        {step === 2 && (
+          <div className="space-y-8">
+            <div>
+              <p className="text-xs uppercase tracking-[0.2em] font-bold text-black/35 mb-2">Step 2 of 3 • Storefront Direction</p>
                 <h1 className="text-4xl md:text-5xl font-serif italic tracking-tight mb-3">
                   Choose the direction that feels closest to your business
                 </h1>
@@ -451,6 +449,17 @@ export default function OnboardingPage() {
   );
 }
 
+/** Infer primary optimization goal from business type */
+function inferPrimaryGoal(businessType: TemplateFamily): string {
+  if (businessType === 'retail-core') return 'sell-products';
+  if (businessType === 'service-pro') return 'get-quotes';
+  if (businessType === 'food-catering') return 'take-orders';
+  if (businessType === 'artisan-market') return 'sell-products';
+  if (businessType === 'event-floral') return 'check-availability';
+  if (businessType === 'coach-educator') return 'enroll-clients';
+  return 'sell-products';
+}
+
 /** Infer buying behavior from business type + primary goal */
 function inferBuyingBehavior(businessType: TemplateFamily, primaryGoal: string): { id: string; label: string } {
   // Service/coach + enrollment → consult first
@@ -474,6 +483,7 @@ function GeneratingScreen({ businessName, vertical, style, goal, onReady }: {
   businessName: string; vertical: string; style: string; goal: string; onReady: () => void;
 }) {
   const [currentStep, setCurrentStep] = useState(0);
+  const [ready, setReady] = useState(false);
 
   const steps = [
     { label: 'Analyzing your business model', duration: 1200 },
@@ -492,12 +502,44 @@ function GeneratingScreen({ businessName, vertical, style, goal, onReady }: {
         setCurrentStep(i);
         setTimeout(() => { i++; advance(); }, steps[i]?.duration || 1000);
       } else {
-        onReady();
+        setReady(true);
       }
     }
     const timeout = setTimeout(advance, 100);
     return () => clearTimeout(timeout);
   }, [onReady]);
+
+  if (ready) {
+    return (
+      <div className="text-center py-8 space-y-8">
+        <div>
+          <p className="text-xs uppercase tracking-[0.2em] font-bold text-black/35 mb-2">Step 3 of 3 • Your Storefront</p>
+          <h1 className="text-4xl md:text-5xl font-serif italic tracking-tight mb-3">
+            Your storefront is ready
+          </h1>
+          <p className="text-black/55 text-lg">Built for {businessName}. Conversion-optimized. Ready to customize.</p>
+        </div>
+
+        <div className="flex items-center justify-center gap-4">
+          <div className="w-16 h-16 rounded-2xl bg-emerald-50 flex items-center justify-center">
+            <svg className="w-8 h-8 text-emerald-600" viewBox="0 0 24 24" fill="none"><path d="M5 13L9 17L19 7" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+          </div>
+        </div>
+
+        <div className="space-y-1">
+          <p className="text-sm text-black/50">Generated with {style} direction</p>
+          <p className="text-sm text-black/50">Optimized for {goal.toLowerCase()}</p>
+        </div>
+
+        <button
+          onClick={onReady}
+          className="inline-block bg-[#1A1A1A] text-white px-10 py-5 rounded-full text-xl font-bold hover:scale-105 transition-transform shadow-xl shadow-black/15"
+        >
+          Enter Workspace →
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div className="text-center py-8 space-y-10">

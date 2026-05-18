@@ -90,7 +90,7 @@ export default function LandingPage() {
               href="/onboarding"
               className="border border-black/10 bg-white px-8 py-4 rounded-full text-lg font-bold hover:border-black/30 transition-colors"
             >
-              Explore Storefronts
+              See How Edge Works
             </Link>
           </div>
 
@@ -126,6 +126,9 @@ export default function LandingPage() {
                 </div>
               ))}
             </div>
+
+            {/* Moat statement */}
+            <p className="text-xs text-black/35 mt-4">Every storefront is generated around conversion behavior, not just visual style.</p>
           </div>
         </div>
       </section>
@@ -137,11 +140,11 @@ export default function LandingPage() {
             <h2 className="text-3xl md:text-4xl font-serif italic">Built for how businesses actually sell</h2>
           </div>
 
-          <div className="grid md:grid-cols-3 gap-6">
+          <div className="grid md:grid-cols-3 gap-x-8 gap-y-6">
             {VERTICALS.map(v => (
-              <div key={v.label} className="bg-[#F9F8F6] rounded-2xl p-6 border border-black/5 hover:border-black/10 transition-colors">
-                <h3 className="font-bold mb-2">{v.label}</h3>
-                <p className="text-sm text-black/50 leading-relaxed">{v.microcopy}</p>
+              <div key={v.label} className="py-4">
+                <h3 className="font-bold text-sm mb-1">{v.label}</h3>
+                <p className="text-sm text-black/45">{v.microcopy}</p>
               </div>
             ))}
           </div>
