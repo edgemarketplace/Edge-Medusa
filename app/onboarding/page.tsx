@@ -186,7 +186,7 @@ export default function OnboardingPage() {
                 <h1 className="text-4xl md:text-5xl font-serif italic tracking-tight mb-3">
                   Launch a storefront built for how your business sells
                 </h1>
-                <p className="text-black/55 text-lg">30 seconds. We handle the rest.</p>
+                <p className="text-black/55 text-lg">Edge generates the right storefront architecture automatically.</p>
               </div>
 
               <div className="space-y-5">
@@ -313,20 +313,19 @@ export default function OnboardingPage() {
 
                 <div>
                   <label className="block text-sm font-bold mb-4">What should this storefront optimize for? *</label>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div className="flex flex-wrap gap-2">
                     {PRIMARY_GOALS.map(goal => (
                       <button
                         key={goal.id}
                         type="button"
                         onClick={() => setPrimaryGoal(goal.id)}
-                        className={`text-left rounded-2xl border p-5 transition-all ${
+                        className={`px-4 py-2.5 rounded-full border text-sm font-medium transition-all ${
                           primaryGoal === goal.id
-                            ? 'border-black bg-white shadow-md ring-2 ring-black'
-                            : 'border-black/10 bg-white hover:border-black/20'
+                            ? 'border-black bg-black text-white'
+                            : 'border-black/10 bg-white hover:border-black/25'
                         }`}
                       >
-                        <h3 className="font-bold mb-1">{goal.label}</h3>
-                        <p className="text-sm text-black/50 leading-relaxed">{goal.microcopy}</p>
+                        {goal.label}
                       </button>
                     ))}
                   </div>
@@ -344,8 +343,7 @@ export default function OnboardingPage() {
                </div>
 
               <div className="rounded-3xl border border-black/5 bg-white/70 px-5 py-4">
-                <p className="text-sm font-bold mb-2">Includes:</p>
-                <p className="text-sm text-black/55">AI-generated layouts, copy, checkout flows, mobile optimization, and payment setup.</p>
+                <p className="text-sm text-black/55">Includes AI-generated layouts, copy, payments, and mobile optimization.</p>
               </div>
 
               <div className="flex flex-wrap items-center justify-center gap-4 sm:gap-6 text-xs text-black/40">

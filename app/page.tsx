@@ -4,12 +4,12 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 
 const VERTICALS = [
-  { icon: '🛍️', label: 'Retail & Products', microcopy: 'Catalogs, merchandising, fast checkout' },
-  { icon: '⚡', label: 'Services', microcopy: 'Quotes, bookings, before/after proof' },
-  { icon: '🍽️', label: 'Restaurants & Catering', microcopy: 'Menus, ordering, reservations' },
-  { icon: '🎨', label: 'Artisan Brands', microcopy: 'Storytelling, provenance, craftsmanship' },
-  { icon: '🌸', label: 'Events & Floral', microcopy: 'Galleries, inquiries, availability' },
-  { icon: '🎓', label: 'Coaches & Educators', microcopy: 'Funnels, enrollment, authority' },
+  { label: 'Retail & Products', microcopy: 'Catalogs, merchandising, fast checkout' },
+  { label: 'Services', microcopy: 'Quotes, bookings, before/after proof' },
+  { label: 'Restaurants & Catering', microcopy: 'Menus, ordering, reservations' },
+  { label: 'Artisan Brands', microcopy: 'Storytelling, provenance, craftsmanship' },
+  { label: 'Events & Floral', microcopy: 'Galleries, inquiries, availability' },
+  { label: 'Coaches & Educators', microcopy: 'Funnels, enrollment, authority' },
 ]
 
 const STEPS = [
@@ -65,12 +65,11 @@ export default function LandingPage() {
 
         <div className="relative max-w-4xl mx-auto">
           <h1 className="text-5xl md:text-7xl font-serif italic tracking-tight leading-[1.05] mb-6">
-            Launch a storefront built for<br />
-            <span className="text-black/30">how your business sells</span>
+            Launch a storefront built for how your business sells
           </h1>
 
           <p className="text-xl md:text-2xl text-black/55 max-w-2xl mx-auto mb-10 leading-relaxed">
-            Edge generates high-converting storefronts for products, services, bookings, food ordering, events, and client enrollment.
+            Edge generates conversion-optimized storefronts for products, services, bookings, restaurants, events, and client-based businesses.
           </p>
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-16">
@@ -80,12 +79,12 @@ export default function LandingPage() {
             >
               Launch Your Store →
             </Link>
-            <Link
-              href="/solutions"
+            <a
+              href="#how-it-works"
               className="border border-black/10 bg-white px-8 py-4 rounded-full text-lg font-bold hover:border-black/30 transition-colors"
             >
-              See Examples
-            </Link>
+              How It Works
+            </a>
           </div>
 
           {/* Trust signals */}
@@ -99,7 +98,7 @@ export default function LandingPage() {
       </section>
 
       {/* ── BUILT FOR HOW BUSINESSES ACTUALLY SELL ── */}
-      <section className="px-6 py-12 md:py-24 bg-white">
+      <section id="how-it-works" className="px-6 py-12 md:py-24 bg-white">
         <div className="max-w-4xl mx-auto">
           <div className="text-center mb-14">
             <h2 className="text-3xl md:text-4xl font-serif italic">Built for how businesses actually sell</h2>
@@ -108,7 +107,6 @@ export default function LandingPage() {
           <div className="grid md:grid-cols-3 gap-6">
             {VERTICALS.map(v => (
               <div key={v.label} className="bg-[#F9F8F6] rounded-2xl p-6 border border-black/5 hover:border-black/10 transition-colors">
-                <div className="text-2xl mb-3">{v.icon}</div>
                 <h3 className="font-bold mb-2">{v.label}</h3>
                 <p className="text-sm text-black/50 leading-relaxed">{v.microcopy}</p>
               </div>
@@ -122,7 +120,7 @@ export default function LandingPage() {
         <div className="max-w-4xl mx-auto">
           <div className="text-center mb-14">
             <p className="text-xs uppercase tracking-[0.2em] font-bold text-black/35 mb-3">How Edge works</p>
-            <h2 className="text-3xl md:text-4xl font-serif italic">Three steps. Instantly ready.</h2>
+            <h2 className="text-3xl md:text-4xl font-serif italic">Three steps. Ready to launch.</h2>
           </div>
 
           <div className="grid md:grid-cols-3 gap-8">

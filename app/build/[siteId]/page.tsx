@@ -627,7 +627,7 @@ export default function BuildPage({ params }: BuildPageProps) {
             <div className="w-8 h-8 rounded-xl bg-black flex items-center justify-center text-white font-black text-lg group-hover:scale-105 transition-transform">E</div>
             <div>
               <span className="font-bold tracking-tight text-xl block">Edge</span>
-              <span className="text-[10px] uppercase tracking-[0.18em] text-black/35 font-black">store admin</span>
+              <span className="text-[10px] uppercase tracking-[0.18em] text-black/35 font-black">workspace</span>
             </div>
           </Link>
           
@@ -672,7 +672,7 @@ export default function BuildPage({ params }: BuildPageProps) {
               <span className="text-[10px] font-black uppercase tracking-widest text-black/30">Current Project</span>
             </div>
             <p className="text-sm font-bold truncate">{site.business_name}</p>
-            <p className="text-[10px] text-black/40 font-medium">Ocean Theme Active</p>
+            <p className="text-[10px] text-black/40 font-medium">{site.theme_id ? `${site.theme_id.charAt(0).toUpperCase() + site.theme_id.slice(1)} Brand Direction Active` : 'Brand Direction Active'}</p>
           </div>
 
           <button 
@@ -714,7 +714,7 @@ export default function BuildPage({ params }: BuildPageProps) {
           )}
           
           <Link href="/dashboard" className="w-full py-3 rounded-2xl border border-black/5 flex items-center justify-center gap-2 text-sm font-bold text-black/40 hover:text-black hover:bg-black/5 transition-all">
-            Exit to Dashboard
+            Back to Workspace
           </Link>
         </div>
       </div>
@@ -803,7 +803,7 @@ export default function BuildPage({ params }: BuildPageProps) {
 
             {/* Advanced tools */}
             <div className="rounded-3xl border border-black/5 bg-white/70 px-6 py-5">
-              <p className="text-xs uppercase tracking-[0.2em] font-bold text-black/35 mb-3">Advanced tools</p>
+              <p className="text-xs uppercase tracking-[0.2em] font-bold text-black/35 mb-3">Operations</p>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                 {[
                   { label: 'Orders', icon: '📊', tab: 'orders' as const },
