@@ -624,21 +624,14 @@ export default function BuildPage({ params }: BuildPageProps) {
       <div className="w-72 fixed inset-y-0 left-0 bg-white border-r border-black/5 z-50 flex flex-col shadow-[10px_0_40px_-15px_rgba(0,0,0,0.03)]">
         <div className="p-8 pb-4">
           <Link href="/dashboard" className="flex items-center gap-2 group mb-8">
-            <div className="w-8 h-8 rounded-xl bg-black flex items-center justify-center text-white font-black text-lg group-hover:scale-105 transition-transform">M</div>
+            <div className="w-8 h-8 rounded-xl bg-black flex items-center justify-center text-white font-black text-lg group-hover:scale-105 transition-transform">E</div>
             <div>
-              <span className="font-bold tracking-tight text-xl block">Edge Medusa</span>
-              <span className="text-[10px] uppercase tracking-[0.18em] text-black/35 font-black">commerce admin</span>
+              <span className="font-bold tracking-tight text-xl block">Edge</span>
+              <span className="text-[10px] uppercase tracking-[0.18em] text-black/35 font-black">store admin</span>
             </div>
           </Link>
           
           <div className="space-y-1">
-            <Link
-              href="/backend"
-              className="w-full flex items-center justify-between px-4 py-3 rounded-2xl text-sm font-bold bg-emerald-50 text-emerald-800 border border-emerald-100 hover:bg-emerald-100 transition-all mb-2"
-            >
-              <span className="flex items-center gap-3"><span className="text-lg">🧠</span>Medusa Backend</span>
-              <span className="text-[10px] uppercase tracking-widest">Open</span>
-            </Link>
             {([
               { id: 'onboarding', label: 'Start here', icon: '✅', count: null },
               { id: 'design', label: 'Edit Page', icon: '✏️', count: null },
@@ -674,12 +667,6 @@ export default function BuildPage({ params }: BuildPageProps) {
         </div>
 
         <div className="mt-auto p-6 space-y-3">
-          <div className="bg-emerald-50 rounded-2xl p-4 border border-emerald-100 mb-2">
-            <p className="text-[10px] font-black uppercase tracking-widest text-emerald-700 mb-1">Medusa commerce layer</p>
-            <p className="text-xs text-emerald-800/75 leading-relaxed">Inventory, orders, Stripe, and fulfillment are now mirrored through the Edge Medusa backend console.</p>
-            <Link href="/backend" className="mt-3 inline-flex text-xs font-black text-emerald-900 underline underline-offset-4">Open backend console</Link>
-          </div>
-
           <div className="bg-black/[0.02] rounded-2xl p-4 border border-black/5 mb-2">
             <div className="flex items-center gap-2 mb-1">
               <span className="text-[10px] font-black uppercase tracking-widest text-black/30">Current Project</span>
@@ -787,20 +774,16 @@ export default function BuildPage({ params }: BuildPageProps) {
         {activeTab === 'onboarding' && (
           <div className="p-8 space-y-8">
             <div className="bg-[#1A1A1A] text-white rounded-3xl p-8">
-              <p className="text-xs uppercase tracking-[0.25em] text-emerald-300 font-bold mb-3">Edge Medusa backend-first launch</p>
-              <h2 className="text-3xl md:text-4xl font-serif italic mb-3">Start here: get {site.business_name} ready to take real customers.</h2>
-              <p className="text-white/60 max-w-2xl">This is the launch checklist. Work top to bottom: add your offers, connect payments if you sell online, edit the page copy, confirm pages, then publish. Use the Medusa Backend console for the commerce-ops view across catalog, orders, channels, and backend health.</p>
+              <h2 className="text-3xl md:text-4xl font-serif italic mb-3">Your storefront is ready</h2>
+              <p className="text-white/60 max-w-2xl">Add your products or services, connect payments, customize your pages, and publish when you're ready.</p>
             </div>
 
             <div className="grid md:grid-cols-2 gap-5">
               {[
-                { icon: '📦', title: site.business_type === 'service-pro' ? 'Add your services' : 'Add products / services', desc: 'Create the offers customers can buy or request. For plumbers: leak repair, drain clearing, water heater service, fixture install.', action: 'Open inventory', tab: 'inventory' as const, done: inventory.length > 0 },
-                { icon: '💳', title: 'Connect Stripe', desc: 'Required for checkout and paid orders. If you only take quote requests, you can publish before connecting.', action: site.stripe_account_id ? 'Stripe connected' : 'Connect in settings', tab: 'settings' as const, done: !!site.stripe_account_id },
-                { icon: '🖨️', title: 'Optional: connect Printify', desc: 'Only needed for print-on-demand products. Add your API key and Shop ID, then sync inventory.', action: 'Printify settings', tab: 'settings' as const, done: !!(site as any).printify_api_key && !!(site as any).printify_shop_id },
-                { icon: '✏️', title: 'Edit the page', desc: 'Use Edit Page to click text directly. Hover a section and press Edit for images, FAQs, reviews, services, and advanced fields.', action: 'Edit page', tab: 'design' as const, done: sections.length > 0 },
-                { icon: '📄', title: 'Confirm pages', desc: 'Home, Products / Services, About, and Contact are prebuilt. Add any specialty pages you need.', action: 'Open pages', tab: 'pages' as const, done: pages.length >= 4 },
-                { icon: '📨', title: 'Email / mailbox', desc: 'Customer form submissions and inquiries appear in Mailbox. Keep your contact email current in Settings.', action: 'Open mailbox', tab: 'mailbox' as const, done: false },
-                { icon: '📈', title: 'Marketing & Social', desc: 'Google Business, Instagram, Facebook, and X are guidance links for now until direct account integrations are enabled.', action: 'Open marketing', tab: 'marketing' as const, done: false },
+                { icon: '📦', title: site.business_type === 'service-pro' ? 'Add your services' : 'Add products or services', desc: 'Create the offers customers can buy or request.', action: 'Open inventory', tab: 'inventory' as const, done: inventory.length > 0 },
+                { icon: '💳', title: 'Connect payments', desc: 'Stripe integration for checkout and paid orders.', action: site.stripe_account_id ? 'Stripe connected' : 'Connect in settings', tab: 'settings' as const, done: !!site.stripe_account_id },
+                { icon: '✏️', title: 'Customize your pages', desc: 'Click text to edit. Add images, change copy, rearrange sections.', action: 'Edit page', tab: 'design' as const, done: sections.length > 0 },
+                { icon: '🚀', title: 'Publish your storefront', desc: 'Go live and start accepting customers.', action: site?.status === 'live' ? 'Already live' : 'Publish now', tab: 'settings' as const, done: site?.status === 'live' },
               ].map(item => (
                 <div key={item.title} className="bg-white border border-black/5 rounded-3xl p-6 shadow-sm">
                   <div className="flex items-start gap-4">
@@ -816,6 +799,24 @@ export default function BuildPage({ params }: BuildPageProps) {
                   </div>
                 </div>
               ))}
+            </div>
+
+            {/* Advanced tools */}
+            <div className="rounded-3xl border border-black/5 bg-white/70 px-6 py-5">
+              <p className="text-xs uppercase tracking-[0.2em] font-bold text-black/35 mb-3">Advanced tools</p>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                {[
+                  { label: 'Orders', icon: '📊', tab: 'orders' as const },
+                  { label: 'Inventory', icon: '📦', tab: 'inventory' as const },
+                  { label: 'Marketing', icon: '📈', tab: 'marketing' as const },
+                  { label: 'Settings', icon: '⚙️', tab: 'settings' as const },
+                ].map(tool => (
+                  <button key={tool.label} onClick={() => setActiveTab(tool.tab)} className="flex items-center gap-2 px-4 py-3 rounded-full border border-black/10 text-sm font-bold hover:border-black/20 transition-colors">
+                    <span>{tool.icon}</span>
+                    <span>{tool.label}</span>
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
         )}
