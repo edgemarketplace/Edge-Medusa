@@ -58,7 +58,7 @@ export async function requireSiteAdmin(request: NextRequest, siteId: string): Pr
 
   const { data: site, error } = await supabaseAdmin
     .from('sites')
-    .select('id, contact_email, business_name, subdomain, organization_id')
+    .select('*')
     .eq('id', siteId)
     .single();
 
