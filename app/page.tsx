@@ -112,7 +112,7 @@ export default function LandingPage() {
           </div>
 
           {/* Social proof bar */}
-          <div className="flex flex-wrap items-center justify-center gap-6 text-sm text-black/45 mb-12">
+          <div className="flex flex-wrap items-center justify-center gap-4 sm:gap-6 text-sm text-black/45 mb-12">
             <span className="flex items-center gap-1.5"><span className="w-1.5 h-1.5 bg-emerald-500 rounded-full"></span>1,200+ storefronts launched</span>
             <span className="flex items-center gap-1.5"><span className="w-1.5 h-1.5 bg-emerald-500 rounded-full"></span>Average setup under 5 minutes</span>
             <span className="flex items-center gap-1.5"><span className="w-1.5 h-1.5 bg-emerald-500 rounded-full"></span>Optimized for mobile conversion</span>

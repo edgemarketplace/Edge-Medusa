@@ -26,9 +26,9 @@ const BUYING_BEHAVIORS = [
 ];
 
 const BEHAVIOR_GROUPS = [
-  { id: 'fast' as const, label: 'Fast decision', desc: 'Customers know what they want', icon: '⚡' },
-  { id: 'considered' as const, label: 'Considered decision', desc: 'Customers compare before committing', icon: '🔍' },
-  { id: 'relationship' as const, label: 'Relationship-led', desc: 'Trust and consultation come first', icon: '🤝' },
+  { id: 'fast' as const, label: 'FAST DECISION', desc: 'Customers know what they want', icon: '⚡', color: 'text-amber-700', bg: 'bg-amber-50', border: 'border-amber-200' },
+  { id: 'considered' as const, label: 'CONSIDERED DECISION', desc: 'Customers compare before committing', icon: '🔍', color: 'text-blue-700', bg: 'bg-blue-50', border: 'border-blue-200' },
+  { id: 'relationship' as const, label: 'RELATIONSHIP / TRUST LED', desc: 'Trust and consultation come first', icon: '🤝', color: 'text-emerald-700', bg: 'bg-emerald-50', border: 'border-emerald-200' },
 ];
 
 const STYLE_PRESETS = [
@@ -254,30 +254,108 @@ export default function OnboardingPage() {
     const goalLabel = PRIMARY_GOALS.find(g => g.id === primaryGoal)?.label || '';
 
     const reasons: string[] = [];
+    const sectionOrder: string[] = [];
+    let ctaStrategy = '';
+    let proofStrategy = '';
+    let pagePacing = '';
+    let mobileDensity = '';
+    let checkoutBehavior = '';
 
-    // Business type reasons
-    if (selectedType === 'retail-core') reasons.push('Product catalog with fast mobile checkout');
-    if (selectedType === 'service-pro') reasons.push('Service packaging with trust-first layout');
-    if (selectedType === 'food-catering') reasons.push('Menu-forward design with ordering speed');
-    if (selectedType === 'artisan-market') reasons.push('Story-driven product presentation');
-    if (selectedType === 'event-floral') reasons.push('Gallery-led visual inquiry flow');
-    if (selectedType === 'coach-educator') reasons.push('Authority-building conversion structure');
+    // Business type → section order + reasons
+    if (selectedType === 'retail-core') {
+      reasons.push('Product catalog with fast mobile checkout');
+      sectionOrder.push('Hero → Products → Social Proof → CTA → Footer');
+      mobileDensity = 'High — thumb-friendly grids, sticky add-to-cart';
+      checkoutBehavior = 'Streamlined 1-page checkout with Apple Pay / Google Pay';
+    }
+    if (selectedType === 'service-pro') {
+      reasons.push('Service packaging with trust-first layout');
+      sectionOrder.push('Hero → Services → Proof → FAQ → Booking CTA → Footer');
+      mobileDensity = 'Medium — stacked service cards, click-to-call prominent';
+      checkoutBehavior = 'Inquiry form → quote flow → booking confirmation';
+    }
+    if (selectedType === 'food-catering') {
+      reasons.push('Menu-forward design with ordering speed');
+      sectionOrder.push('Hero → Menu → Gallery → Order CTA → Footer');
+      mobileDensity = 'High — large tap targets, minimal scroll to order';
+      checkoutBehavior = 'Fast-path ordering with delivery/pickup toggle';
+    }
+    if (selectedType === 'artisan-market') {
+      reasons.push('Story-driven product presentation');
+      sectionOrder.push('Hero → Brand Story → Products → Maker Note → CTA → Footer');
+      mobileDensity = 'Medium — editorial scroll, image-forward';
+      checkoutBehavior = 'Standard cart with provenance details in checkout';
+    }
+    if (selectedType === 'event-floral') {
+      reasons.push('Gallery-led visual inquiry flow');
+      sectionOrder.push('Hero → Gallery → Packages → Testimonials → Inquiry CTA → Footer');
+      mobileDensity = 'Low — immersive full-bleed imagery, minimal UI chrome';
+      checkoutBehavior = 'Inquiry-first with date availability checker';
+    }
+    if (selectedType === 'coach-educator') {
+      reasons.push('Authority-building conversion structure');
+      sectionOrder.push('Hero → Authority → Offer → Testimonials → Enrollment CTA → Footer');
+      mobileDensity = 'Medium — long-form scroll, video embed support';
+      checkoutBehavior = 'Enrollment funnel with lead capture → payment plan';
+    }
 
-    // Goal reasons
-    if (primaryGoal === 'sell-products') reasons.push('Aggressive CTA placement for impulse conversion');
-    if (primaryGoal === 'book-service') reasons.push('Booking flow prioritized above the fold');
-    if (primaryGoal === 'get-quotes') reasons.push('Quote form with trust scaffolding');
-    if (primaryGoal === 'take-orders') reasons.push('Fast-path ordering with minimal friction');
-    if (primaryGoal === 'check-availability') reasons.push('Date-first inquiry with urgency signals');
-    if (primaryGoal === 'enroll-clients') reasons.push('Lead capture with authority positioning');
+    // Goal → CTA strategy
+    if (primaryGoal === 'sell-products') {
+      reasons.push('Aggressive CTA placement for impulse conversion');
+      ctaStrategy = 'High frequency — sticky bar, inline product CTAs, urgency signals';
+      pagePacing = 'Fast — minimal friction between discovery and checkout';
+    }
+    if (primaryGoal === 'book-service') {
+      reasons.push('Booking flow prioritized above the fold');
+      ctaStrategy = 'Primary booking CTA above fold, secondary in sticky header';
+      pagePacing = 'Medium — trust signals before booking commitment';
+    }
+    if (primaryGoal === 'get-quotes') {
+      reasons.push('Quote form with trust scaffolding');
+      ctaStrategy = 'Soft CTAs leading to quote form, proof-heavy mid-page';
+      pagePacing = 'Slower — education before conversion ask';
+    }
+    if (primaryGoal === 'take-orders') {
+      reasons.push('Fast-path ordering with minimal friction');
+      ctaStrategy = 'Order now above fold, menu categories as navigation';
+      pagePacing = 'Fast — get to menu in 1 scroll or less';
+    }
+    if (primaryGoal === 'check-availability') {
+      reasons.push('Date-first inquiry with urgency signals');
+      ctaStrategy = 'Date picker as primary CTA, availability calendar prominent';
+      pagePacing = 'Medium — visual proof before date selection';
+    }
+    if (primaryGoal === 'enroll-clients') {
+      reasons.push('Lead capture with authority positioning');
+      ctaStrategy = 'Lead magnet → email sequence → enrollment page';
+      pagePacing = 'Slower — authority building before ask';
+    }
 
-    // Behavior reasons
-    if (buyingBehavior === 'buy-now') reasons.push('High CTA frequency, minimal decision steps');
-    if (buyingBehavior === 'compare-first') reasons.push('Side-by-side proof, detailed comparisons');
-    if (buyingBehavior === 'custom-pricing') reasons.push('Quote-first flow, trust before price');
-    if (buyingBehavior === 'consult-first') reasons.push('Consultation booking as primary conversion');
-    if (buyingBehavior === 'reserve-time') reasons.push('Availability calendar with urgency');
-    if (buyingBehavior === 'contact-first') reasons.push('Soft CTAs with guided decision path');
+    // Behavior → proof strategy
+    if (buyingBehavior === 'buy-now') {
+      reasons.push('High CTA frequency, minimal decision steps');
+      proofStrategy = 'Minimal — star ratings, trust badges, low-friction';
+    }
+    if (buyingBehavior === 'compare-first') {
+      reasons.push('Side-by-side proof, detailed comparisons');
+      proofStrategy = 'Heavy — comparison tables, detailed specs, reviews';
+    }
+    if (buyingBehavior === 'custom-pricing') {
+      reasons.push('Quote-first flow, trust before price');
+      proofStrategy = 'Heavy — case studies, ROI proof, client logos';
+    }
+    if (buyingBehavior === 'consult-first') {
+      reasons.push('Consultation booking as primary conversion');
+      proofStrategy = 'Authority-heavy — credentials, media, testimonials';
+    }
+    if (buyingBehavior === 'reserve-time') {
+      reasons.push('Availability calendar with urgency');
+      proofStrategy = 'Medium — recent bookings, popularity signals';
+    }
+    if (buyingBehavior === 'contact-first') {
+      reasons.push('Soft CTAs with guided decision path');
+      proofStrategy = 'Guided — progressive trust building, FAQ prominent';
+    }
 
     // Determine variant
     let variant = '';
@@ -288,7 +366,19 @@ export default function OnboardingPage() {
     else if (buyingBehavior === 'reserve-time') variant = 'Availability-First Variant';
     else if (buyingBehavior === 'contact-first') variant = 'Trust-Led Variant';
 
-    return { engine, variant, behaviorLabel, goalLabel, reasons: reasons.slice(0, 4) };
+    return {
+      engine,
+      variant,
+      behaviorLabel,
+      goalLabel,
+      reasons: reasons.slice(0, 4),
+      sectionOrder: sectionOrder[0] || '',
+      ctaStrategy,
+      proofStrategy,
+      pagePacing,
+      mobileDensity,
+      checkoutBehavior,
+    };
   }, [selectedType, primaryGoal, buyingBehavior]);
 
   return (
@@ -488,10 +578,10 @@ export default function OnboardingPage() {
                   {BEHAVIOR_GROUPS.map(group => {
                     const groupBehaviors = BUYING_BEHAVIORS.filter(b => b.group === group.id);
                     return (
-                      <div key={group.id} className="mb-4">
-                        <div className="flex items-center gap-2 mb-2">
+                      <div key={group.id} className={`rounded-2xl border ${group.border} ${group.bg} p-4`}>
+                        <div className="flex items-center gap-2 mb-3">
                           <span className="text-sm">{group.icon}</span>
-                          <span className="text-xs font-bold uppercase tracking-[0.15em] text-black/50">{group.label}</span>
+                          <span className={`text-xs font-black uppercase tracking-[0.18em] ${group.color}`}>{group.label}</span>
                           <span className="text-xs text-black/30">— {group.desc}</span>
                         </div>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
@@ -518,7 +608,7 @@ export default function OnboardingPage() {
 
                 {/* Dynamic Recommendation Preview */}
                 {recommendationPreview && (
-                  <div className="rounded-3xl border border-emerald-200 bg-emerald-50/50 p-6 space-y-4">
+                  <div className="rounded-3xl border border-emerald-200 bg-emerald-50/50 p-6 space-y-5">
                     <div className="flex items-center gap-2">
                       <span className="text-lg">🎯</span>
                       <p className="text-xs uppercase tracking-[0.2em] font-bold text-emerald-700">Recommended storefront system</p>
@@ -536,6 +626,45 @@ export default function OnboardingPage() {
                           <span>{reason}</span>
                         </p>
                       ))}
+                    </div>
+                    {/* Architecture details */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
+                      {recommendationPreview.sectionOrder && (
+                        <div className="bg-white/60 rounded-xl p-3">
+                          <p className="text-[10px] uppercase tracking-[0.15em] font-bold text-black/35 mb-1">Section order</p>
+                          <p className="text-xs text-black/60">{recommendationPreview.sectionOrder}</p>
+                        </div>
+                      )}
+                      {recommendationPreview.ctaStrategy && (
+                        <div className="bg-white/60 rounded-xl p-3">
+                          <p className="text-[10px] uppercase tracking-[0.15em] font-bold text-black/35 mb-1">CTA strategy</p>
+                          <p className="text-xs text-black/60">{recommendationPreview.ctaStrategy}</p>
+                        </div>
+                      )}
+                      {recommendationPreview.proofStrategy && (
+                        <div className="bg-white/60 rounded-xl p-3">
+                          <p className="text-[10px] uppercase tracking-[0.15em] font-bold text-black/35 mb-1">Proof strategy</p>
+                          <p className="text-xs text-black/60">{recommendationPreview.proofStrategy}</p>
+                        </div>
+                      )}
+                      {recommendationPreview.pagePacing && (
+                        <div className="bg-white/60 rounded-xl p-3">
+                          <p className="text-[10px] uppercase tracking-[0.15em] font-bold text-black/35 mb-1">Page pacing</p>
+                          <p className="text-xs text-black/60">{recommendationPreview.pagePacing}</p>
+                        </div>
+                      )}
+                      {recommendationPreview.mobileDensity && (
+                        <div className="bg-white/60 rounded-xl p-3">
+                          <p className="text-[10px] uppercase tracking-[0.15em] font-bold text-black/35 mb-1">Mobile density</p>
+                          <p className="text-xs text-black/60">{recommendationPreview.mobileDensity}</p>
+                        </div>
+                      )}
+                      {recommendationPreview.checkoutBehavior && (
+                        <div className="bg-white/60 rounded-xl p-3">
+                          <p className="text-[10px] uppercase tracking-[0.15em] font-bold text-black/35 mb-1">Checkout behavior</p>
+                          <p className="text-xs text-black/60">{recommendationPreview.checkoutBehavior}</p>
+                        </div>
+                      )}
                     </div>
                   </div>
                 )}
@@ -566,9 +695,10 @@ export default function OnboardingPage() {
               </div>
 
               {/* Social proof */}
-              <div className="flex items-center justify-center gap-6 text-xs text-black/40">
+              <div className="flex flex-wrap items-center justify-center gap-4 sm:gap-6 text-xs text-black/40">
                 <span className="flex items-center gap-1.5"><span className="w-1.5 h-1.5 bg-emerald-500 rounded-full"></span>Generated for 1,200+ storefronts</span>
                 <span className="flex items-center gap-1.5"><span className="w-1.5 h-1.5 bg-emerald-500 rounded-full"></span>Average setup under 5 minutes</span>
+                <span className="flex items-center gap-1.5"><span className="w-1.5 h-1.5 bg-emerald-500 rounded-full"></span>Optimized for mobile conversion</span>
                 <span className="flex items-center gap-1.5"><span className="w-1.5 h-1.5 bg-emerald-500 rounded-full"></span>Stripe-ready checkout included</span>
               </div>
             </div>
@@ -586,10 +716,22 @@ export default function OnboardingPage() {
               </div>
 
               {recommendedSetup && (
-                <div className="rounded-3xl border border-emerald-200 bg-emerald-50/50 p-6">
-                  <p className="text-xs uppercase tracking-[0.2em] font-bold text-emerald-700 mb-2">Best match</p>
+                <div className="rounded-3xl border border-emerald-200 bg-emerald-50/50 p-6 space-y-3">
+                  <p className="text-xs uppercase tracking-[0.2em] font-bold text-emerald-700 mb-1">Best match from Step 1</p>
                   <h3 className="text-2xl font-serif italic tracking-tight">{recommendedSetup.engine}{recommendedSetup.variant ? ` + ${recommendedSetup.variant}` : ''}</h3>
-                  <p className="text-black/55 mt-2">{recommendedSetup.note}</p>
+                  <p className="text-black/55">{recommendedSetup.note}</p>
+                  {recommendationPreview?.sectionOrder && (
+                    <div className="flex flex-wrap gap-2 pt-1">
+                      <span className="text-[10px] uppercase tracking-[0.15em] font-bold text-black/35">Section order:</span>
+                      <span className="text-xs text-black/60">{recommendationPreview.sectionOrder}</span>
+                    </div>
+                  )}
+                  {recommendationPreview?.ctaStrategy && (
+                    <div className="flex flex-wrap gap-2">
+                      <span className="text-[10px] uppercase tracking-[0.15em] font-bold text-black/35">CTA:</span>
+                      <span className="text-xs text-black/60">{recommendationPreview.ctaStrategy}</span>
+                    </div>
+                  )}
                 </div>
               )}
 
