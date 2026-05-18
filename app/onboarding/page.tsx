@@ -8,21 +8,21 @@ import type { TemplateFamily } from '@/lib/types';
 const templateEntries = Object.values(TEMPLATES);
 
 const PRIMARY_GOALS = [
-  { id: 'sell-products', label: 'Sell products', desc: 'Optimized for catalogs, merchandising, and fast mobile checkout.' },
-  { id: 'book-service', label: 'Book appointments', desc: 'Built for service businesses that need clear booking flows and trust signals.' },
-  { id: 'get-quotes', label: 'Get quote requests', desc: 'Best for custom work, considered purchases, and higher-friction decisions.' },
-  { id: 'take-orders', label: 'Take food orders', desc: 'Designed for restaurants, catering, and local ordering speed.' },
-  { id: 'check-availability', label: 'Check availability', desc: 'Great for event-led and date-based inquiries where timing matters.' },
-  { id: 'enroll-clients', label: 'Enroll students / clients', desc: 'Strong for coaching, courses, and authority-led offers.' },
+  { id: 'sell-products', label: 'Sell Products', microcopy: 'Fast checkout • Merchandising' },
+  { id: 'book-service', label: 'Book Appointments', microcopy: 'Scheduling • Trust' },
+  { id: 'get-quotes', label: 'Get Quote Requests', microcopy: 'Lead capture • Qualification' },
+  { id: 'take-orders', label: 'Take Food Orders', microcopy: 'Local ordering • Speed' },
+  { id: 'check-availability', label: 'Check Availability', microcopy: 'Date-based inquiries' },
+  { id: 'enroll-clients', label: 'Enroll Students / Clients', microcopy: 'Programs • Conversion funnels' },
 ];
 
 const BUYING_BEHAVIORS = [
-  { id: 'buy-now', label: 'Buy immediately online', desc: 'Push stronger product discovery, faster checkout, and higher CTA frequency.', group: 'fast' },
-  { id: 'reserve-time', label: 'Reserve a date / time', desc: 'Prioritize date availability, urgency, and low-friction inquiry paths.', group: 'fast' },
-  { id: 'compare-first', label: 'Compare options before purchasing', desc: 'Show more proof, explanation, and side-by-side offer structure.', group: 'considered' },
-  { id: 'custom-pricing', label: 'Request custom pricing', desc: 'Lean into quote forms, proof, and trust before price commitment.', group: 'considered' },
-  { id: 'contact-first', label: 'Contact before purchasing', desc: 'Use softer CTAs, stronger proof, and a guided decision flow.', group: 'considered' },
-  { id: 'consult-first', label: 'Book a consultation first', desc: 'Route visitors into authority, qualification, and booking conversion.', group: 'relationship' },
+  { id: 'buy-now', label: 'Buy immediately online', microcopy: 'Fast checkout • Higher CTA frequency', group: 'fast' },
+  { id: 'reserve-time', label: 'Reserve a date / time', microcopy: 'Availability-first inquiry flow', group: 'fast' },
+  { id: 'compare-first', label: 'Compare options', microcopy: 'More proof • Structured comparisons', group: 'considered' },
+  { id: 'custom-pricing', label: 'Request custom pricing', microcopy: 'Quote-first conversion flow', group: 'considered' },
+  { id: 'contact-first', label: 'Contact before purchasing', microcopy: 'Guided decision journey', group: 'considered' },
+  { id: 'consult-first', label: 'Book a consultation first', microcopy: 'Authority + qualification flow', group: 'relationship' },
 ];
 
 const BEHAVIOR_GROUPS = [
@@ -36,8 +36,7 @@ const STYLE_PRESETS = [
     id: 'milano',
     name: 'Editorial Premium',
     system: 'Milano',
-    desc: 'Luxury, story-driven, and high perceived value.',
-    detail: 'Controls typography, whitespace, and image-led merchandising for premium brands.',
+    desc: 'Luxury, story-driven, high perceived value.',
     accent: '#1A1A1A',
     bg: '#F9F8F6',
     preview: ['font-serif italic', 'font-serif italic'],
@@ -46,8 +45,7 @@ const STYLE_PRESETS = [
     id: 'ocean',
     name: 'Professional Authority',
     system: 'Ocean',
-    desc: 'Trusted expert energy with clean hierarchy and calm precision.',
-    detail: 'Balances clarity, proof, and confident conversion structure for service-led businesses.',
+    desc: 'Trusted authority with clean hierarchy and calm precision.',
     accent: '#0891B2',
     bg: '#F0F9FF',
     preview: ['text-sky-900', 'text-cyan-600'],
@@ -56,8 +54,7 @@ const STYLE_PRESETS = [
     id: 'sunlit',
     name: 'Bold High Energy',
     system: 'Sunlit',
-    desc: 'Fast-moving, promotional, and conversion-forward.',
-    detail: 'Adds stronger CTA contrast, tighter spacing, and faster merchandising behavior.',
+    desc: 'Fast, promotional, conversion-forward.',
     accent: '#F59E0B',
     bg: '#FFFBF0',
     preview: ['text-amber-800', 'text-amber-600'],
@@ -66,8 +63,7 @@ const STYLE_PRESETS = [
     id: 'sage',
     name: 'Warm Artisan',
     system: 'Sage',
-    desc: 'Handmade, approachable, and naturally premium.',
-    detail: 'Softens the storefront with warmer color rhythm and craft-forward presentation.',
+    desc: 'Handmade, approachable, naturally premium.',
     accent: '#6B7C6A',
     bg: '#F4F7F4',
     preview: ['text-green-900', 'text-green-700'],
@@ -108,13 +104,13 @@ const PRICE_POSITIONING = [
   { id: 'luxury', label: 'Luxury', icon: '👑' },
 ];
 
-const BUSINESS_TYPE_COPY: Record<TemplateFamily, { customerLabel: string; engineLabel: string }> = {
-  'retail-core': { customerLabel: 'Retail & Product Store', engineLabel: 'Editorial Commerce Engine' },
-  'service-pro': { customerLabel: 'Service Business', engineLabel: 'Trust-First Services Engine' },
-  'food-catering': { customerLabel: 'Restaurant & Catering', engineLabel: 'Menus + Booking Engine' },
-  'artisan-market': { customerLabel: 'Handmade & Artisan', engineLabel: 'Maker Storytelling Engine' },
-  'event-floral': { customerLabel: 'Event & Floral', engineLabel: 'Gallery-Led Luxury Engine' },
-  'coach-educator': { customerLabel: 'Coach & Educator', engineLabel: 'Authority Funnel Engine' },
+const BUSINESS_TYPE_COPY: Record<TemplateFamily, { customerLabel: string; engineLabel: string; microcopy: string }> = {
+  'retail-core': { customerLabel: 'Retail & Product Store', engineLabel: 'Editorial Commerce Engine', microcopy: 'Catalogs • Merchandising • Checkout' },
+  'service-pro': { customerLabel: 'Service Business', engineLabel: 'Trust-First Services Engine', microcopy: 'Quotes • Bookings • Proof' },
+  'food-catering': { customerLabel: 'Restaurant & Catering', engineLabel: 'Menus + Booking Engine', microcopy: 'Menus • Ordering • Reservations' },
+  'artisan-market': { customerLabel: 'Handmade & Artisan', engineLabel: 'Maker Storytelling Engine', microcopy: 'Storytelling • Provenance • Craft' },
+  'event-floral': { customerLabel: 'Event & Floral', engineLabel: 'Gallery-Led Luxury Engine', microcopy: 'Galleries • Luxury • Inquiries' },
+  'coach-educator': { customerLabel: 'Coach & Educator', engineLabel: 'Authority Funnel Engine', microcopy: 'Funnels • Programs • Enrollment' },
 };
 
 type Step = 1 | 2 | 3;
@@ -420,9 +416,9 @@ export default function OnboardingPage() {
               <div>
                 <p className="text-xs uppercase tracking-[0.2em] font-bold text-black/35 mb-2">Step 1 of 3 • Business Profile</p>
                 <h1 className="text-4xl md:text-5xl font-serif italic tracking-tight mb-3">
-                  Launch a storefront built for how your business actually sells
+                  Launch a storefront built for how your business sells
                 </h1>
-                <p className="text-black/55 text-lg">Edge generates a conversion-optimized storefront based on how your business sells — whether that's products, bookings, inquiries, reservations, or client enrollment.</p>
+                <p className="text-black/55 text-lg">30 seconds. We handle the rest.</p>
               </div>
 
               <div className="space-y-5">
@@ -543,15 +539,14 @@ export default function OnboardingPage() {
                       >
                         <p className="text-[10px] uppercase tracking-[0.2em] font-bold text-black/35 mb-1">{copy.engineLabel}</p>
                         <h3 className="font-bold mb-1">{copy.customerLabel}</h3>
-                        <p className="text-sm text-black/50 leading-relaxed">{t.summary}</p>
+                        <p className="text-sm text-black/50 leading-relaxed">{copy.microcopy}</p>
                       </button>
                       )})}
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-bold mb-1">What do you want this storefront to do? *</label>
-                  <p className="text-sm text-black/45 mb-4">This determines the conversion flow, layout structure, and checkout experience.</p>
+                  <label className="block text-sm font-bold mb-4">What should this storefront optimize for? *</label>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     {PRIMARY_GOALS.map(goal => (
                       <button
@@ -565,15 +560,14 @@ export default function OnboardingPage() {
                         }`}
                       >
                         <h3 className="font-bold mb-1">{goal.label}</h3>
-                        <p className="text-sm text-black/50 leading-relaxed">{goal.desc}</p>
+                        <p className="text-sm text-black/50 leading-relaxed">{goal.microcopy}</p>
                       </button>
                     ))}
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-bold mb-1">How do customers usually buy from you? *</label>
-                  <p className="text-sm text-black/45 mb-4">This shapes CTA frequency, proof placement, and how aggressive the storefront should be.</p>
+                  <label className="block text-sm font-bold mb-4">How do customers usually buy from you? *</label>
 
                   {BEHAVIOR_GROUPS.map(group => {
                     const groupBehaviors = BUYING_BEHAVIORS.filter(b => b.group === group.id);
@@ -582,7 +576,6 @@ export default function OnboardingPage() {
                         <div className="flex items-center gap-2 mb-3">
                           <span className="text-sm">{group.icon}</span>
                           <span className={`text-xs font-black uppercase tracking-[0.18em] ${group.color}`}>{group.label}</span>
-                          <span className="text-xs text-black/30">— {group.desc}</span>
                         </div>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                           {groupBehaviors.map(item => (
@@ -597,7 +590,7 @@ export default function OnboardingPage() {
                               }`}
                             >
                               <h3 className="font-bold text-sm mb-0.5">{item.label}</h3>
-                              <p className="text-xs text-black/50 leading-relaxed">{item.desc}</p>
+                              <p className="text-xs text-black/50 leading-relaxed">{item.microcopy}</p>
                             </button>
                           ))}
                         </div>
@@ -676,30 +669,21 @@ export default function OnboardingPage() {
                   disabled={!step1Valid}
                   className="w-full bg-[#1A1A1A] text-white py-5 rounded-full text-lg font-bold disabled:opacity-40 disabled:cursor-not-allowed hover:scale-[1.02] transition-transform"
                 >
-                  Continue to Brand Positioning →
-                </button>
-                <p className="text-center text-xs text-black/35 mt-3">Typical setup: 3–5 minutes</p>
-              </div>
+                  Generate Recommended Directions →
+                 </button>
+               </div>
 
               <div className="rounded-3xl border border-black/5 bg-white/70 px-5 py-4">
-                <p className="text-sm font-bold mb-2">Edge automatically configures:</p>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm text-black/55">
-                  <p>• Storefront architecture</p>
-                  <p>• Product or service page layouts</p>
-                  <p>• Conversion-focused copy</p>
-                  <p>• Checkout or booking flows</p>
-                  <p>• Mobile optimization</p>
-                  <p>• Payment onboarding</p>
-                  <p>• SEO-ready page structure</p>
-                </div>
+                <p className="text-sm font-bold mb-2">Includes:</p>
+                <p className="text-sm text-black/55">AI-generated layouts, copy, checkout flows, mobile optimization, and payment setup.</p>
               </div>
 
               {/* Social proof */}
               <div className="flex flex-wrap items-center justify-center gap-4 sm:gap-6 text-xs text-black/40">
-                <span className="flex items-center gap-1.5"><span className="w-1.5 h-1.5 bg-emerald-500 rounded-full"></span>Generated for 1,200+ storefronts</span>
-                <span className="flex items-center gap-1.5"><span className="w-1.5 h-1.5 bg-emerald-500 rounded-full"></span>Average setup under 5 minutes</span>
-                <span className="flex items-center gap-1.5"><span className="w-1.5 h-1.5 bg-emerald-500 rounded-full"></span>Optimized for mobile conversion</span>
-                <span className="flex items-center gap-1.5"><span className="w-1.5 h-1.5 bg-emerald-500 rounded-full"></span>Stripe-ready checkout included</span>
+                <span className="flex items-center gap-1.5"><span className="w-1.5 h-1.5 bg-emerald-500 rounded-full"></span>Stripe-ready</span>
+                <span className="flex items-center gap-1.5"><span className="w-1.5 h-1.5 bg-emerald-500 rounded-full"></span>Mobile-optimized</span>
+                <span className="flex items-center gap-1.5"><span className="w-1.5 h-1.5 bg-emerald-500 rounded-full"></span>Built on Medusa</span>
+                <span className="flex items-center gap-1.5"><span className="w-1.5 h-1.5 bg-emerald-500 rounded-full"></span>Edge-deployed globally</span>
               </div>
             </div>
           )}
@@ -737,8 +721,7 @@ export default function OnboardingPage() {
 
               {/* Style preset */}
               <div>
-                <label className="block text-sm font-bold mb-1">Visual style</label>
-                <p className="text-sm text-black/45 mb-4">Choose the design system that best matches your brand.</p>
+                <label className="block text-sm font-bold mb-4">Visual style</label>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   {STYLE_PRESETS.map(preset => (
                     <button
@@ -777,7 +760,6 @@ export default function OnboardingPage() {
                           )}
                         </div>
                         <p className="text-xs text-black/50">{preset.desc}</p>
-                        <p className="text-xs text-black/35 mt-2">{preset.detail}</p>
                       </div>
                     </button>
                   ))}
@@ -786,8 +768,7 @@ export default function OnboardingPage() {
 
               {/* Brand positioning */}
               <div>
-                <label className="block text-sm font-bold mb-1">Brand positioning</label>
-                <p className="text-sm text-black/45 mb-3">Select all that apply. This controls the overall feel of your storefront.</p>
+                <label className="block text-sm font-bold mb-3">Brand positioning</label>
                 <div className="flex flex-wrap gap-2">
                   {BRAND_POSITIONING.map(bp => (
                     <button
@@ -808,8 +789,7 @@ export default function OnboardingPage() {
 
               {/* Visual density */}
               <div>
-                <label className="block text-sm font-bold mb-1">Visual density</label>
-                <p className="text-sm text-black/45 mb-3">How much content should each section contain?</p>
+                <label className="block text-sm font-bold mb-3">Visual density</label>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                   {VISUAL_DENSITY.map(vd => (
                     <button
@@ -831,8 +811,7 @@ export default function OnboardingPage() {
 
               {/* Emotional tone */}
               <div>
-                <label className="block text-sm font-bold mb-1">Emotional tone</label>
-                <p className="text-sm text-black/45 mb-3">Select all that apply. This influences copy, pacing, and CTA language.</p>
+                <label className="block text-sm font-bold mb-3">Emotional tone</label>
                 <div className="flex flex-wrap gap-2">
                   {EMOTIONAL_TONE.map(et => (
                     <button
@@ -853,8 +832,7 @@ export default function OnboardingPage() {
 
               {/* Price positioning */}
               <div>
-                <label className="block text-sm font-bold mb-1">Price positioning</label>
-                <p className="text-sm text-black/45 mb-3">This affects proof density, CTA urgency, and layout complexity.</p>
+                <label className="block text-sm font-bold mb-3">Price positioning</label>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                   {PRICE_POSITIONING.map(pp => (
                     <button
@@ -889,7 +867,7 @@ export default function OnboardingPage() {
                   Generate Recommended Directions →
                 </button>
               </div>
-              <p className="text-center text-xs text-black/35">Typical setup: 3–5 minutes</p>
+              <p className="text-center text-xs text-black/35">Built on Medusa + Stripe. Edge-deployed globally.</p>
             </div>
           )}
 
