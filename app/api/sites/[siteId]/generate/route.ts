@@ -74,13 +74,30 @@ export async function POST(
     }
 
     const { business_name, business_type, contact_email, offerings, tagline } = site
+    const onboardingProfile = (site.template_data && typeof site.template_data === 'object'
+      ? (site.template_data as any).onboarding_profile
+      : null) as { primary_goal?: string; primary_goal_label?: string } | null
+
+    const enrichedOfferings = [
+      offerings || '',
+      onboardingProfile?.primary_goal_label ? `Primary goal: ${onboardingProfile.primary_goal_label}` : '',
+    ]
+      .filter(Boolean)
+      .join('\n')
+
+    const enrichedTagline = [
+      tagline || '',
+      onboardingProfile?.primary_goal_label ? `Primary CTA: ${onboardingProfile.primary_goal_label}` : '',
+    ]
+      .filter(Boolean)
+      .join(' · ')
 
     const generated = await generateSiteContent(
       business_name || '',
       business_type || 'service-pro',
-      offerings || '',
+      enrichedOfferings,
       contact_email || '',
-      tagline || '',
+      enrichedTagline,
       site.style_preset || site.template_data?.style_preset || site.template_data?.theme_id || 'milano',
     )
 

@@ -1,45 +1,144 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import type { InventoryCatalogRow, InventorySyncStatus, InventorySourceType } from '@/lib/inventory/types';
 
-interface InventoryItem {
-  id?: string;
-  name: string;
-  price: string;
-  description: string;
-  category: string;
-  image_url?: string;
-  variants?: Array<{ name: string; value: string; price_adjustment?: string }>;
-  stock?: number | null;
-  sku?: string;
+type InventoryItem = InventoryCatalogRow & {
   tax_rate?: number | null;
   shipping_class?: string;
-  enabled: boolean;
+};
+
+type SiteMeta = {
+  stripe_account_id?: string | null;
+  printify_api_key?: string | null;
+  printify_shop_id?: string | null;
+};
+
+const CATEGORIES = ['Shirts', 'Hoodies', 'Shorts', 'Accessories', 'Digital Products', 'Services', 'Other'];
+const SHIPPING_CLASSES = ['standard', 'express', 'digital', 'heavy'];
+
+const SOURCE_LABELS: Record<InventorySourceType, string> = {
+  manual: 'Manual',
+  stripe: 'Stripe',
+  printify: 'Printify',
+  hybrid: 'Hybrid',
+};
+
+const SYNC_LABELS: Record<InventorySyncStatus, string> = {
+  idle: 'Idle',
+  pending: 'Pending',
+  synced: 'Synced',
+  error: 'Needs attention',
+};
+
+function emptyItem(): InventoryItem {
+  return {
+    id: '',
+    site_id: '',
+    name: '',
+    price: '',
+    description: '',
+    category: 'Other',
+    enabled: true,
+    source_type: 'manual',
+    source_refs: {},
+    sync_status: 'idle',
+    sync_error: null,
+    fulfillment_mode: 'manual',
+    pricing_mode: 'manual',
+    status: 'active',
+    metadata: {},
+    image_url: null,
+    sku: null,
+    stock: null,
+    variants: null,
+    external_updated_at: null,
+    last_synced_at: null,
+  };
 }
 
-const CATEGORIES = [
-  'Shirts',
-  'Hoodies',
-  'Shorts',
-  'Accessories',
-  'Digital Products',
-  'Services',
-  'Other',
-];
+function badgeClasses(kind: 'dark' | 'green' | 'amber' | 'red' | 'blue' | 'gray') {
+  return {
+    dark: 'bg-[#2D2D2D] text-white',
+    green: 'bg-emerald-100 text-emerald-700',
+    amber: 'bg-amber-100 text-amber-800',
+    red: 'bg-red-100 text-red-700',
+    blue: 'bg-blue-100 text-blue-700',
+    gray: 'bg-black/5 text-black/55',
+  }[kind];
+}
 
-const SHIPPING_CLASSES = ['standard', 'express', 'digital', 'heavy'];
+function sourceBadgeKind(source: InventorySourceType) {
+  if (source === 'printify') return 'blue';
+  if (source === 'stripe') return 'amber';
+  if (source === 'hybrid') return 'dark';
+  return 'gray';
+}
+
+function syncBadgeKind(status: InventorySyncStatus) {
+  if (status === 'synced') return 'green';
+  if (status === 'pending') return 'amber';
+  if (status === 'error') return 'red';
+  return 'gray';
+}
+
+function getConflictRules(item: InventoryItem) {
+  const rules: string[] = [];
+  const hasStripe = Boolean(item.source_refs?.stripe_product_id) || item.pricing_mode === 'stripe';
+  const hasPrintify = Boolean(item.source_refs?.printify_product_id) || item.fulfillment_mode === 'printify';
+  const hasManual = item.source_type === 'manual' || item.source_type === 'hybrid';
+
+  if (hasStripe) rules.push('Stripe owns price when pricing mode is Stripe-linked.');
+  if (hasPrintify) rules.push('Printify owns fulfillment when fulfillment mode is Printify.');
+  if (hasManual && (hasStripe || hasPrintify)) rules.push('Manual edits keep filled descriptive fields during provider imports.');
+  if (item.enabled === false && (hasStripe || hasPrintify)) rules.push('Manual disabled state is preserved across imports.');
+  if (item.source_type === 'hybrid') rules.push('Provider refs are merged into one hybrid catalog row.');
+
+  return rules;
+}
+
+function formatDateTime(value?: string | null) {
+  if (!value) return 'Not yet';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return 'Not yet';
+  return date.toLocaleString();
+}
+
+function parseQuickAddLines(input: string): InventoryItem[] {
+  return input
+    .split('\n')
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .map((line) => {
+      const [name, price, category, stock] = line.split('|').map((part) => part?.trim() || '');
+      return {
+        ...emptyItem(),
+        name,
+        price,
+        category: category || 'Other',
+        stock: stock ? Number(stock) : null,
+      };
+    })
+    .filter((item) => item.name && item.price);
+}
 
 export default function InventoryPage({ params }: { params: Promise<{ siteId: string }> }) {
   const router = useRouter();
-  const [siteId, setSiteId] = useState<string>('');
+  const [siteId, setSiteId] = useState('');
+  const [siteMeta, setSiteMeta] = useState<SiteMeta | null>(null);
   const [items, setItems] = useState<InventoryItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [syncing, setSyncing] = useState<'stripe' | 'printify' | null>(null);
+  const [medusaSyncing, setMedusaSyncing] = useState(false);
+  const [resyncingItemId, setResyncingItemId] = useState<string | null>(null);
+  const [statusMessage, setStatusMessage] = useState('');
   const [editingItem, setEditingItem] = useState<InventoryItem | null>(null);
-  const [showAddModal, setShowAddModal] = useState(false);
-  const [filterCategory, setFilterCategory] = useState<string>('all');
+  const [showModal, setShowModal] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  const [filterCategory, setFilterCategory] = useState('all');
+  const [quickAddInput, setQuickAddInput] = useState('');
 
   useEffect(() => {
     params.then(({ siteId }) => setSiteId(siteId));
@@ -47,104 +146,208 @@ export default function InventoryPage({ params }: { params: Promise<{ siteId: st
 
   useEffect(() => {
     if (!siteId) return;
-    loadInventory();
+    void Promise.all([loadInventory(siteId), loadSite(siteId)]);
   }, [siteId]);
 
-  async function loadInventory() {
+  async function loadSite(currentSiteId: string) {
     try {
-      const res = await fetch(`/api/sites/${siteId}/inventory`);
-      if (!res.ok) throw new Error('Failed to load');
+      const res = await fetch(`/api/sites/${currentSiteId}`);
+      if (!res.ok) throw new Error('Failed to load site');
       const data = await res.json();
-      setItems(data || []);
-    } catch (err: any) {
-      console.error(err);
+      setSiteMeta(data);
+    } catch (error) {
+      console.error(error);
+    }
+  }
+
+  async function loadInventory(currentSiteId = siteId) {
+    try {
+      setLoading(true);
+      const res = await fetch(`/api/sites/${currentSiteId}/inventory`);
+      if (!res.ok) throw new Error('Failed to load inventory');
+      const data = await res.json();
+      setItems(Array.isArray(data) ? data : []);
+    } catch (error) {
+      console.error(error);
+      setStatusMessage('Failed to load inventory.');
     } finally {
       setLoading(false);
     }
   }
 
-  async function handleSaveItem(item: InventoryItem) {
+  async function saveItems(nextItems: InventoryItem[], successMessage?: string) {
     setSaving(true);
+    setStatusMessage('');
+
     try {
-      const updatedItems = item.id
-        ? items.map(i => i.id === item.id ? item : i)
-        : [...items, { ...item, id: `temp-${Date.now()}` }];
-      
-      setItems(updatedItems);
-      
-      // Save to API
       const res = await fetch(`/api/sites/${siteId}/inventory`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ items: updatedItems.map(({ id, ...rest }) => rest) }),
+        body: JSON.stringify({ items: nextItems }),
       });
 
-      if (!res.ok) throw new Error('Save failed');
-      
-      // Reload to get real IDs
-      await loadInventory();
-      setEditingItem(null);
-      setShowAddModal(false);
-    } catch (err: any) {
-      console.error(err);
-      alert('Failed to save item');
+      if (!res.ok) {
+        const error = await res.json().catch(() => ({}));
+        throw new Error(error.error || 'Save failed');
+      }
+
+      const saved = await res.json();
+      setItems(saved);
+      if (successMessage) setStatusMessage(successMessage);
+      return saved as InventoryItem[];
+    } catch (error: any) {
+      console.error(error);
+      setStatusMessage(error.message || 'Failed to save inventory.');
+      throw error;
     } finally {
       setSaving(false);
     }
   }
 
+  async function handleSaveItem(item: InventoryItem) {
+    const nextItems = item.id
+      ? items.map((current) => (current.id === item.id ? item : current))
+      : [...items, item];
+
+    await saveItems(nextItems, item.id ? 'Item updated.' : 'Item added.');
+    setEditingItem(null);
+    setShowModal(false);
+  }
+
   async function handleDeleteItem(id: string) {
     if (!confirm('Delete this item?')) return;
-    
-    const updatedItems = items.filter(i => i.id !== id);
-    setItems(updatedItems);
-    
-    await fetch(`/api/sites/${siteId}/inventory`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ items: updatedItems.map(({ id, ...rest }) => rest) }),
+    await saveItems(items.filter((item) => item.id !== id), 'Item deleted.');
+  }
+
+  async function handleToggleEnabled(item: InventoryItem) {
+    await handleSaveItem({ ...item, enabled: !item.enabled });
+  }
+
+  async function handleProviderSync(source: 'stripe' | 'printify') {
+    setSyncing(source);
+    setStatusMessage('');
+    try {
+      const res = await fetch(`/api/sites/${siteId}/${source}/sync`, { method: 'POST' });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || `Failed to import from ${source}`);
+      setStatusMessage(`${data.synced || 0} ${source} products imported into master inventory.`);
+      await loadInventory();
+      await loadSite(siteId);
+    } catch (error: any) {
+      console.error(error);
+      setStatusMessage(error.message || `Failed to import from ${source}.`);
+    } finally {
+      setSyncing(null);
+    }
+  }
+
+  async function handleMedusaResync(itemIds?: string[], label?: string) {
+    setStatusMessage('');
+    setMedusaSyncing(!itemIds?.length);
+    setResyncingItemId(itemIds?.length === 1 ? itemIds[0] : null);
+
+    try {
+      const res = await fetch(`/api/sites/${siteId}/inventory/resync`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ itemIds: itemIds || [] }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || 'Failed to resync Medusa');
+
+      if (Array.isArray(data.items)) {
+        setItems(data.items);
+      } else {
+        await loadInventory();
+      }
+
+      const changed = typeof data.updated === 'number'
+        ? data.updated
+        : (typeof data.created === 'number' ? data.created : 0);
+      const existing = typeof data.existing === 'number' ? data.existing : 0;
+      setStatusMessage(`${label || 'Medusa sync'} complete. ${changed} changed, ${existing} unchanged.`);
+    } catch (error: any) {
+      console.error(error);
+      setStatusMessage(error.message || 'Failed to resync Medusa.');
+    } finally {
+      setMedusaSyncing(false);
+      setResyncingItemId(null);
+    }
+  }
+
+  async function handleQuickAdd() {
+    const parsed = parseQuickAddLines(quickAddInput);
+    if (parsed.length === 0) {
+      setStatusMessage('Add lines as Name | Price | Category | Stock');
+      return;
+    }
+
+    await saveItems([...items, ...parsed], `${parsed.length} products added.`);
+    setQuickAddInput('');
+  }
+
+  const filteredItems = useMemo(() => {
+    return items.filter((item) => {
+      if (filterCategory !== 'all' && item.category !== filterCategory) return false;
+      if (searchTerm && !`${item.name} ${item.description || ''}`.toLowerCase().includes(searchTerm.toLowerCase())) return false;
+      return true;
     });
-  }
+  }, [filterCategory, items, searchTerm]);
 
-  function handleToggleEnabled(item: InventoryItem) {
-    const updated = { ...item, enabled: !item.enabled };
-    handleSaveItem(updated);
-  }
-
-  const filteredItems = items.filter(item => {
-    if (filterCategory !== 'all' && item.category !== filterCategory) return false;
-    if (searchTerm && !item.name.toLowerCase().includes(searchTerm.toLowerCase())) return false;
-    return true;
-  });
-
-  const categoriesUsed = [...new Set(items.map(i => i.category).filter(Boolean))];
+  const categoriesUsed = useMemo(() => [...new Set(items.map((item) => item.category).filter(Boolean))], [items]);
+  const sourceCounts = useMemo(() => {
+    return items.reduce(
+      (acc, item) => {
+        const key = item.source_type || 'manual';
+        acc[key] = (acc[key] || 0) + 1;
+        return acc;
+      },
+      {} as Record<string, number>,
+    );
+  }, [items]);
+  const syncErrors = items.filter((item) => item.sync_status === 'error').length;
+  const activeItems = items.filter((item) => item.enabled !== false).length;
+  const pricedItems = items.filter((item) => Number(item.price) > 0).length;
 
   return (
     <div className="min-h-screen bg-[#F9F8F6]">
-      {/* Header */}
       <div className="bg-white border-b border-black/5 px-6 py-4">
-        <div className="max-w-7xl mx-auto flex items-center justify-between">
+        <div className="max-w-7xl mx-auto flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div className="flex items-center gap-4">
-            <button
-              onClick={() => router.push(`/build/${siteId}`)}
-              className="text-sm text-black/40 hover:text-black transition-colors"
-            >
+            <button onClick={() => router.push(`/build/${siteId}`)} className="text-sm text-black/40 hover:text-black transition-colors">
               ← Back to builder
             </button>
-            <h1 className="font-bold text-xl">Inventory</h1>
-            <span className="text-sm text-black/40">{items.length} items</span>
+            <div>
+              <h1 className="font-bold text-xl">Master inventory</h1>
+              <p className="text-sm text-black/40">One catalog for manual items, Stripe imports, and Printify imports.</p>
+            </div>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-3">
+            <button
+              onClick={() => handleProviderSync('stripe')}
+              disabled={syncing !== null || medusaSyncing || !siteMeta?.stripe_account_id}
+              className="border border-black/10 bg-white px-4 py-2.5 rounded-full text-sm font-bold hover:border-black/20 disabled:opacity-40"
+            >
+              {syncing === 'stripe' ? 'Importing Stripe…' : 'Import Stripe'}
+            </button>
+            <button
+              onClick={() => handleProviderSync('printify')}
+              disabled={syncing !== null || medusaSyncing || !siteMeta?.printify_api_key || !siteMeta?.printify_shop_id}
+              className="border border-black/10 bg-white px-4 py-2.5 rounded-full text-sm font-bold hover:border-black/20 disabled:opacity-40"
+            >
+              {syncing === 'printify' ? 'Importing Printify…' : 'Import Printify'}
+            </button>
+            <button
+              onClick={() => handleMedusaResync(undefined, 'Full Medusa resync')}
+              disabled={syncing !== null || medusaSyncing || items.length === 0}
+              className="border border-black/10 bg-white px-4 py-2.5 rounded-full text-sm font-bold hover:border-black/20 disabled:opacity-40"
+            >
+              {medusaSyncing ? 'Resyncing Medusa…' : 'Resync Medusa'}
+            </button>
             <button
               onClick={() => {
-                setEditingItem({
-                  name: '',
-                  price: '',
-                  description: '',
-                  category: categoriesUsed[0] || 'Other',
-                  enabled: true,
-                });
-                setShowAddModal(true);
+                setEditingItem(emptyItem());
+                setShowModal(true);
               }}
               className="bg-[#2D2D2D] text-white px-5 py-2.5 rounded-full text-sm font-bold hover:scale-[1.02] transition-transform"
             >
@@ -154,82 +357,108 @@ export default function InventoryPage({ params }: { params: Promise<{ siteId: st
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-6 py-8">
-        {/* Filters */}
-        <div className="flex flex-col sm:flex-row gap-4 mb-8">
-          <div className="flex-1">
-            <input
-              type="text"
-              placeholder="Search products..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full border border-black/10 rounded-2xl px-5 py-3 text-sm focus:outline-none focus:border-black/30 bg-white"
+      <div className="max-w-7xl mx-auto px-6 py-8 space-y-8">
+        {statusMessage && (
+          <div className="rounded-2xl border border-black/10 bg-white px-5 py-4 text-sm text-black/70">
+            {statusMessage}
+          </div>
+        )}
+
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="lg:col-span-2 bg-white rounded-3xl border border-black/5 p-6">
+            <div className="flex items-start justify-between gap-4 mb-4">
+              <div>
+                <h2 className="font-bold text-lg">Rapid input</h2>
+                <p className="text-sm text-black/45">Paste one item per line as Name | Price | Category | Stock</p>
+              </div>
+              <button
+                onClick={handleQuickAdd}
+                disabled={saving}
+                className="bg-[#2D2D2D] text-white px-4 py-2 rounded-full text-sm font-bold disabled:opacity-40"
+              >
+                Add lines
+              </button>
+            </div>
+            <textarea
+              value={quickAddInput}
+              onChange={(e) => setQuickAddInput(e.target.value)}
+              rows={5}
+              placeholder={['Classic Tee | 29.99 | Shirts | 50', 'VIP Consultation | 150 | Services |', 'Garden Bouquet | 85 | Floral | 12'].join('\n')}
+              className="w-full border border-black/10 rounded-2xl px-5 py-4 text-sm resize-none focus:outline-none focus:border-black/30"
             />
           </div>
+
+          <div className="bg-white rounded-3xl border border-black/5 p-6">
+            <h2 className="font-bold text-lg mb-4">Connection state</h2>
+            <div className="space-y-3 text-sm">
+              <div className="flex items-center justify-between">
+                <span>Stripe catalog</span>
+                <span className={`px-2.5 py-1 rounded-full ${badgeClasses(siteMeta?.stripe_account_id ? 'green' : 'gray')}`}>
+                  {siteMeta?.stripe_account_id ? 'Connected' : 'Not connected'}
+                </span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span>Printify catalog</span>
+                <span className={`px-2.5 py-1 rounded-full ${badgeClasses(siteMeta?.printify_api_key && siteMeta?.printify_shop_id ? 'green' : 'gray')}`}>
+                  {siteMeta?.printify_api_key && siteMeta?.printify_shop_id ? 'Connected' : 'Not connected'}
+                </span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span>Sync issues</span>
+                <span className={`px-2.5 py-1 rounded-full ${badgeClasses(syncErrors > 0 ? 'red' : 'green')}`}>
+                  {syncErrors}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-6 gap-4">
+          <StatCard label="Total items" value={String(items.length)} />
+          <StatCard label="Active" value={String(activeItems)} />
+          <StatCard label="Priced" value={String(pricedItems)} />
+          <StatCard label="Manual" value={String(sourceCounts.manual || 0)} />
+          <StatCard label="Stripe" value={String(sourceCounts.stripe || 0)} />
+          <StatCard label="Printify" value={String(sourceCounts.printify || 0)} />
+        </div>
+
+        <div className="flex flex-col sm:flex-row gap-4">
+          <input
+            type="text"
+            placeholder="Search products..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="flex-1 border border-black/10 rounded-2xl px-5 py-3 text-sm focus:outline-none focus:border-black/30 bg-white"
+          />
           <div className="flex gap-2 flex-wrap">
             <button
               onClick={() => setFilterCategory('all')}
-              className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
-                filterCategory === 'all'
-                  ? 'bg-[#2D2D2D] text-white'
-                  : 'bg-white border border-black/10 text-black/60 hover:border-black/20'
-              }`}
+              className={`px-4 py-2 rounded-full text-sm font-medium ${filterCategory === 'all' ? 'bg-[#2D2D2D] text-white' : 'bg-white border border-black/10 text-black/60'}`}
             >
               All ({items.length})
             </button>
-            {categoriesUsed.map(cat => (
+            {categoriesUsed.map((category) => (
               <button
-                key={cat}
-                onClick={() => setFilterCategory(cat)}
-                className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
-                  filterCategory === cat
-                    ? 'bg-[#2D2D2D] text-white'
-                    : 'bg-white border border-black/10 text-black/60 hover:border-black/20'
-                }`}
+                key={category}
+                onClick={() => setFilterCategory(category)}
+                className={`px-4 py-2 rounded-full text-sm font-medium ${filterCategory === category ? 'bg-[#2D2D2D] text-white' : 'bg-white border border-black/10 text-black/60'}`}
               >
-                {cat} ({items.filter(i => i.category === cat).length})
+                {category} ({items.filter((item) => item.category === category).length})
               </button>
             ))}
           </div>
         </div>
 
-        {/* Quick Stats */}
-        <div className="grid grid-cols-1 sm:grid-cols-4 gap-4 mb-8">
-          <div className="bg-white rounded-2xl p-5 border border-black/5">
-            <p className="text-sm text-black/40 mb-1">Total Products</p>
-            <p className="text-2xl font-bold">{items.length}</p>
-          </div>
-          <div className="bg-white rounded-2xl p-5 border border-black/5">
-            <p className="text-sm text-black/40 mb-1">Active</p>
-            <p className="text-2xl font-bold">{items.filter(i => i.enabled).length}</p>
-          </div>
-          <div className="bg-white rounded-2xl p-5 border border-black/5">
-            <p className="text-sm text-black/40 mb-1">Categories</p>
-            <p className="text-2xl font-bold">{categoriesUsed.length}</p>
-          </div>
-          <div className="bg-white rounded-2xl p-5 border border-black/5">
-            <p className="text-sm text-black/40 mb-1">With Stock</p>
-            <p className="text-2xl font-bold">{items.filter(i => i.stock != null).length}</p>
-          </div>
-        </div>
-
-        {/* Inventory Grid */}
         {loading ? (
           <div className="text-center py-20 text-black/40">Loading inventory...</div>
         ) : filteredItems.length === 0 ? (
-          <div className="text-center py-20">
-            <p className="text-xl font-bold mb-2">No products yet</p>
-            <p className="text-black/60 mb-6">Add your first product to start selling</p>
+          <div className="bg-white rounded-3xl border border-black/5 p-12 text-center">
+            <p className="text-xl font-bold mb-2">No items yet</p>
+            <p className="text-black/60 mb-6">Add products manually or pull them in from Stripe / Printify.</p>
             <button
               onClick={() => {
-                setEditingItem({
-                  name: '',
-                  price: '',
-                  description: '',
-                  category: 'Other',
-                  enabled: true,
-                });
-                setShowAddModal(true);
+                setEditingItem(emptyItem());
+                setShowModal(true);
               }}
               className="bg-[#2D2D2D] text-white px-6 py-3 rounded-full font-bold hover:scale-[1.02] transition-transform"
             >
@@ -237,90 +466,95 @@ export default function InventoryPage({ params }: { params: Promise<{ siteId: st
             </button>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredItems.map(item => (
-              <div
-                key={item.id}
-                className={`bg-white rounded-2xl border transition-all hover:shadow-md ${
-                  item.enabled ? 'border-black/5' : 'border-black/5 opacity-50'
-                }`}
-              >
-                {/* Product Image */}
-                <div className="aspect-video bg-[#F9F8F6] rounded-t-2xl flex items-center justify-center">
-                  {item.image_url ? (
-                    <img src={item.image_url} alt={item.name} className="w-full h-full object-cover rounded-t-2xl" />
-                  ) : (
-                    <span className="text-black/20 text-sm">No image</span>
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+            {filteredItems.map((item) => (
+              <div key={item.id || item.name} className={`bg-white rounded-3xl border p-5 transition-all hover:shadow-md ${item.enabled === false ? 'opacity-60 border-black/5' : 'border-black/5'}`}>
+                <div className="aspect-video bg-[#F9F8F6] rounded-2xl flex items-center justify-center overflow-hidden mb-4">
+                  {item.image_url ? <img src={item.image_url} alt={item.name} className="w-full h-full object-cover" /> : <span className="text-black/20 text-sm">No image</span>}
+                </div>
+
+                <div className="flex items-start justify-between gap-3 mb-2">
+                  <div>
+                    <h3 className="font-bold text-lg leading-tight">{item.name}</h3>
+                    <p className="text-sm text-black/45">{item.category || 'Uncategorized'}</p>
+                  </div>
+                  <button
+                    onClick={() => handleToggleEnabled(item)}
+                    className={`text-xs px-2.5 py-1 rounded-full ${badgeClasses(item.enabled === false ? 'gray' : 'green')}`}
+                  >
+                    {item.enabled === false ? 'Disabled' : 'Active'}
+                  </button>
+                </div>
+
+                <p className="text-sm text-black/60 mb-4 line-clamp-2 min-h-[40px]">{item.description || 'No description yet.'}</p>
+
+                <div className="flex items-center justify-between mb-4">
+                  <span className="text-xl font-bold">${item.price || '0.00'}</span>
+                  <span className="text-xs text-black/40">{item.stock == null ? 'Stock not tracked' : `${item.stock} in stock`}</span>
+                </div>
+
+                <div className="flex flex-wrap gap-2 mb-4">
+                  <span className={`text-xs px-2.5 py-1 rounded-full ${badgeClasses(sourceBadgeKind(item.source_type || 'manual'))}`}>
+                    {SOURCE_LABELS[item.source_type || 'manual']}
+                  </span>
+                  <span className={`text-xs px-2.5 py-1 rounded-full ${badgeClasses(syncBadgeKind(item.sync_status || 'idle'))}`}>
+                    {SYNC_LABELS[item.sync_status || 'idle']}
+                  </span>
+                  <span
+                    className={`text-xs px-2.5 py-1 rounded-full ${badgeClasses(item.pricing_mode === 'stripe' ? 'amber' : 'gray')}`}
+                    title={item.pricing_mode === 'stripe' ? 'Stripe remains the source of truth for price on this item.' : 'Price is manually managed in master inventory.'}
+                  >
+                    {item.pricing_mode === 'stripe' ? 'Stripe pricing' : 'Manual pricing'}
+                  </span>
+                  <span
+                    className={`text-xs px-2.5 py-1 rounded-full ${badgeClasses(item.fulfillment_mode === 'printify' ? 'blue' : 'gray')}`}
+                    title={item.fulfillment_mode === 'printify' ? 'Printify remains the source of truth for fulfillment on this item.' : 'Fulfillment is manually managed.'}
+                  >
+                    {item.fulfillment_mode === 'printify' ? 'Printify fulfillment' : 'Manual fulfillment'}
+                  </span>
+                  {getConflictRules(item).length > 0 && (
+                    <span
+                      className={`text-xs px-2.5 py-1 rounded-full ${badgeClasses(item.source_type === 'hybrid' ? 'dark' : 'gray')}`}
+                      title={getConflictRules(item).join(' ')}
+                    >
+                      {item.source_type === 'hybrid' ? 'Hybrid rules' : 'Import rules'}
+                    </span>
                   )}
                 </div>
 
-                {/* Product Info */}
-                <div className="p-5">
-                  <div className="flex items-start justify-between mb-2">
-                    <h3 className="font-bold text-lg">{item.name}</h3>
-                    <button
-                      onClick={() => handleToggleEnabled(item)}
-                      className={`text-xs px-2 py-1 rounded-full ${
-                        item.enabled
-                          ? 'bg-green-100 text-green-700'
-                          : 'bg-gray-100 text-gray-400'
-                      }`}
-                    >
-                      {item.enabled ? 'Active' : 'Disabled'}
-                    </button>
-                  </div>
-                  
-                  <p className="text-sm text-black/60 mb-3 line-clamp-2">{item.description}</p>
-                  
-                  <div className="flex items-center justify-between mb-4">
-                    <span className="text-xl font-bold">${item.price}</span>
-                    {item.category && (
-                      <span className="text-xs bg-[#F9F8F6] px-2 py-1 rounded-full text-black/40">
-                        {item.category}
-                      </span>
-                    )}
-                  </div>
+                {item.sync_error && <p className="text-xs text-red-600 mb-2">{item.sync_error}</p>}
+                {getConflictRules(item).length > 0 && (
+                  <p className="text-xs text-black/45 mb-4">{getConflictRules(item)[0]}</p>
+                )}
 
-                  {item.variants && item.variants.length > 0 && (
-                    <div className="mb-4">
-                      <p className="text-xs text-black/40 mb-1">Variants:</p>
-                      <div className="flex flex-wrap gap-1">
-                        {item.variants.map((v, idx) => (
-                          <span key={idx} className="text-xs bg-[#F9F8F6] px-2 py-1 rounded">
-                            {v.name}: {v.value}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-          <div className="flex gap-2">
-            <button
-              onClick={() => {
-                setEditingItem(item);
-                setShowAddModal(true);
-              }}
-              className="flex-1 border border-black/10 py-2 rounded-full text-sm font-medium hover:border-black/30 transition-colors"
-            >
-              Edit
-            </button>
-            <button
-              onClick={() => {
-                const dup = { ...item, id: undefined, name: `${item.name} (Copy)` };
-                handleSaveItem(dup);
-              }}
-              className="px-3 py-2 text-sm text-black/50 hover:text-black transition-colors"
-              title="Duplicate"
-            >
-              ⧉
-            </button>
-            <button
-              onClick={() => handleDeleteItem(item.id!)}
-              className="px-4 py-2 text-sm text-red-600 hover:text-red-700 transition-colors"
-            >
-              Delete
-            </button>
-          </div>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => {
+                      setEditingItem(item);
+                      setShowModal(true);
+                    }}
+                    className="flex-1 border border-black/10 py-2 rounded-full text-sm font-medium hover:border-black/30 transition-colors"
+                  >
+                    Edit
+                  </button>
+                  <button
+                    onClick={() => handleMedusaResync(item.id ? [item.id] : undefined, `${item.name} resync`)}
+                    disabled={medusaSyncing || resyncingItemId === item.id || syncing !== null}
+                    className="border border-black/10 px-3 py-2 rounded-full text-sm font-medium hover:border-black/30 disabled:opacity-40"
+                    title="Reconcile this item back into Medusa"
+                  >
+                    {resyncingItemId === item.id ? 'Syncing…' : 'Resync'}
+                  </button>
+                  <button
+                    onClick={() => handleSaveItem({ ...item, id: '', name: `${item.name} (Copy)`, source_type: 'manual', source_refs: {}, pricing_mode: 'manual', fulfillment_mode: 'manual' })}
+                    className="px-3 py-2 text-sm text-black/50 hover:text-black"
+                    title="Duplicate"
+                  >
+                    ⧉
+                  </button>
+                  <button onClick={() => handleDeleteItem(item.id)} className="px-4 py-2 text-sm text-red-600 hover:text-red-700">
+                    Delete
+                  </button>
                 </div>
               </div>
             ))}
@@ -328,18 +562,90 @@ export default function InventoryPage({ params }: { params: Promise<{ siteId: st
         )}
       </div>
 
-      {/* Add/Edit Modal */}
-      {showAddModal && (
+      {showModal && editingItem && (
         <InventoryModal
           item={editingItem}
           onSave={handleSaveItem}
           onClose={() => {
-            setShowAddModal(false);
+            setShowModal(false);
             setEditingItem(null);
           }}
           saving={saving}
           siteId={siteId}
         />
+      )}
+    </div>
+  );
+}
+
+function StatCard({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="bg-white rounded-2xl p-5 border border-black/5">
+      <p className="text-sm text-black/40 mb-1">{label}</p>
+      <p className="text-2xl font-bold">{value}</p>
+    </div>
+  );
+}
+
+function InventoryStatusPanel({ item }: { item: InventoryItem }) {
+  const medusaProductId = item.source_refs?.medusa_product_id;
+  const medusaVariantIds = Array.isArray(item.source_refs?.medusa_variant_ids) ? item.source_refs?.medusa_variant_ids : [];
+  const providerRefs = [
+    item.source_refs?.stripe_product_id ? `Stripe product: ${item.source_refs.stripe_product_id}` : null,
+    item.source_refs?.stripe_price_id ? `Stripe price: ${item.source_refs.stripe_price_id}` : null,
+    item.source_refs?.printify_product_id ? `Printify product: ${item.source_refs.printify_product_id}` : null,
+    item.source_refs?.printify_shop_id ? `Printify shop: ${item.source_refs.printify_shop_id}` : null,
+  ].filter(Boolean);
+
+  return (
+    <div className="rounded-3xl border border-black/5 bg-[#F9F8F6] p-5">
+      <div className="flex flex-wrap items-center gap-2 mb-4">
+        <span className={`text-xs px-2.5 py-1 rounded-full ${badgeClasses(syncBadgeKind(item.sync_status || 'idle'))}`}>
+          {SYNC_LABELS[item.sync_status || 'idle']}
+        </span>
+        {medusaProductId && (
+          <span className="text-xs px-2.5 py-1 rounded-full bg-white text-black/60 border border-black/10">
+            Medusa linked
+          </span>
+        )}
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
+        <div>
+          <p className="text-black/40 mb-1">Last synced</p>
+          <p className="font-medium">{formatDateTime(item.last_synced_at)}</p>
+        </div>
+        <div>
+          <p className="text-black/40 mb-1">External source updated</p>
+          <p className="font-medium">{formatDateTime(item.external_updated_at)}</p>
+        </div>
+        <div>
+          <p className="text-black/40 mb-1">Medusa product</p>
+          <p className="font-medium break-all">{medusaProductId || 'Not linked yet'}</p>
+        </div>
+        <div>
+          <p className="text-black/40 mb-1">Medusa variants</p>
+          <p className="font-medium break-all">{medusaVariantIds.length ? medusaVariantIds.join(', ') : 'None yet'}</p>
+        </div>
+      </div>
+
+      {providerRefs.length > 0 && (
+        <div className="mt-4">
+          <p className="text-black/40 mb-2 text-sm">Provider refs</p>
+          <div className="flex flex-wrap gap-2">
+            {providerRefs.map((ref) => (
+              <span key={ref} className="text-xs px-2.5 py-1 rounded-full bg-white border border-black/10 text-black/60">
+                {ref}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {item.sync_error && (
+        <div className="mt-4 rounded-2xl bg-red-50 text-red-700 px-4 py-3 text-sm">
+          {item.sync_error}
+        </div>
       )}
     </div>
   );
@@ -352,23 +658,16 @@ function InventoryModal({
   saving,
   siteId,
 }: {
-  item: InventoryItem | null;
-  onSave: (item: InventoryItem) => void;
+  item: InventoryItem;
+  onSave: (item: InventoryItem) => Promise<void>;
   onClose: () => void;
   saving: boolean;
   siteId: string;
 }) {
-  const [form, setForm] = useState<InventoryItem>(
-    item || {
-      name: '',
-      price: '',
-      description: '',
-      category: 'Other',
-      enabled: true,
-    }
-  );
+  const [form, setForm] = useState<InventoryItem>({ ...emptyItem(), ...item, metadata: item.metadata || {}, source_refs: item.source_refs || {} });
   const [variantName, setVariantName] = useState('');
   const [variantValue, setVariantValue] = useState('');
+  const conflictRules = getConflictRules(form);
 
   function handleAddVariant() {
     if (!variantName || !variantValue) return;
@@ -380,150 +679,92 @@ function InventoryModal({
     setVariantValue('');
   }
 
-  function handleRemoveVariant(idx: number) {
-    setForm({
-      ...form,
-      variants: (form.variants || []).filter((_, i) => i !== idx),
-    });
-  }
-
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-6">
       <div className="bg-white rounded-3xl p-8 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-        <h2 className="text-2xl font-bold mb-6">
-          {item?.id ? 'Edit Product' : 'Add Product'}
-        </h2>
+        <div className="flex items-start justify-between gap-4 mb-6">
+          <div>
+            <h2 className="text-2xl font-bold">{form.id ? 'Edit inventory item' : 'Add inventory item'}</h2>
+            <p className="text-sm text-black/45">Editing the master catalog record used by checkout, storefront, Stripe, and Printify.</p>
+          </div>
+          <div className="flex flex-col items-end gap-2">
+            <span className={`text-xs px-2.5 py-1 rounded-full ${badgeClasses(sourceBadgeKind(form.source_type || 'manual'))}`}>
+              {SOURCE_LABELS[form.source_type || 'manual']}
+            </span>
+            {conflictRules.length > 0 && (
+              <div className="max-w-xs rounded-2xl bg-[#F9F8F6] border border-black/5 px-4 py-3">
+                <p className="text-xs font-bold uppercase tracking-wide text-black/45 mb-2">Resolution rules</p>
+                <ul className="space-y-1 text-xs text-black/60 list-disc pl-4">
+                  {conflictRules.map((rule) => (
+                    <li key={rule}>{rule}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </div>
+        </div>
 
         <div className="space-y-6">
-          {/* Name */}
+          <InventoryStatusPanel item={form} />
+
           <div>
-            <label className="block text-sm font-bold mb-2">Product Name *</label>
-            <input
-              type="text"
-              value={form.name}
-              onChange={(e) => setForm({ ...form, name: e.target.value })}
-              placeholder="e.g. Classic Cotton T-Shirt"
-              className="w-full border border-black/10 rounded-2xl px-5 py-3 text-sm focus:outline-none focus:border-black/30"
-              required
-            />
+            <label className="block text-sm font-bold mb-2">Product name *</label>
+            <input type="text" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="w-full border border-black/10 rounded-2xl px-5 py-3 text-sm" />
           </div>
 
-          {/* Price & SKU */}
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-bold mb-2">Price *</label>
-              <input
-                type="text"
-                value={form.price}
-                onChange={(e) => setForm({ ...form, price: e.target.value })}
-                placeholder="29.99"
-                className="w-full border border-black/10 rounded-2xl px-5 py-3 text-sm focus:outline-none focus:border-black/30"
-              />
+              <input type="text" value={String(form.price || '')} onChange={(e) => setForm({ ...form, price: e.target.value })} placeholder="29.99" className="w-full border border-black/10 rounded-2xl px-5 py-3 text-sm" />
             </div>
             <div>
               <label className="block text-sm font-bold mb-2">SKU</label>
-              <input
-                type="text"
-                value={form.sku || ''}
-                onChange={(e) => setForm({ ...form, sku: e.target.value })}
-                placeholder="SKU-001"
-                className="w-full border border-black/10 rounded-2xl px-5 py-3 text-sm focus:outline-none focus:border-black/30"
-              />
+              <input type="text" value={form.sku || ''} onChange={(e) => setForm({ ...form, sku: e.target.value })} className="w-full border border-black/10 rounded-2xl px-5 py-3 text-sm" />
             </div>
           </div>
 
-          {/* Category & Stock */}
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-bold mb-2">Category</label>
-              <select
-                value={form.category}
-                onChange={(e) => setForm({ ...form, category: e.target.value })}
-                className="w-full border border-black/10 rounded-2xl px-5 py-3 text-sm focus:outline-none focus:border-black/30 bg-white"
-              >
-                {CATEGORIES.map(cat => (
-                  <option key={cat} value={cat}>{cat}</option>
+              <select value={form.category || 'Other'} onChange={(e) => setForm({ ...form, category: e.target.value })} className="w-full border border-black/10 rounded-2xl px-5 py-3 text-sm bg-white">
+                {CATEGORIES.map((category) => (
+                  <option key={category} value={category}>{category}</option>
                 ))}
               </select>
             </div>
             <div>
-              <label className="block text-sm font-bold mb-2">Stock (optional)</label>
-              <input
-                type="number"
-                value={form.stock ?? ''}
-                onChange={(e) => setForm({ ...form, stock: e.target.value ? parseInt(e.target.value) : null })}
-                placeholder="100"
-                className="w-full border border-black/10 rounded-2xl px-5 py-3 text-sm focus:outline-none focus:border-black/30"
-              />
+              <label className="block text-sm font-bold mb-2">Stock</label>
+              <input type="number" value={form.stock ?? ''} onChange={(e) => setForm({ ...form, stock: e.target.value ? Number(e.target.value) : null })} className="w-full border border-black/10 rounded-2xl px-5 py-3 text-sm" />
             </div>
           </div>
 
-          {/* Description */}
           <div>
             <label className="block text-sm font-bold mb-2">Description</label>
-            <textarea
-              value={form.description}
-              onChange={(e) => setForm({ ...form, description: e.target.value })}
-              placeholder="Describe your product..."
-              rows={3}
-              className="w-full border border-black/10 rounded-2xl px-5 py-3 text-sm focus:outline-none focus:border-black/30 resize-none"
-            />
+            <textarea value={form.description || ''} onChange={(e) => setForm({ ...form, description: e.target.value })} rows={3} className="w-full border border-black/10 rounded-2xl px-5 py-3 text-sm resize-none" />
           </div>
 
-          {/* Variants */}
           <div>
-            <label className="block text-sm font-bold mb-2">Variants (Size, Color, etc.)</label>
+            <label className="block text-sm font-bold mb-2">Variants</label>
             <div className="flex gap-2 mb-3">
-              <input
-                type="text"
-                value={variantName}
-                onChange={(e) => setVariantName(e.target.value)}
-                placeholder="Size"
-                className="flex-1 border border-black/10 rounded-xl px-4 py-2 text-sm"
-              />
-              <input
-                type="text"
-                value={variantValue}
-                onChange={(e) => setVariantValue(e.target.value)}
-                placeholder="Large"
-                className="flex-1 border border-black/10 rounded-xl px-4 py-2 text-sm"
-              />
-              <button
-                onClick={handleAddVariant}
-                className="px-4 py-2 bg-[#F9F8F6] rounded-xl text-sm font-bold hover:bg-[#F0F0F0]"
-              >
-                + Add
-              </button>
+              <input type="text" value={variantName} onChange={(e) => setVariantName(e.target.value)} placeholder="Size" className="flex-1 border border-black/10 rounded-xl px-4 py-2 text-sm" />
+              <input type="text" value={variantValue} onChange={(e) => setVariantValue(e.target.value)} placeholder="Large" className="flex-1 border border-black/10 rounded-xl px-4 py-2 text-sm" />
+              <button onClick={handleAddVariant} className="px-4 py-2 bg-[#F9F8F6] rounded-xl text-sm font-bold">+ Add</button>
             </div>
             {(form.variants || []).length > 0 && (
               <div className="space-y-2">
-                {form.variants!.map((v, idx) => (
-                  <div key={idx} className="flex items-center justify-between bg-[#F9F8F6] px-4 py-2 rounded-xl">
-                    <span className="text-sm"><strong>{v.name}:</strong> {v.value}</span>
-                    <button onClick={() => handleRemoveVariant(idx)} className="text-red-500 text-sm">
-                      Remove
-                    </button>
+                {form.variants!.map((variant, index) => (
+                  <div key={`${variant.name}-${variant.value}-${index}`} className="flex items-center justify-between bg-[#F9F8F6] px-4 py-2 rounded-xl">
+                    <span className="text-sm"><strong>{variant.name}:</strong> {variant.value}</span>
+                    <button onClick={() => setForm({ ...form, variants: (form.variants || []).filter((_, idx) => idx !== index) })} className="text-red-500 text-sm">Remove</button>
                   </div>
                 ))}
               </div>
             )}
           </div>
 
-          {/* Image Upload */}
           <div>
-            <label className="block text-sm font-bold mb-2">Product Image</label>
-            {form.image_url && (
-              <div className="mb-3 relative">
-                <img src={form.image_url} alt={form.name} className="w-full h-48 object-cover rounded-xl" />
-                <button
-                  type="button"
-                  onClick={(e) => { e.stopPropagation(); setForm({ ...form, image_url: '' }); }}
-                  className="absolute top-2 right-2 bg-red-500 text-white w-6 h-6 rounded-full text-xs hover:bg-red-600"
-                >
-                  ×
-                </button>
-              </div>
-            )}
+            <label className="block text-sm font-bold mb-2">Product image</label>
+            {form.image_url && <img src={form.image_url} alt={form.name} className="w-full h-48 object-cover rounded-xl mb-3" />}
             <input
               type="file"
               accept="image/*"
@@ -533,80 +774,59 @@ function InventoryModal({
                 const formData = new FormData();
                 formData.append('file', file);
                 formData.append('siteId', siteId);
-                try {
-                  const res = await fetch(`/api/upload`, { method: 'POST', body: formData });
-                  if (!res.ok) throw new Error('Upload failed');
-                  const { url } = await res.json();
-                  setForm({ ...form, image_url: url });
-                } catch (err) {
-                  alert('Image upload failed. Try URL instead.');
-                }
+                const res = await fetch('/api/upload', { method: 'POST', body: formData });
+                if (!res.ok) return;
+                const data = await res.json();
+                setForm({ ...form, image_url: data.url });
               }}
-              className="w-full border border-black/10 rounded-2xl px-5 py-3 text-sm file:mr-4 file:py-1 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-medium file:bg-[#F9F8F6] hover:file:bg-[#F0F0F0]"
+              className="w-full border border-black/10 rounded-2xl px-5 py-3 text-sm file:mr-4 file:py-1 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-medium file:bg-[#F9F8F6]"
             />
-            <p className="text-xs text-black/40 mt-1">Or enter URL below</p>
-            <input
-              type="text"
-              value={form.image_url || ''}
-              onChange={(e) => setForm({ ...form, image_url: e.target.value })}
-              placeholder="https://..."
-              className="mt-2 w-full border border-black/10 rounded-2xl px-5 py-3 text-sm focus:outline-none focus:border-black/30"
-            />
+            <input type="text" value={form.image_url || ''} onChange={(e) => setForm({ ...form, image_url: e.target.value })} placeholder="https://..." className="mt-2 w-full border border-black/10 rounded-2xl px-5 py-3 text-sm" />
           </div>
 
-          {/* Shipping & Tax */}
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-bold mb-2">Shipping Class</label>
-              <select
-                value={form.shipping_class || 'standard'}
-                onChange={(e) => setForm({ ...form, shipping_class: e.target.value })}
-                className="w-full border border-black/10 rounded-2xl px-5 py-3 text-sm focus:outline-none focus:border-black/30 bg-white"
-              >
-                {SHIPPING_CLASSES.map(sc => (
-                  <option key={sc} value={sc}>{sc}</option>
+              <label className="block text-sm font-bold mb-2">Shipping class</label>
+              <select value={form.shipping_class || 'standard'} onChange={(e) => setForm({ ...form, shipping_class: e.target.value })} className="w-full border border-black/10 rounded-2xl px-5 py-3 text-sm bg-white">
+                {SHIPPING_CLASSES.map((shippingClass) => (
+                  <option key={shippingClass} value={shippingClass}>{shippingClass}</option>
                 ))}
               </select>
             </div>
             <div>
-              <label className="block text-sm font-bold mb-2">Tax Rate (%)</label>
-              <input
-                type="number"
-                value={form.tax_rate ?? ''}
-                onChange={(e) => setForm({ ...form, tax_rate: e.target.value ? parseFloat(e.target.value) : null })}
-                placeholder="8.25"
-                className="w-full border border-black/10 rounded-2xl px-5 py-3 text-sm focus:outline-none focus:border-black/30"
-              />
+              <label className="block text-sm font-bold mb-2">Tax rate (%)</label>
+              <input type="number" value={form.tax_rate ?? ''} onChange={(e) => setForm({ ...form, tax_rate: e.target.value ? Number(e.target.value) : null })} className="w-full border border-black/10 rounded-2xl px-5 py-3 text-sm" />
             </div>
           </div>
 
-          {/* Enabled Toggle */}
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-bold mb-2">Pricing mode</label>
+              <select value={form.pricing_mode || 'manual'} onChange={(e) => setForm({ ...form, pricing_mode: e.target.value as any })} className="w-full border border-black/10 rounded-2xl px-5 py-3 text-sm bg-white">
+                <option value="manual">Manual</option>
+                <option value="stripe">Stripe-linked</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-bold mb-2">Fulfillment</label>
+              <select value={form.fulfillment_mode || 'manual'} onChange={(e) => setForm({ ...form, fulfillment_mode: e.target.value as any })} className="w-full border border-black/10 rounded-2xl px-5 py-3 text-sm bg-white">
+                <option value="manual">Manual</option>
+                <option value="printify">Printify</option>
+              </select>
+            </div>
+          </div>
+
           <div className="flex items-center gap-3">
-            <input
-              type="checkbox"
-              checked={form.enabled}
-              onChange={(e) => setForm({ ...form, enabled: e.target.checked })}
-              id="enabled"
-            />
+            <input type="checkbox" checked={form.enabled !== false} onChange={(e) => setForm({ ...form, enabled: e.target.checked })} id="enabled" />
             <label htmlFor="enabled" className="text-sm font-medium">Product is active and visible</label>
           </div>
         </div>
 
-        {/* Actions */}
         <div className="flex gap-3 mt-8">
-          <button
-            onClick={() => onSave(form)}
-            disabled={saving || !form.name || !form.price}
-            className="flex-1 bg-[#2D2D2D] text-white py-3 rounded-full font-bold text-sm disabled:opacity-40 hover:scale-[1.02] transition-transform"
-          >
-            {saving ? 'Saving...' : 'Save Product'}
+          <button onClick={() => onSave(form)} disabled={saving || !form.name || !form.price} className="flex-1 bg-[#2D2D2D] text-white py-3 rounded-full font-bold text-sm disabled:opacity-40">
+            {saving ? 'Saving...' : 'Save product'}
           </button>
-          <button
-            onClick={onClose}
-            className="px-6 py-3 border border-black/10 rounded-full text-sm font-medium hover:border-black/30 transition-colors"
-          >
-            Cancel
-          </button>
+          <button onClick={onClose} className="px-6 py-3 border border-black/10 rounded-full text-sm font-medium">Cancel</button>
         </div>
       </div>
     </div>

@@ -27,6 +27,14 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'siteId and items array required' }, { status: 400 });
     }
 
+    const requestedItemIds = items
+      .map((item: any) => item?.id)
+      .filter((value: unknown): value is string => typeof value === 'string' && value.length > 0)
+
+    if (requestedItemIds.length !== items.length) {
+      return NextResponse.json({ error: 'Each cart item must include a valid id' }, { status: 400 });
+    }
+
     // Get the site — use * to fetch all known columns, then cast to any
     const result = await supabaseAdmin
       .from('sites')
@@ -44,24 +52,50 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Site not found' }, { status: 404 });
     }
 
-    // Build line items with basic validation
+    const { data: inventoryRows, error: inventoryError } = await supabaseAdmin
+      .from('inventory_items')
+      .select('id,name,description,price,stock,enabled,site_id')
+      .eq('site_id', siteId)
+      .in('id', requestedItemIds)
+
+    if (inventoryError) {
+      console.error('Checkout inventory query error:', inventoryError.message)
+      return NextResponse.json({ error: 'Inventory lookup failed' }, { status: 500 })
+    }
+
+    const inventoryById = new Map((inventoryRows || []).map((row: any) => [row.id, row]))
+
+    // Build line items with canonical server-side pricing and stock validation
     const lineItems = items.map((item: any) => {
-      const rawPrice = String(item.price).replace(/[^0-9.]/g, '');
-      const unitAmount = Math.round(parseFloat(rawPrice) * 100);
+      const inventoryItem = inventoryById.get(item.id)
+      if (!inventoryItem) {
+        throw new Error(`Item not found: ${item.id}`)
+      }
+      if (inventoryItem.enabled === false) {
+        throw new Error(`Item is not available: ${inventoryItem.name}`)
+      }
+
+      const quantity = Math.max(1, Number(item.quantity || 1))
+      if (inventoryItem.stock != null && quantity > inventoryItem.stock) {
+        throw new Error(`Only ${inventoryItem.stock} available for ${inventoryItem.name}`)
+      }
+
+      const rawPrice = String(inventoryItem.price).replace(/[^0-9.]/g, '')
+      const unitAmount = Math.round(parseFloat(rawPrice) * 100)
       if (!unitAmount || unitAmount <= 0) {
-        throw new Error(`Invalid price for item "${item.name}": ${item.price}`);
+        throw new Error(`Invalid price for item "${inventoryItem.name}": ${inventoryItem.price}`)
       }
       return {
         price_data: {
           currency: 'usd',
           product_data: {
-            name: item.name,
-            description: item.description || undefined,
+            name: inventoryItem.name,
+            description: inventoryItem.description || undefined,
           },
           unit_amount: unitAmount,
         },
-        quantity: item.quantity || 1,
-      };
+        quantity,
+      }
     });
 
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';

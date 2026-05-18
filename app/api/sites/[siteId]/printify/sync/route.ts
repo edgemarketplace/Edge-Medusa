@@ -1,7 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
 import { requireSiteAdmin } from '@/lib/auth-server'
-import { getPrintifyProducts, mapPrintifyToInventory } from '@/lib/printify'
+import { getPrintifyProducts } from '@/lib/printify'
+import { upsertInventoryCatalog } from '@/lib/inventory/catalog'
+import { mapPrintifyProductToCatalog } from '@/lib/inventory/source-mappers'
+import { reconcileMedusaInventorySync, syncInventoryToMedusa } from '@/lib/medusa/client'
 
 export async function POST(
   request: NextRequest,
@@ -32,48 +35,24 @@ export async function POST(
     // 2. Fetch products from Printify
     const printifyProducts = await getPrintifyProducts(apiKey, shopId)
 
-    // 3. Map to inventory format
-    const newItems = printifyProducts.map(mapPrintifyToInventory)
-
-    // 4. Update inventory in DB
-    // First, get current inventory
-    const { data: currentInventory, error: invError } = await supabaseAdmin
-      .from('inventory')
-      .select('*')
-      .eq('site_id', siteId)
-
-    if (invError) throw invError
-
-    // We'll append new items that don't exist by Printify ID,
-    // but for simplicity in this MVP, we'll just clear and re-sync
-    // OR we can just return the new list and let the client save it.
-    // Let's actually save it here to make it a true "Sync".
-
-    // Option: Upsert by Printify ID
-    const existingByPrintify = new Map(
-      (currentInventory || []).filter((i: any) => i.printify_id).map((i: any) => [i.printify_id, i])
+    // 3. Normalize into the master catalog and upsert into inventory_items
+    const catalogDrafts = printifyProducts.map((product) =>
+      mapPrintifyProductToCatalog(product, shopId),
     )
 
-    const upserts = newItems.map((item: any) => {
-      const existing = existingByPrintify.get(item.printify_id)
-      if (existing) {
-        return { ...existing, ...item, id: existing.id, site_id: siteId }
-      }
-      return { ...item, site_id: siteId }
-    })
+    const rows = await upsertInventoryCatalog(siteId, catalogDrafts)
 
-    if (upserts.length > 0) {
-      const { error: upsertError } = await supabaseAdmin
-        .from('inventory')
-        .upsert(upserts)
-
-      if (upsertError) throw upsertError
+    try {
+      const medusaResult = await syncInventoryToMedusa(siteId, rows)
+      await reconcileMedusaInventorySync(siteId, rows, medusaResult)
+    } catch (error: any) {
+      console.error('Medusa inventory sync failed after Printify import:', error?.message || error)
     }
 
     return NextResponse.json({
       success: true,
-      synced: upserts.length,
-      products: newItems,
+      synced: rows.length,
+      products: rows,
     })
   } catch (error: any) {
     if (error.status) {

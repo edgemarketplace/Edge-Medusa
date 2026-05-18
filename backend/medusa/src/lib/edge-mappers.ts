@@ -3,11 +3,14 @@ export type EdgeInventoryItem = {
   name: string
   description?: string
   price?: string | number
-  image_url?: string
-  sku?: string
+  image_url?: string | null
+  sku?: string | null
   stock?: number | null
   enabled?: boolean
   variants?: Array<{ name?: string; value?: string }> | null
+  metadata?: Record<string, any> | null
+  source_refs?: Record<string, any> | null
+  sync_hash?: string
 }
 
 export function parseMoneyToCents(value: string | number | undefined): number {
@@ -38,7 +41,10 @@ export function toMedusaProductInput(siteId: string, item: EdgeInventoryItem) {
     metadata: {
       edge_site_id: siteId,
       edge_inventory_id: item.id || sku,
+      edge_sync_hash: item.sync_hash || null,
+      edge_source_refs: item.source_refs || null,
       source: 'edge-marketplace-hub',
+      ...(item.metadata || {}),
     },
     options: [{ title: 'Default', values: ['Default'] }],
     variants: [
@@ -55,5 +61,12 @@ export function toMedusaProductInput(siteId: string, item: EdgeInventoryItem) {
         },
       },
     ],
+  }
+}
+
+export function toMedusaProductUpdate(siteId: string, medusaProductId: string, item: EdgeInventoryItem) {
+  return {
+    id: medusaProductId,
+    ...toMedusaProductInput(siteId, item),
   }
 }

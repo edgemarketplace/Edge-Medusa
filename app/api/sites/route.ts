@@ -28,7 +28,7 @@ async function createBuilderSession(email: string) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { business_name, business_type, offerings, contact_email, tagline, style_preset, theme_id } = body
+    const { business_name, business_type, offerings, contact_email, tagline, style_preset, theme_id, onboarding_profile } = body
 
     if (!business_name || !business_type || !contact_email) {
       return NextResponse.json(
@@ -56,6 +56,8 @@ export async function POST(request: NextRequest) {
       status: 'draft',
       template_data: {
         sections: [],
+        style_preset,
+        onboarding_profile: onboarding_profile || null,
         ...style,
       },
     }

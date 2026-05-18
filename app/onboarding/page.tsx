@@ -7,6 +7,15 @@ import type { TemplateFamily } from '@/lib/types';
 
 const templateEntries = Object.values(TEMPLATES);
 
+const PRIMARY_GOALS = [
+  { id: 'sell-products', label: 'Sell products', desc: 'Best for catalogs, drops, and physical goods.' },
+  { id: 'book-service', label: 'Book appointments', desc: 'Best for local services and appointment-led businesses.' },
+  { id: 'get-quotes', label: 'Get quote requests', desc: 'Best for considered purchases and custom projects.' },
+  { id: 'take-orders', label: 'Take food orders', desc: 'Best for restaurants, catering, and food trucks.' },
+  { id: 'check-availability', label: 'Check availability', desc: 'Best for floral, events, and date-based inquiries.' },
+  { id: 'enroll-clients', label: 'Enroll students / clients', desc: 'Best for coaching, courses, and authority funnels.' },
+];
+
 const STYLE_PRESETS = [
   {
     id: 'milano',
@@ -52,6 +61,7 @@ export default function OnboardingPage() {
   const [tagline, setTagline] = useState('');
   const [email, setEmail] = useState('');
   const [selectedType, setSelectedType] = useState<TemplateFamily | null>(null);
+  const [primaryGoal, setPrimaryGoal] = useState('');
   const [selectedStyle, setSelectedStyle] = useState<string>('milano');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -68,8 +78,8 @@ export default function OnboardingPage() {
 
   // Ensure step1Valid always reflects current state
   const step1Valid = useMemo(
-    () => !!(businessName.trim() && offerings.trim() && email.trim() && selectedType),
-    [businessName, offerings, email, selectedType]
+    () => !!(businessName.trim() && offerings.trim() && email.trim() && selectedType && primaryGoal),
+    [businessName, offerings, email, selectedType, primaryGoal]
   );
 
   // Explicit selection handler with defensive fallback
@@ -92,6 +102,10 @@ export default function OnboardingPage() {
           tagline: tagline.trim(),
           contact_email: email.trim(),
           style_preset: selectedStyle,
+          onboarding_profile: {
+            primary_goal: primaryGoal,
+            primary_goal_label: PRIMARY_GOALS.find((goal) => goal.id === primaryGoal)?.label || primaryGoal,
+          },
         }),
       });
       if (!res.ok) {
@@ -171,11 +185,11 @@ export default function OnboardingPage() {
                         type="button"
                         onClick={() => {
                           const samples = [
-                            { name: "Urban Grind Coffee", type: "retail-core", desc: "Small-batch roasted coffee beans, brewing equipment, and artisanal syrups for home baristas.", tagline: "Fuel your daily ritual", email: "hello@urbangrind.com" },
-                            { name: "Zenith Marketing", type: "service-pro", desc: "Full-service digital marketing agency specializing in SEO, PPC, and content strategy for B2B SaaS companies.", tagline: "Scale your growth with precision", email: "growth@zenith.com" },
-                            { name: "The Pastry Box", type: "food-catering", desc: "Custom cakes, cupcakes, and dessert tables for weddings, birthdays, and corporate events.", tagline: "Baking memories, one bite at a time", email: "orders@thepastrybox.com" },
-                            { name: "Iron & Oak Furniture", type: "artisan-market", desc: "Hand-crafted industrial furniture made from reclaimed wood and steel for modern homes.", tagline: "Timeless craftsmanship for modern living", email: "custom@ironandoak.com" },
-                            { name: "Velvet Petals", type: "event-floral", desc: "Luxury floral design for weddings, galas, and upscale events. Specialized in rare blooms.", tagline: "Floral artistry for unforgettable moments", email: "studio@velvetpetals.com" }
+                            { name: "Urban Grind Coffee", type: "retail-core", goal: 'sell-products', desc: "Small-batch roasted coffee beans, brewing equipment, and artisanal syrups for home baristas.", tagline: "Fuel your daily ritual", email: "hello@urbangrind.com" },
+                            { name: "Zenith Marketing", type: "service-pro", goal: 'get-quotes', desc: "Full-service digital marketing agency specializing in SEO, PPC, and content strategy for B2B SaaS companies.", tagline: "Scale your growth with precision", email: "growth@zenith.com" },
+                            { name: "The Pastry Box", type: "food-catering", goal: 'take-orders', desc: "Custom cakes, cupcakes, and dessert tables for weddings, birthdays, and corporate events.", tagline: "Baking memories, one bite at a time", email: "orders@thepastrybox.com" },
+                            { name: "Iron & Oak Furniture", type: "artisan-market", goal: 'sell-products', desc: "Hand-crafted industrial furniture made from reclaimed wood and steel for modern homes.", tagline: "Timeless craftsmanship for modern living", email: "custom@ironandoak.com" },
+                            { name: "Velvet Petals", type: "event-floral", goal: 'check-availability', desc: "Luxury floral design for weddings, galas, and upscale events. Specialized in rare blooms.", tagline: "Floral artistry for unforgettable moments", email: "studio@velvetpetals.com" }
                           ];
                           const random = samples[Math.floor(Math.random() * samples.length)];
                           setBusinessName(random.name);
@@ -183,6 +197,7 @@ export default function OnboardingPage() {
                           setTagline(random.tagline);
                           setEmail(random.email);
                           setSelectedType(random.type as TemplateFamily);
+                          setPrimaryGoal(random.goal);
                         }}
                         className="text-[10px] font-bold uppercase tracking-widest text-black/40 hover:text-black transition-colors"
                       >
@@ -266,6 +281,27 @@ export default function OnboardingPage() {
                         <p className="text-[10px] uppercase tracking-[0.2em] font-bold text-black/35 mb-1">{t.kicker}</p>
                         <h3 className="font-bold mb-1">{t.label}</h3>
                         <p className="text-sm text-black/50 leading-relaxed">{t.summary}</p>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-bold mb-4">What is your primary goal? *</label>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {PRIMARY_GOALS.map(goal => (
+                      <button
+                        key={goal.id}
+                        type="button"
+                        onClick={() => setPrimaryGoal(goal.id)}
+                        className={`text-left rounded-2xl border p-5 transition-all ${
+                          primaryGoal === goal.id
+                            ? 'border-black bg-white shadow-md ring-2 ring-black'
+                            : 'border-black/10 bg-white hover:border-black/20'
+                        }`}
+                      >
+                        <h3 className="font-bold mb-1">{goal.label}</h3>
+                        <p className="text-sm text-black/50 leading-relaxed">{goal.desc}</p>
                       </button>
                     ))}
                   </div>
@@ -356,6 +392,7 @@ export default function OnboardingPage() {
               businessName={businessName}
               vertical={templateEntries.find(t => t.family === selectedType)?.label || ''}
               style={STYLE_PRESETS.find(p => p.id === selectedStyle)?.name || 'Milano'}
+              goal={PRIMARY_GOALS.find(goal => goal.id === primaryGoal)?.label || 'Launching your storefront'}
               onReady={handleSubmit}
             />
           )}
@@ -371,13 +408,14 @@ export default function OnboardingPage() {
   );
 }
 
-function GeneratingScreen({ businessName, vertical, style, onReady }: {
-  businessName: string; vertical: string; style: string; onReady: () => void;
+function GeneratingScreen({ businessName, vertical, style, goal, onReady }: {
+  businessName: string; vertical: string; style: string; goal: string; onReady: () => void;
 }) {
   const [currentStep, setCurrentStep] = useState(0);
 
   const steps = [
     { label: 'Analyzing your business', duration: 1200 },
+    { label: `Routing for ${goal.toLowerCase()}`, duration: 1200 },
     { label: `Mapping your ${vertical.toLowerCase()} funnel`, duration: 1400 },
     { label: `Applying ${style} design tokens`, duration: 1000 },
     { label: 'Writing your headlines & copy', duration: 1600 },
