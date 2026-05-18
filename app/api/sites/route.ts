@@ -39,6 +39,7 @@ export async function POST(request: NextRequest) {
 
     const STYLE_MAP: Record<string, any> = {
       milano: { primaryColor: '#1A1A1A', fontFamily: 'Georgia, "Times New Roman", Times, serif', backgroundColor: '#F9F8F6', accentColor: '#1A1A1A', borderRadius: '0px' },
+      ocean: { primaryColor: '#0891B2', fontFamily: 'Inter, system-ui, -apple-system, sans-serif', backgroundColor: '#F0F9FF', accentColor: '#0891B2', borderRadius: '10px' },
       midnight: { primaryColor: '#6366F1', fontFamily: 'Inter, system-ui, -apple-system, sans-serif', backgroundColor: '#0F0F14', accentColor: '#6366F1', borderRadius: '8px' },
       sunlit: { primaryColor: '#F59E0B', fontFamily: 'Georgia, "Times New Roman", Times, serif', backgroundColor: '#FFFBF0', accentColor: '#F59E0B', borderRadius: '12px' },
       sage: { primaryColor: '#6B7C6A', fontFamily: 'Inter, system-ui, -apple-system, sans-serif', backgroundColor: '#F4F7F4', accentColor: '#6B7C6A', borderRadius: '24px' },

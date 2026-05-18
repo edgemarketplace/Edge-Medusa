@@ -8,48 +8,74 @@ import type { TemplateFamily } from '@/lib/types';
 const templateEntries = Object.values(TEMPLATES);
 
 const PRIMARY_GOALS = [
-  { id: 'sell-products', label: 'Sell products', desc: 'Best for catalogs, drops, and physical goods.' },
-  { id: 'book-service', label: 'Book appointments', desc: 'Best for local services and appointment-led businesses.' },
-  { id: 'get-quotes', label: 'Get quote requests', desc: 'Best for considered purchases and custom projects.' },
-  { id: 'take-orders', label: 'Take food orders', desc: 'Best for restaurants, catering, and food trucks.' },
-  { id: 'check-availability', label: 'Check availability', desc: 'Best for floral, events, and date-based inquiries.' },
-  { id: 'enroll-clients', label: 'Enroll students / clients', desc: 'Best for coaching, courses, and authority funnels.' },
+  { id: 'sell-products', label: 'Sell products', desc: 'Optimized for catalogs, merchandising, and fast mobile checkout.' },
+  { id: 'book-service', label: 'Book appointments', desc: 'Built for service businesses that need clear booking flows and trust signals.' },
+  { id: 'get-quotes', label: 'Get quote requests', desc: 'Best for custom work, considered purchases, and higher-friction decisions.' },
+  { id: 'take-orders', label: 'Take food orders', desc: 'Designed for restaurants, catering, and local ordering speed.' },
+  { id: 'check-availability', label: 'Check availability', desc: 'Great for event-led and date-based inquiries where timing matters.' },
+  { id: 'enroll-clients', label: 'Enroll students / clients', desc: 'Strong for coaching, courses, and authority-led offers.' },
+];
+
+const BUYING_BEHAVIORS = [
+  { id: 'buy-now', label: 'Buy immediately online', desc: 'Push stronger product discovery, faster checkout, and higher CTA frequency.' },
+  { id: 'compare-first', label: 'Compare options before purchasing', desc: 'Show more proof, explanation, and side-by-side offer structure.' },
+  { id: 'custom-pricing', label: 'Request custom pricing', desc: 'Lean into quote forms, proof, and trust before price commitment.' },
+  { id: 'consult-first', label: 'Book a consultation first', desc: 'Route visitors into authority, qualification, and booking conversion.' },
+  { id: 'reserve-time', label: 'Reserve a date / time', desc: 'Prioritize date availability, urgency, and low-friction inquiry paths.' },
+  { id: 'contact-first', label: 'Contact before purchasing', desc: 'Use softer CTAs, stronger proof, and a guided decision flow.' },
 ];
 
 const STYLE_PRESETS = [
   {
     id: 'milano',
-    name: 'Milano',
-    desc: 'Luxury serif typography, airy white space, editorial feel',
+    name: 'Editorial Premium',
+    system: 'Milano',
+    desc: 'Luxury, story-driven, and high perceived value.',
+    detail: 'Controls typography, whitespace, and image-led merchandising for premium brands.',
     accent: '#1A1A1A',
     bg: '#F9F8F6',
     preview: ['font-serif italic', 'font-serif italic'],
   },
   {
     id: 'ocean',
-    name: 'Ocean',
-    desc: 'Calm, deep blues and soft teals — professional and soothing',
+    name: 'Professional Authority',
+    system: 'Ocean',
+    desc: 'Trusted expert energy with clean hierarchy and calm precision.',
+    detail: 'Balances clarity, proof, and confident conversion structure for service-led businesses.',
     accent: '#0891B2',
     bg: '#F0F9FF',
     preview: ['text-sky-900', 'text-cyan-600'],
   },
   {
     id: 'sunlit',
-    name: 'Sunlit',
-    desc: 'Warm, inviting, California-casual with bright warmth',
+    name: 'Bold High Energy',
+    system: 'Sunlit',
+    desc: 'Fast-moving, promotional, and conversion-forward.',
+    detail: 'Adds stronger CTA contrast, tighter spacing, and faster merchandising behavior.',
     accent: '#F59E0B',
     bg: '#FFFBF0',
     preview: ['text-amber-800', 'text-amber-600'],
   },
   {
     id: 'sage',
-    name: 'Sage',
-    desc: 'Earthy, organic, wellness-forward with natural tones',
+    name: 'Warm Artisan',
+    system: 'Sage',
+    desc: 'Handmade, approachable, and naturally premium.',
+    detail: 'Softens the storefront with warmer color rhythm and craft-forward presentation.',
     accent: '#6B7C6A',
     bg: '#F4F7F4',
     preview: ['text-green-900', 'text-green-700'],
   },
 ];
+
+const BUSINESS_TYPE_COPY: Record<TemplateFamily, { customerLabel: string; engineLabel: string }> = {
+  'retail-core': { customerLabel: 'Retail & Product Store', engineLabel: 'Editorial Commerce Engine' },
+  'service-pro': { customerLabel: 'Service Business', engineLabel: 'Trust-First Services Engine' },
+  'food-catering': { customerLabel: 'Restaurant & Catering', engineLabel: 'Menus + Booking Engine' },
+  'artisan-market': { customerLabel: 'Handmade & Artisan', engineLabel: 'Maker Storytelling Engine' },
+  'event-floral': { customerLabel: 'Event & Floral', engineLabel: 'Gallery-Led Luxury Engine' },
+  'coach-educator': { customerLabel: 'Coach & Educator', engineLabel: 'Authority Funnel Engine' },
+};
 
 type Step = 1 | 2 | 3;
 
@@ -62,6 +88,7 @@ export default function OnboardingPage() {
   const [email, setEmail] = useState('');
   const [selectedType, setSelectedType] = useState<TemplateFamily | null>(null);
   const [primaryGoal, setPrimaryGoal] = useState('');
+  const [buyingBehavior, setBuyingBehavior] = useState('');
   const [selectedStyle, setSelectedStyle] = useState<string>('milano');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -78,8 +105,8 @@ export default function OnboardingPage() {
 
   // Ensure step1Valid always reflects current state
   const step1Valid = useMemo(
-    () => !!(businessName.trim() && offerings.trim() && email.trim() && selectedType && primaryGoal),
-    [businessName, offerings, email, selectedType, primaryGoal]
+    () => !!(businessName.trim() && offerings.trim() && email.trim() && selectedType && primaryGoal && buyingBehavior),
+    [businessName, offerings, email, selectedType, primaryGoal, buyingBehavior]
   );
 
   // Explicit selection handler with defensive fallback
@@ -105,6 +132,10 @@ export default function OnboardingPage() {
           onboarding_profile: {
             primary_goal: primaryGoal,
             primary_goal_label: PRIMARY_GOALS.find((goal) => goal.id === primaryGoal)?.label || primaryGoal,
+            buying_behavior: buyingBehavior,
+            buying_behavior_label: BUYING_BEHAVIORS.find((item) => item.id === buyingBehavior)?.label || buyingBehavior,
+            recommended_engine: BUSINESS_TYPE_COPY[selectedType!].engineLabel,
+            recommended_style: STYLE_PRESETS.find((preset) => preset.id === selectedStyle)?.name || selectedStyle,
           },
         }),
       });
@@ -120,6 +151,27 @@ export default function OnboardingPage() {
       setStep(1);
     }
   }
+
+  const selectedGoalMeta = PRIMARY_GOALS.find((goal) => goal.id === primaryGoal) || null;
+  const selectedBehaviorMeta = BUYING_BEHAVIORS.find((item) => item.id === buyingBehavior) || null;
+  const selectedTemplateMeta = selectedType ? BUSINESS_TYPE_COPY[selectedType] : null;
+  const selectedStyleMeta = STYLE_PRESETS.find((preset) => preset.id === selectedStyle) || STYLE_PRESETS[0];
+
+  const recommendedSetup = useMemo(() => {
+    if (!selectedType || !primaryGoal) return null;
+
+    const engine = BUSINESS_TYPE_COPY[selectedType].engineLabel;
+    const goalLabel = PRIMARY_GOALS.find((goal) => goal.id === primaryGoal)?.label || primaryGoal;
+    let note = 'Optimized around your business model and primary conversion path.';
+
+    if (primaryGoal === 'enroll-clients') note = 'Optimized for lead capture, authority, and consultation conversion.';
+    if (primaryGoal === 'check-availability') note = 'Designed for premium visual inquiry businesses and date-based conversion.';
+    if (primaryGoal === 'sell-products') note = 'Built for fast product discovery, stronger merchandising, and mobile conversion.';
+    if (primaryGoal === 'take-orders') note = 'Designed for fast local ordering, menu clarity, and checkout speed.';
+    if (primaryGoal === 'get-quotes') note = 'Structured for considered purchases, trust, and low-friction quote requests.';
+
+    return { engine, goalLabel, note };
+  }, [primaryGoal, selectedType]);
 
   return (
     <div className="min-h-screen bg-[#F9F8F6] text-[#1A1A1A] font-sans flex flex-col">
@@ -158,11 +210,11 @@ export default function OnboardingPage() {
           {step === 1 && (
             <div className="space-y-8">
               <div>
-                <p className="text-xs uppercase tracking-[0.2em] font-bold text-black/35 mb-2">Step 1 of 3</p>
+                <p className="text-xs uppercase tracking-[0.2em] font-bold text-black/35 mb-2">Step 1 of 3 • Business Profile</p>
                 <h1 className="text-4xl md:text-5xl font-serif italic tracking-tight mb-3">
-                  Tell us about your business
+                  Launch a storefront built for how your business actually sells
                 </h1>
-                <p className="text-black/55 text-lg">30 seconds. We handle the rest.</p>
+                <p className="text-black/55 text-lg">Edge analyzes your business model, conversion goals, and brand positioning to generate a high-converting storefront — optimized for products, bookings, inquiries, or local ordering.</p>
               </div>
 
               <div className="space-y-5">
@@ -185,11 +237,11 @@ export default function OnboardingPage() {
                         type="button"
                         onClick={() => {
                           const samples = [
-                            { name: "Urban Grind Coffee", type: "retail-core", goal: 'sell-products', desc: "Small-batch roasted coffee beans, brewing equipment, and artisanal syrups for home baristas.", tagline: "Fuel your daily ritual", email: "hello@urbangrind.com" },
-                            { name: "Zenith Marketing", type: "service-pro", goal: 'get-quotes', desc: "Full-service digital marketing agency specializing in SEO, PPC, and content strategy for B2B SaaS companies.", tagline: "Scale your growth with precision", email: "growth@zenith.com" },
-                            { name: "The Pastry Box", type: "food-catering", goal: 'take-orders', desc: "Custom cakes, cupcakes, and dessert tables for weddings, birthdays, and corporate events.", tagline: "Baking memories, one bite at a time", email: "orders@thepastrybox.com" },
-                            { name: "Iron & Oak Furniture", type: "artisan-market", goal: 'sell-products', desc: "Hand-crafted industrial furniture made from reclaimed wood and steel for modern homes.", tagline: "Timeless craftsmanship for modern living", email: "custom@ironandoak.com" },
-                            { name: "Velvet Petals", type: "event-floral", goal: 'check-availability', desc: "Luxury floral design for weddings, galas, and upscale events. Specialized in rare blooms.", tagline: "Floral artistry for unforgettable moments", email: "studio@velvetpetals.com" }
+                            { name: "Urban Grind Coffee", type: "retail-core", goal: 'sell-products', behavior: 'buy-now', desc: "Small-batch roasted coffee beans, brewing equipment, and artisanal syrups for home baristas.", tagline: "Fuel your daily ritual", email: "hello@urbangrind.com" },
+                            { name: "Zenith Marketing", type: "service-pro", goal: 'get-quotes', behavior: 'custom-pricing', desc: "Full-service digital marketing agency specializing in SEO, PPC, and content strategy for B2B SaaS companies.", tagline: "Scale your growth with precision", email: "growth@zenith.com" },
+                            { name: "The Pastry Box", type: "food-catering", goal: 'take-orders', behavior: 'buy-now', desc: "Custom cakes, cupcakes, and dessert tables for weddings, birthdays, and corporate events.", tagline: "Baking memories, one bite at a time", email: "orders@thepastrybox.com" },
+                            { name: "Iron & Oak Furniture", type: "artisan-market", goal: 'sell-products', behavior: 'compare-first', desc: "Hand-crafted industrial furniture made from reclaimed wood and steel for modern homes.", tagline: "Timeless craftsmanship for modern living", email: "custom@ironandoak.com" },
+                            { name: "Velvet Petals", type: "event-floral", goal: 'check-availability', behavior: 'reserve-time', desc: "Luxury floral design for weddings, galas, and upscale events. Specialized in rare blooms.", tagline: "Floral artistry for unforgettable moments", email: "studio@velvetpetals.com" }
                           ];
                           const random = samples[Math.floor(Math.random() * samples.length)];
                           setBusinessName(random.name);
@@ -198,6 +250,7 @@ export default function OnboardingPage() {
                           setEmail(random.email);
                           setSelectedType(random.type as TemplateFamily);
                           setPrimaryGoal(random.goal);
+                          setBuyingBehavior(random.behavior);
                         }}
                         className="text-[10px] font-bold uppercase tracking-widest text-black/40 hover:text-black transition-colors"
                       >
@@ -262,9 +315,11 @@ export default function OnboardingPage() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-bold mb-4">What type of business? *</label>
+                  <label className="block text-sm font-bold mb-4">What type of business are you launching? *</label>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    {templateEntries.map(t => (
+                    {templateEntries.map(t => {
+                      const copy = BUSINESS_TYPE_COPY[t.family];
+                      return (
                       <button
                         key={t.family}
                         type="button"
@@ -278,16 +333,17 @@ export default function OnboardingPage() {
                             : 'border-black/10 bg-white hover:border-black/20'
                         }`}
                       >
-                        <p className="text-[10px] uppercase tracking-[0.2em] font-bold text-black/35 mb-1">{t.kicker}</p>
-                        <h3 className="font-bold mb-1">{t.label}</h3>
+                        <p className="text-[10px] uppercase tracking-[0.2em] font-bold text-black/35 mb-1">{copy.engineLabel}</p>
+                        <h3 className="font-bold mb-1">{copy.customerLabel}</h3>
                         <p className="text-sm text-black/50 leading-relaxed">{t.summary}</p>
                       </button>
-                    ))}
+                      )})}
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-bold mb-4">What is your primary goal? *</label>
+                  <label className="block text-sm font-bold mb-1">What do you want this storefront to do? *</label>
+                  <p className="text-sm text-black/45 mb-4">This determines the conversion flow, layout structure, and checkout experience.</p>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     {PRIMARY_GOALS.map(goal => (
                       <button
@@ -306,6 +362,41 @@ export default function OnboardingPage() {
                     ))}
                   </div>
                 </div>
+
+                <div>
+                  <label className="block text-sm font-bold mb-1">How do customers usually buy from you? *</label>
+                  <p className="text-sm text-black/45 mb-4">This shapes CTA frequency, proof placement, and how aggressive the storefront should be.</p>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {BUYING_BEHAVIORS.map(item => (
+                      <button
+                        key={item.id}
+                        type="button"
+                        onClick={() => setBuyingBehavior(item.id)}
+                        className={`text-left rounded-2xl border p-5 transition-all ${
+                          buyingBehavior === item.id
+                            ? 'border-black bg-white shadow-md ring-2 ring-black'
+                            : 'border-black/10 bg-white hover:border-black/20'
+                        }`}
+                      >
+                        <h3 className="font-bold mb-1">{item.label}</h3>
+                        <p className="text-sm text-black/50 leading-relaxed">{item.desc}</p>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {recommendedSetup && selectedTemplateMeta && (
+                  <div className="rounded-3xl border border-black/10 bg-white p-6 space-y-3">
+                    <p className="text-xs uppercase tracking-[0.2em] font-bold text-emerald-700">Recommended setup</p>
+                    <div>
+                      <h3 className="text-2xl font-serif italic tracking-tight">{recommendedSetup.engine} + {recommendedSetup.goalLabel}</h3>
+                      <p className="text-black/55 mt-2">{recommendedSetup.note}</p>
+                    </div>
+                    {selectedBehaviorMeta && (
+                      <p className="text-sm text-black/45">Buying behavior detected: {selectedBehaviorMeta.label}.</p>
+                    )}
+                  </div>
+                )}
               </div>
 
               <button
@@ -313,8 +404,20 @@ export default function OnboardingPage() {
                 disabled={!step1Valid}
                 className="w-full bg-[#1A1A1A] text-white py-5 rounded-full text-lg font-bold disabled:opacity-40 disabled:cursor-not-allowed hover:scale-[1.02] transition-transform"
               >
-                Choose your style →
+                Next: Style + positioning →
               </button>
+
+              <div className="rounded-3xl border border-black/5 bg-white/70 px-5 py-4">
+                <p className="text-sm font-bold mb-2">Edge automatically generates:</p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm text-black/55">
+                  <p>• Layout structure</p>
+                  <p>• Product / service pages</p>
+                  <p>• Conversion-focused copy</p>
+                  <p>• Checkout & booking flows</p>
+                  <p>• Mobile optimization</p>
+                  <p>• Payment setup</p>
+                </div>
+              </div>
             </div>
           )}
 
@@ -322,12 +425,20 @@ export default function OnboardingPage() {
           {step === 2 && (
             <div className="space-y-8">
               <div>
-                <p className="text-xs uppercase tracking-[0.2em] font-bold text-black/35 mb-2">Step 2 of 3</p>
+                <p className="text-xs uppercase tracking-[0.2em] font-bold text-black/35 mb-2">Step 2 of 3 • Style + Positioning</p>
                 <h1 className="text-4xl md:text-5xl font-serif italic tracking-tight mb-3">
-                  Pick your visual style
+                  Choose your brand positioning
                 </h1>
-                <p className="text-black/55 text-lg">This shapes your entire storefront's look and feel.</p>
+                <p className="text-black/55 text-lg">Your style controls typography, spacing, image density, and merchandising behavior.</p>
               </div>
+
+              {recommendedSetup && (
+                <div className="rounded-3xl border border-black/10 bg-white p-6">
+                  <p className="text-xs uppercase tracking-[0.2em] font-bold text-emerald-700 mb-2">Best match</p>
+                  <h3 className="text-2xl font-serif italic tracking-tight">{recommendedSetup.engine} + {recommendedSetup.goalLabel}</h3>
+                  <p className="text-black/55 mt-2">{recommendedSetup.note}</p>
+                </div>
+              )}
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {STYLE_PRESETS.map(preset => (
@@ -346,24 +457,28 @@ export default function OnboardingPage() {
                       <div className={`text-lg font-serif italic ${preset.preview[0]}`} style={{ color: preset.accent }}>
                         {businessName || 'Your Business'}
                       </div>
-                      <div className="flex gap-2">
+                      <div className="flex gap-2 flex-wrap justify-center">
                         <div className="px-3 py-1 rounded-full text-xs font-bold" style={{ backgroundColor: preset.accent, color: preset.bg }}>
-                          Shop Now
+                          {selectedGoalMeta?.label || 'Shop now'}
                         </div>
                         <div className="px-3 py-1 rounded-full text-xs border" style={{ borderColor: preset.accent, color: preset.accent }}>
-                          Learn More
+                          {selectedBehaviorMeta?.label || 'Learn more'}
                         </div>
                       </div>
                     </div>
                     {/* Label */}
                     <div className="bg-white px-4 py-3 border-t border-black/5">
-                      <div className="flex items-center justify-between mb-0.5">
-                        <p className="font-bold">{preset.name}</p>
+                      <div className="flex items-center justify-between mb-0.5 gap-3">
+                        <div>
+                          <p className="font-bold">{preset.name}</p>
+                          <p className="text-[11px] uppercase tracking-[0.18em] text-black/35 mt-1">{preset.system}</p>
+                        </div>
                         {selectedStyle === preset.id && (
                           <span className="text-xs bg-black text-white px-2 py-0.5 rounded-full">Selected</span>
                         )}
                       </div>
                       <p className="text-xs text-black/50">{preset.desc}</p>
+                      <p className="text-xs text-black/35 mt-2">{preset.detail}</p>
                     </div>
                   </button>
                 ))}
@@ -380,7 +495,7 @@ export default function OnboardingPage() {
                   onClick={() => setStep(3)}
                   className="flex-1 bg-[#1A1A1A] text-white py-4 rounded-full text-lg font-bold hover:scale-[1.02] transition-transform"
                 >
-                  Build my store →
+                  Generate My Storefront →
                 </button>
               </div>
             </div>
@@ -390,8 +505,8 @@ export default function OnboardingPage() {
           {step === 3 && (
             <GeneratingScreen
               businessName={businessName}
-              vertical={templateEntries.find(t => t.family === selectedType)?.label || ''}
-              style={STYLE_PRESETS.find(p => p.id === selectedStyle)?.name || 'Milano'}
+              vertical={selectedTemplateMeta?.customerLabel || templateEntries.find(t => t.family === selectedType)?.label || ''}
+              style={selectedStyleMeta?.name || 'Editorial Premium'}
               goal={PRIMARY_GOALS.find(goal => goal.id === primaryGoal)?.label || 'Launching your storefront'}
               onReady={handleSubmit}
             />
@@ -414,13 +529,13 @@ function GeneratingScreen({ businessName, vertical, style, goal, onReady }: {
   const [currentStep, setCurrentStep] = useState(0);
 
   const steps = [
-    { label: 'Analyzing your business', duration: 1200 },
+    { label: 'Analyzing your business model', duration: 1200 },
     { label: `Routing for ${goal.toLowerCase()}`, duration: 1200 },
-    { label: `Mapping your ${vertical.toLowerCase()} funnel`, duration: 1400 },
-    { label: `Applying ${style} design tokens`, duration: 1000 },
-    { label: 'Writing your headlines & copy', duration: 1600 },
-    { label: 'Assembling your sections', duration: 1200 },
-    { label: 'Finalizing your storefront', duration: 800 },
+    { label: `Mapping your ${vertical.toLowerCase()} conversion flow`, duration: 1400 },
+    { label: `Applying ${style} positioning`, duration: 1000 },
+    { label: 'Writing conversion-focused copy', duration: 1600 },
+    { label: 'Configuring sections, checkout, and CTAs', duration: 1200 },
+    { label: 'Finalizing your storefront architecture', duration: 800 },
   ];
 
   useEffect(() => {
@@ -440,11 +555,11 @@ function GeneratingScreen({ businessName, vertical, style, goal, onReady }: {
   return (
     <div className="text-center py-8 space-y-10">
       <div>
-        <p className="text-xs uppercase tracking-[0.2em] font-bold text-black/35 mb-2">Step 3 of 3</p>
+        <p className="text-xs uppercase tracking-[0.2em] font-bold text-black/35 mb-2">Step 3 of 3 • Generation</p>
         <h1 className="text-4xl md:text-5xl font-serif italic tracking-tight mb-3">
-          Building {businessName}
+          Configuring {businessName}
         </h1>
-        <p className="text-black/55 text-lg">AI is designing your store right now.</p>
+        <p className="text-black/55 text-lg">Configuring your storefront architecture…</p>
       </div>
 
       {/* Animated loader */}

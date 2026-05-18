@@ -76,11 +76,20 @@ export async function POST(
     const { business_name, business_type, contact_email, offerings, tagline } = site
     const onboardingProfile = (site.template_data && typeof site.template_data === 'object'
       ? (site.template_data as any).onboarding_profile
-      : null) as { primary_goal?: string; primary_goal_label?: string } | null
+      : null) as {
+        primary_goal?: string;
+        primary_goal_label?: string;
+        buying_behavior?: string;
+        buying_behavior_label?: string;
+        recommended_engine?: string;
+        recommended_style?: string;
+      } | null
 
     const enrichedOfferings = [
       offerings || '',
       onboardingProfile?.primary_goal_label ? `Primary goal: ${onboardingProfile.primary_goal_label}` : '',
+      onboardingProfile?.buying_behavior_label ? `Buying behavior: ${onboardingProfile.buying_behavior_label}` : '',
+      onboardingProfile?.recommended_engine ? `Recommended engine: ${onboardingProfile.recommended_engine}` : '',
     ]
       .filter(Boolean)
       .join('\n')
@@ -88,6 +97,7 @@ export async function POST(
     const enrichedTagline = [
       tagline || '',
       onboardingProfile?.primary_goal_label ? `Primary CTA: ${onboardingProfile.primary_goal_label}` : '',
+      onboardingProfile?.recommended_style ? `Positioning: ${onboardingProfile.recommended_style}` : '',
     ]
       .filter(Boolean)
       .join(' · ')
