@@ -88,12 +88,21 @@ export async function syncInventoryToMedusa(siteId: string, items: MedusaSyncIte
   return payload as MedusaSyncResult
 }
 
+type MedusaInventorySyncUpdate = {
+  id: string
+  site_id: string
+  source_refs: Record<string, any>
+  sync_status: string
+  sync_error: string | null
+  last_synced_at: string
+}
+
 export async function reconcileMedusaInventorySync(siteId: string, items: MedusaSyncItem[], result: MedusaSyncResult) {
   if (!result?.mappings?.length) return result
 
   const rowById = new Map(items.filter((item) => item.id).map((item) => [item.id as string, item]))
-  const updates = result.mappings
-    .map((mapping) => {
+  const updates: MedusaInventorySyncUpdate[] = result.mappings
+    .map((mapping): MedusaInventorySyncUpdate | null => {
       const current = rowById.get(mapping.inventory_id)
       if (!current) return null
 
@@ -112,7 +121,7 @@ export async function reconcileMedusaInventorySync(siteId: string, items: Medusa
         last_synced_at: new Date().toISOString(),
       }
     })
-    .filter(Boolean)
+    .filter((update): update is MedusaInventorySyncUpdate => Boolean(update))
 
   if (!updates.length) return result
 

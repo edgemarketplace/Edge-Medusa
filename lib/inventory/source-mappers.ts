@@ -43,6 +43,12 @@ export function mergeCatalogDraft(
   const keepCurrentStripePricing = current?.pricing_mode === 'stripe' && incoming.source_type !== 'manual'
   const preservePrintifyFulfillment = current?.fulfillment_mode === 'printify' && incoming.source_type !== 'manual'
 
+  const mergedPrice = incomingWantsStripePricing
+    ? incoming.price
+    : keepCurrentStripePricing
+      ? current?.price
+      : chooseField(current?.price, incoming.price, preserveManual)
+
   return {
     ...current,
     ...incoming,
@@ -53,11 +59,7 @@ export function mergeCatalogDraft(
     sku: chooseField(current?.sku, incoming.sku, preserveManual) || null,
     stock: preserveManual && current?.stock != null ? current.stock : (incoming.stock ?? current?.stock ?? null),
     variants: chooseField(current?.variants, incoming.variants, preserveManual) || null,
-    price: incomingWantsStripePricing
-      ? incoming.price
-      : keepCurrentStripePricing
-        ? current?.price
-        : chooseField(current?.price, incoming.price, preserveManual),
+    price: mergedPrice ?? undefined,
     source_type: mergeSourceTypes(current?.source_type, incoming.source_type),
     source_refs: mergeSourceRefs(current?.source_refs, incoming.source_refs),
     metadata: {

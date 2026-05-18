@@ -294,7 +294,10 @@ export default function InventoryPage({ params }: { params: Promise<{ siteId: st
     });
   }, [filterCategory, items, searchTerm]);
 
-  const categoriesUsed = useMemo(() => [...new Set(items.map((item) => item.category).filter(Boolean))], [items]);
+  const categoriesUsed = useMemo(
+    () => [...new Set(items.map((item) => item.category).filter((category): category is string => Boolean(category)))],
+    [items],
+  );
   const sourceCounts = useMemo(() => {
     return items.reduce(
       (acc, item) => {
@@ -595,7 +598,7 @@ function InventoryStatusPanel({ item }: { item: InventoryItem }) {
     item.source_refs?.stripe_price_id ? `Stripe price: ${item.source_refs.stripe_price_id}` : null,
     item.source_refs?.printify_product_id ? `Printify product: ${item.source_refs.printify_product_id}` : null,
     item.source_refs?.printify_shop_id ? `Printify shop: ${item.source_refs.printify_shop_id}` : null,
-  ].filter(Boolean);
+  ].filter((ref): ref is string => Boolean(ref));
 
   return (
     <div className="rounded-3xl border border-black/5 bg-[#F9F8F6] p-5">
